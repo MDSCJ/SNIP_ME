@@ -92,12 +92,15 @@ body {
 /* --- Mobile Responsive Styles --- */
 @media (max-width: 768px) {
     .nav-toggle { display: block; }
+    /* shrink hamburger icon a bit so it remains visible with other icons */
+    .nav-toggle { font-size: 1.2rem; padding: 6px; }
 
     .nav-bar ul {
         position: absolute;
         top: 60px;
         left: -100%; /* hide off-canvas */
-        width: 100%;
+        /* make panel narrower on phones so it doesn’t feel overwhelming */
+        width: 80%;
         background: var(--nav-bg);
         flex-direction: column;
         align-items: center;
@@ -107,7 +110,8 @@ body {
         border-bottom: 2px solid var(--accent-yellow);
     }
 
-    .nav-bar ul.open { left: 0; }
+    /* when opened, slide in from left and center horizontally */
+    .nav-bar ul.open { left: 10%; }
 
     .nav-bar ul li { margin: 8px 0; }
 

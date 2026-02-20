@@ -165,8 +165,15 @@
 /* --- RESPONSIVE MOBILE STYLES --- */
 @media (max-width: 768px) {
     .hero {
-        height: 280px;
+        /* taller hero to show more of the video on phones */
+        height: 420px;
         padding: 30px 20px;
+    }
+
+    /* make hero heading readable on small screens */
+    .hero h2 {
+        font-size: 1.8rem;
+        margin-bottom: 20px;
     }
 
     .search-pill {
@@ -196,5 +203,13 @@
     .btn-search-round {
         width: 100%; /* Full width button */
         margin-top: 10px;
+    }
+
+    /* Zoom in the background video slightly on mobile so the
+       search pill sits over a more consistent area and doesn't
+       shift when input fields expand. Helps the video cover the
+       hero container and keeps focus on the center of the frame. */
+    .bg-video {
+        transform: scale(1.2);
     }
 }
