@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SNIP ME | Book Your Style</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/scrollreveal"></script>
+</head>
+<body class="dark-theme">
+    <header class="main-header">
+        <div class="header-content">
+            <div class="logo-left">
+                <img src="logo-placeholder.png" alt="SNIP ME Logo">
+            </div>
+            <div class="branding-right">
+                <h1>SNIP ME</h1>
+                <p>Your Style, Just a Click Away</p>
+            </div>
+        </div>
+    </header>
+
+    <nav class="nav-bar">
+        <ul>
+            <li><a href="index.html" class="active">Home</a></li>
+            <li><a href="about.html">About Us</a></li>
+            <li><a href="login.html">Login</a></li>
+            <li><a href="#">Services</a></li>
+        </ul>
+    </nav>
+
+    <section class="hero">
+        <div class="search-container">
+            <h2>Find & Book Nearby Salons</h2>
+            <div class="search-box">
+                <input type="text" placeholder="All treatments and venues">
+                <input type="text" placeholder="Current location">
+                <input type="date">
+                <button class="btn-yellow">Search</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="trending">
+        <h3>Trending Styles</h3>
+        <div class="grid">
+            <div class="card">
+                <div class="card-img"></div>
+                <div class="card-info">
+                    <h4>Modern Fade</h4>
+                    <span>Rating: 4.8</span>
+                    <button class="btn-outline">RESERVE</button>
+                </div>
+            </div>
+            </div>
+    </section>
+
+    <script>
+        ScrollReveal().reveal('.card', { delay: 200, distance: '50px', origin: 'bottom' });
+    </script>
+</body>
+</html>
