@@ -1,0 +1,69 @@
+/* css/about.css */
+
+.team-section {
+    text-align: center;
+    padding: 50px 5%;
+}
+
+.team-section h1 {
+    color: var(--accent-yellow);
+    font-size: 2.5rem;
+    margin-bottom: 50px;
+    letter-spacing: 2px;
+}
+
+/* Grid Layout for 5 Developers */
+.team-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 40px;
+}
+
+.team-card {
+    background: #1a1a1a;
+    padding: 30px;
+    border-radius: 15px;
+    width: 250px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid #333;
+}
+
+.team-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 10px 20px rgba(241, 196, 15, 0.2);
+    border-color: var(--accent-yellow);
+}
+
+/* Circular Image Cropping */
+.img-circle {
+    width: 150px;
+    height: 150px;
+    margin: 0 auto 20px;
+    border-radius: 50%; /* Makes it a circle */
+    overflow: hidden;
+    border: 3px solid var(--accent-yellow);
+}
+
+.img-circle img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Ensures image fills circle without distortion */
+}
+
+/* Text Styles */
+.team-card h3 { margin: 10px 0 5px; color: #fff; }
+.team-card .role { color: var(--accent-yellow); font-weight: bold; font-size: 0.9rem; margin-bottom: 15px; }
+.team-card .desc { color: #ccc; font-size: 0.9rem; margin-bottom: 20px; line-height: 1.4; }
+
+/* Social Icons */
+.social-links a {
+    color: #fff;
+    font-size: 1.5rem;
+    margin: 0 10px;
+    transition: 0.3s;
+}
+
+.social-links a:hover {
+    color: var(--accent-yellow);
+}

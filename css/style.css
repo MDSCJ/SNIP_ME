@@ -1,0 +1,128 @@
+/* css/style.css */
+:root {
+    --bg-dark: #121212;
+    --accent-yellow: #f1c40f; /* Orange-Yellow */
+    --text-main: #ffffff;
+    --nav-bg: #111;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* --- 1. Header Image (Scrolls Away) --- */
+.main-header {
+    width: 100%;
+    height: auto;
+    background: #000;
+}
+.main-header img {
+    width: 100%;
+    display: block;
+    object-fit: cover;
+}
+
+/* --- 2. Sticky Navigation Bar --- */
+.nav-bar {
+    background: var(--nav-bg);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    border-bottom: 1px solid #333;
+    padding: 0 20px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start; /* keep items left-to-right; we'll push links right */
+}
+
+/* Desktop Menu (aligned to right) */
+.nav-bar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    gap: 30px;
+    margin-left: auto; /* push the menu to the right */
+    align-items: center;
+}
+
+.nav-bar ul li a {
+    color: #fff;
+    text-decoration: none;
+    text-transform: uppercase;
+    font-weight: bold;
+    font-size: 1rem;
+    padding: 10px 0;
+    transition: color 0.2s ease;
+    position: relative;
+}
+
+/* Hover/Active */
+.nav-bar ul li a:hover { color: var(--accent-yellow); }
+.nav-bar ul li a.active { color: var(--accent-yellow); }
+.nav-bar ul li a.active::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; height: 3px;
+    bottom: -8px;
+    background: var(--accent-yellow);
+}
+
+/* --- 3. Mobile hamburger toggle --- */
+.nav-toggle {
+    display: none; /* shown on small screens only */
+    font-size: 1.6rem;
+    color: var(--text-main);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    margin-left: auto; /* push toggle to the right */
+}
+
+/* --- Mobile Responsive Styles --- */
+@media (max-width: 768px) {
+    .nav-toggle { display: block; }
+
+    .nav-bar ul {
+        position: absolute;
+        top: 60px;
+        left: -100%; /* hide off-canvas */
+        width: 100%;
+        background: var(--nav-bg);
+        flex-direction: column;
+        align-items: center;
+        padding: 20px 0;
+        gap: 12px;
+        transition: left 0.28s ease;
+        border-bottom: 2px solid var(--accent-yellow);
+    }
+
+    .nav-bar ul.open { left: 0; }
+
+    .nav-bar ul li { margin: 8px 0; }
+
+    .nav-bar ul li a.active::after { display: none; }
+}
+
+/* Footer styles (ensure footer sits below content) */
+footer {
+    background: #111;
+    color: #ccc;
+    text-align: center;
+    padding: 20px 0;
+    font-size: 0.9rem;
+    margin-top: auto; /* push footer to bottom when page is short */
+    position: relative;
+    z-index: 1;
+}
+footer a { color: var(--accent-yellow); text-decoration: none; }

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | SNIP ME</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/login.css">
+</head>
+<body class="dark-theme flex-center">
+    <header class="main-header">
+        <div class="header-content">
+            <div class="logo-left">
+                <img src="images/desktop.jpg" alt="SNIP ME Logo">
+            </div>
+        </div>
+    </header>
+
+    <nav class="nav-bar">
+        <div class="nav-toggle">&#9776;</div>
+        <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="about.html">About Us</a></li>
+            <li><a href="login.html" class="active">Login</a></li>
+            <li><a href="#">Services</a></li>
+        </ul>
+    </nav>
+
+    <div class="login-container animate-fade">
+        <h2>Welcome Back</h2>
+        <p>Manage your appointments or business</p>
+        <form>
+            <input type="email" placeholder="Enter your email address" required>
+            <button type="submit" class="btn-yellow full-width">Continue</button>
+        </form>
+        <div class="separator">OR</div>
+        <button class="btn-social fb">Continue with Facebook</button>
+        <button class="btn-social google">Continue with Google</button>
+        <div class="footer-links">
+            <a href="#">Are you a professional?</a>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 <a href="index.html">SNIP ME</a>. All rights reserved.</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var toggle = document.querySelector('.nav-toggle');
+            var list = document.querySelector('.nav-bar ul');
+            if (toggle && list) {
+                toggle.addEventListener('click', function() {
+                    list.classList.toggle('open');
+                });
+            }
+        });
+    </script>
+<script src="js/main.js"></script>
+</body>
+</html>

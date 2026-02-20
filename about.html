@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Team | SNIP ME</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/about.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="dark-theme">
+
+    <header class="main-header">
+        <div class="header-content">
+            <div class="logo-left">
+                <img src="images/desktop.jpg" alt="SNIP ME Team">
+            </div>
+        </div>
+    </header>
+
+    <nav class="nav-bar">
+        <div class="nav-toggle">&#9776;</div>
+        <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="about.html" class="active">About Us</a></li>
+            <li><a href="login.html">Login</a></li>
+            <li><a href="#">Services</a></li>
+        </ul>
+    </nav>
+
+    <section class="team-section">
+        <h1>MEET THE MINDS</h1>
+        <div class="team-grid">
+            
+            <div class="team-card">
+                <div class="img-circle">
+                    <img src="images/dev1.jpg" alt="Chamath">
+                </div>
+                <h3>Chamath</h3>
+                <p class="role">Lead Developer</p>
+                <p class="desc">Mastermind behind the backend architecture and logic.</p>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-linkedin"></i></a>
+                    <a href="#"><i class="fab fa-github"></i></a>
+                </div>
+            </div>
+
+            <div class="team-card">
+                <div class="img-circle">
+                    <img src="images/dev2.jpg" alt="Dev 2">
+                </div>
+                <h3>Name 2</h3>
+                <p class="role">UI/UX Designer</p>
+                <p class="desc">Creating seamless visual experiences.</p>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-linkedin"></i></a>
+                    <a href="#"><i class="fab fa-github"></i></a>
+                </div>
+            </div>
+
+            <div class="team-card">
+                <div class="img-circle"><img src="images/dev3.jpg" alt="Dev 3"></div>
+                <h3>Name 3</h3>
+                <p class="role">Frontend Dev</p>
+                <p class="desc">Turning designs into interactive code.</p>
+                <div class="social-links"><a href="#"><i class="fab fa-linkedin"></i></a><a href="#"><i class="fab fa-github"></i></a></div>
+            </div>
+
+            <div class="team-card">
+                <div class="img-circle"><img src="images/dev4.jpg" alt="Dev 4"></div>
+                <h3>Name 4</h3>
+                <p class="role">Database Admin</p>
+                <p class="desc">Ensuring data integrity and speed.</p>
+                <div class="social-links"><a href="#"><i class="fab fa-linkedin"></i></a><a href="#"><i class="fab fa-github"></i></a></div>
+            </div>
+
+            <div class="team-card">
+                <div class="img-circle"><img src="images/dev5.jpg" alt="Dev 5"></div>
+                <h3>Name 5</h3>
+                <p class="role">QA Engineer</p>
+                <p class="desc">Breaking things so users don't have to.</p>
+                <div class="social-links"><a href="#"><i class="fab fa-linkedin"></i></a><a href="#"><i class="fab fa-github"></i></a></div>
+            </div>
+
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; 2026 <a href="index.html">SNIP ME</a>. All rights reserved.</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var toggle = document.querySelector('.nav-toggle');
+            var list = document.querySelector('.nav-bar ul');
+            if (toggle && list) {
+                toggle.addEventListener('click', function() {
+                    list.classList.toggle('open');
+                });
+            }
+        });
+    </script>
+
+    <script src="js/main.js"></script>
+</body>
+</html>

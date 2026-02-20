@@ -1,0 +1,200 @@
+.trending { padding: 40px 5%; }
+.trending h3 { border-left: 5px solid var(--accent-yellow); padding-left: 15px; margin-bottom: 30px; }
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.card {
+    background: var(--card-bg);
+    border: 1px solid #333;
+    padding: 15px;
+    transition: 0.3s;
+    transform: translateZ(0); /* Fixes some weird hover issues */
+}
+/* --- NEW SEARCH PILL STYLES --- */
+
+/* 1. The Hero Container (Centered) */
+.hero {
+    /* Background image is handled here or in common.css */
+    padding: 40px 20px;
+    text-align: center;
+    display: flex;
+    justify-content: center; /* Horizontally center everything */
+    align-items: center;     /* Vertically center if height is set */
+    flex-direction: column;  /* Stack title above search bar */
+    position: relative;
+    overflow: hidden;
+    height: 350px;
+}
+
+.bg-video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 1;
+    opacity: 0.7;
+}
+
+.search-container {
+    position: relative;
+    z-index: 10;
+}
+
+.hero h2 {
+    margin-bottom: 40px;
+    font-size: 2.5rem;
+    color: #fff;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+    animation: floatIn 1s ease-out forwards;
+}
+
+@keyframes floatIn {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 2. The Big Curved Container (The Pill) */
+/* This replaces the old .search-box */
+.search-pill {
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Spreads inputs out */
+    background: rgba(18, 18, 18, 0.95); /* Dark background */
+    border: 2px solid var(--accent-yellow); /* The Line Art */
+    border-radius: 50px; /* Fully curved ends */
+    padding: 10px 10px 10px 30px; /* Padding: Top Right Bottom Left */
+    width: 100%;
+    max-width: 900px; /* Limits width on big screens */
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    position: relative;
+    z-index: 10;
+}
+
+/* 3. The Input Groups (What, Where, When) */
+.input-group {
+    flex: 1; /* Makes them all equal width */
+    display: flex;
+    flex-direction: column;
+    padding-right: 20px;
+}
+
+.input-group label {
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: var(--accent-yellow);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 5px;
+    text-align: left; /* Align text left */
+}
+
+.input-group input {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 500;
+    width: 100%;
+    outline: none;
+    padding: 5px 0;
+}
+
+/* Location button inside input */
+.location-wrapper { position: relative; }
+.location-wrapper input { padding-right: 36px; }
+.loc-btn {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: var(--accent-yellow);
+    cursor: pointer;
+    padding: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.loc-btn.loading { opacity: 0.6; }
+
+/* 4. The Vertical Dividers */
+.divider {
+    width: 1px;
+    height: 40px;
+    background-color: #444;
+    margin: 0 10px;
+}
+
+/* 5. The Search Button (Round) */
+.btn-search-round {
+    background: var(--accent-yellow);
+    color: #000;
+    border: none;
+    height: 60px;
+    width: 60px; /* Perfect circle for icon only on mobile, or expanding pill */
+    min-width: 140px; /* Minimum width for text */
+    border-radius: 40px;
+    font-weight: bold;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btn-search-round:hover {
+    background: #fff;
+    transform: scale(1.05);
+}
+
+/* --- RESPONSIVE MOBILE STYLES --- */
+@media (max-width: 768px) {
+    .hero {
+        height: 280px;
+        padding: 30px 20px;
+    }
+
+    .search-pill {
+
+        flex-direction: column;
+        border-radius: 20px; /* Less curved on phone */
+        padding: 20px;
+        gap: 20px;
+    }
+
+    .input-group {
+        width: 100%;
+        padding: 0;
+        border-bottom: 1px solid #333; /* Horizontal lines instead of vertical */
+        padding-bottom: 10px;
+    }
+
+    .location-wrapper input { padding-right: 44px; }
+    .loc-btn { right: 12px; }
+
+    .input-group:last-child {
+        border-bottom: none;
+    }
+
+    .divider { display: none; } /* Hide vertical lines on mobile */
+
+    .btn-search-round {
+        width: 100%; /* Full width button */
+        margin-top: 10px;
+    }
+}

@@ -4,23 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SNIP ME | Book Your Style</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/home.css">
     <script src="https://unpkg.com/scrollreveal"></script>
 </head>
 <body class="dark-theme">
     <header class="main-header">
         <div class="header-content">
             <div class="logo-left">
-                <img src="logo-placeholder.png" alt="SNIP ME Logo">
+                <img src="images/desktop.jpg" alt="SNIP ME Logo">
             </div>
-            <div class="branding-right">
-                <h1>SNIP ME</h1>
-                <p>Your Style, Just a Click Away</p>
-            </div>
+            
         </div>
     </header>
 
     <nav class="nav-bar">
+        <div class="nav-toggle">&#9776;</div>
         <ul>
             <li><a href="index.html" class="active">Home</a></li>
             <li><a href="about.html">About Us</a></li>
@@ -30,14 +29,48 @@
     </nav>
 
     <section class="hero">
+        <video class="bg-video" autoplay muted loop playsinline>
+            <source src="videos/bc.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
         <div class="search-container">
             <h2>Find & Book Nearby Salons</h2>
-            <div class="search-box">
-                <input type="text" placeholder="All treatments and venues">
-                <input type="text" placeholder="Current location">
-                <input type="date">
-                <button class="btn-yellow">Search</button>
-            </div>
+            
+            <form class="search-pill">
+                
+                <div class="input-group">
+                    <label for="treatment">What</label>
+                    <input type="text" id="treatment" placeholder="All treatments and venues">
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="input-group location-group">
+                    <label for="location">Where</label>
+                    <div class="location-wrapper">
+                        <input type="text" id="location" placeholder="Current location" aria-label="Location">
+                        <button type="button" id="locBtn" class="loc-btn" title="Use my current location" aria-label="Use my current location">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                <path d="M12 2C12 2 15 5 15 8C15 11 12 14 12 14C12 14 9 11 9 8C9 5 12 2 12 2Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M12 14V22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                <circle cx="12" cy="8" r="2" fill="currentColor" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="input-group">
+                    <label for="date">When</label>
+                    <input type="date" id="date">
+                </div>
+
+                <button class="btn-search-round">
+                    <i class="fas fa-search"></i> Search
+                </button>
+
+            </form>
         </div>
     </section>
 
@@ -52,11 +85,69 @@
                     <button class="btn-outline">RESERVE</button>
                 </div>
             </div>
+            <div class="card">
+                <div class="card-img"></div>
+                <div class="card-info">
+                    <h4>Classic Bob</h4>
+                    <span>Rating: 4.6</span>
+                    <button class="btn-outline">RESERVE</button>
+                </div>
             </div>
+            <div class="card">
+                <div class="card-img"></div>
+                <div class="card-info">
+                    <h4>Beard Trim</h4>
+                    <span>Rating: 4.2</span>
+                    <button class="btn-outline">RESERVE</button>
+                </div>
+            </div>
+        </div>
     </section>
 
     <script>
         ScrollReveal().reveal('.card', { delay: 200, distance: '50px', origin: 'bottom' });
+
+        // simple nav toggle for mobile + geolocation handler
+        document.addEventListener('DOMContentLoaded', function() {
+            var toggle = document.querySelector('.nav-toggle');
+            var list = document.querySelector('.nav-bar ul');
+            if (toggle && list) {
+                toggle.addEventListener('click', function() {
+                    list.classList.toggle('open');
+                });
+            }
+
+            // location button behavior
+            var locBtn = document.getElementById('locBtn');
+            var locInput = document.getElementById('location');
+            var originalIcon = locBtn ? locBtn.innerHTML : '';
+
+            if (locBtn && locInput && navigator.geolocation) {
+                locBtn.addEventListener('click', function() {
+                    locBtn.disabled = true;
+                    locBtn.classList.add('loading');
+                    navigator.geolocation.getCurrentPosition(function(pos) {
+                        var lat = pos.coords.latitude.toFixed(5);
+                        var lon = pos.coords.longitude.toFixed(5);
+                        locInput.value = lat + ', ' + lon;
+                        locBtn.disabled = false;
+                        locBtn.classList.remove('loading');
+                    }, function(err) {
+                        locInput.value = 'Unable to get location';
+                        locBtn.disabled = false;
+                        locBtn.classList.remove('loading');
+                    }, { timeout: 10000 });
+                });
+            } else if (locBtn && locInput) {
+                locBtn.addEventListener('click', function() {
+                    locInput.value = 'Geolocation not supported';
+                });
+            }
+        });
     </script>
+    <footer>
+        <p>&copy; 2026 <a href="index.html">SNIP ME</a>. All rights reserved.</p>
+    </footer>
+<script src="js/main.js"></script>
 </body>
 </html>
