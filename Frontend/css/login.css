@@ -1,63 +1,83 @@
-/* css/login.css */
+/* Remove default spacing */
 body {
-    /* Overrides common body to center content vertically */
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
+    margin: 0;
+    height: 100vh;
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+    position: relative;
 }
 
-.login-wrapper {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-}
-
-.login-container {
-    background: var(--card-bg);
-    padding: 40px;
+/* Background video styling */
+.bg-video {
+    position: fixed;
+    top: 0;
+    left: 0;
     width: 100%;
-    max-width: 400px;
-    border: 1px solid #333;
-    border-top: 4px solid var(--accent-yellow);
-    text-align: center;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    height: 100%;
+    object-fit: cover;
+    z-index: -2;
 }
 
-.login-container input {
-    width: 90%;
-    padding: 12px;
-    margin-bottom: 15px;
-    background: #2a2a2a;
+/* Dark overlay for better readability */
+body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: -1;
+}
+
+/* Center container */
+.center-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+
+/* Buttons */
+.btn-main,
+.btn-outline {
+    display: block;
+    width: 280px;
+    padding: 14px;
+    margin: 15px auto;
+    font-size: 16px;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+/* Filled button */
+.btn-main {
+    background-color: #f4b400;
     border: none;
+    color: black;
+}
+
+.btn-main:hover {
+    background-color: #ffcc33;
+}
+
+/* Outline button */
+.btn-outline {
+    background: transparent;
+    border: 2px solid white;
     color: white;
 }
 
-.separator { margin: 20px 0; color: var(--text-muted); }
-
-/* simple fade animation applied to container */
-.animate-fade { animation: fadeIn 0.8s ease-out forwards; opacity: 0; }
-
-@keyframes fadeIn {
-    to { opacity: 1; }
+.btn-outline:hover {
+    background: white;
+    color: black;
 }
 
-/* make social buttons stand out */
-.btn-social { transition: transform 0.2s, opacity 0.2s; }
-.btn-social:hover { transform: scale(1.02); opacity: 0.9; }
-
-@media (max-width: 600px) {
-    .login-container { width: 90%; padding: 20px; }
-}
-
-.btn-social {
+/* Footer */
+footer {
+    position: absolute;
+    bottom: 15px;
     width: 100%;
-    padding: 12px;
-    margin-bottom: 10px;
-    border: none;
-    cursor: pointer;
-    font-weight: bold;
+    text-align: center;
+    color: white;
+    font-size: 14px;
 }
-.fb { background: #3b5998; color: white; }
-.google { background: white; color: #333; }
