@@ -37,7 +37,7 @@ body::after {
 }
 
 /* Buttons */
-.btn-main,
+
 .btn-outline {
     display: block;
     width: 280px;
@@ -49,16 +49,7 @@ body::after {
     transition: 0.3s ease;
 }
 
-/* Filled button */
-.btn-main {
-    background-color: #f4b400;
-    border: none;
-    color: black;
-}
 
-.btn-main:hover {
-    background-color: #ffcc33;
-}
 
 /* Outline button */
 .btn-outline {
