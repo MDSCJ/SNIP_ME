@@ -1,7 +1,7 @@
 /* Remove default spacing */
 body {
     margin: 0;
-    height: 100vh;
+    min-height: 100vh;
     overflow: hidden;
     font-family: Arial, sans-serif;
     position: relative;
@@ -30,45 +30,69 @@ body::after {
 /* Center container */
 .center-container {
     position: absolute;
-    top: 50%;
+    top: 58%;
     left: 50%;
     transform: translate(-50%, -50%);
     text-align: center;
+    backdrop-filter: blur(4px);
+    z-index: 2;
+}
+
+/* Button spacing */
+.center-container button {
+    margin: 18px 0;
+}
+
+/* Button hover */
+.center-container button:hover {
+    background: #f4c400;
+    color: black;
+}
+.btn-outline{
+    letter-spacing:0.6px;
 }
 
 /* Buttons */
-
 .btn-outline {
     display: block;
-    width: 280px;
-    padding: 14px;
-    margin: 15px auto;
-    font-size: 16px;
+    width: 340px;              /* increased width */
+    padding: 17px 20px;        /* increased height */
+    margin: 16px auto;
+    font-size: 18px;           /* slightly bigger text */
+    font-weight: 600;
     border-radius: 30px;
     cursor: pointer;
     transition: 0.3s ease;
-}
-
-
-
-/* Outline button */
-.btn-outline {
     background: transparent;
     border: 2px solid white;
     color: white;
 }
 
+/* Outline button hover */
 .btn-outline:hover {
-    background: white;
+    background: #f4c400;
     color: black;
+    border-color: #f4c400;
 }
 
 /* Footer */
 footer {
     position: absolute;
-    bottom: 15px;
+    bottom: 0;
+    left: 0;
     width: 100%;
     text-align: center;
     color: white;
     font-size: 14px;
+    padding: 18px 0 22px;
+    z-index: 2;
+}
+
+footer p {
+    margin: 0;
+}
+
+footer a {
+    color: #f4c400;
+    text-decoration: none;
 }
