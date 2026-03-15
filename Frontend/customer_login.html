@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Customer Login | SNIP ME</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/customer_login.css">
+</head>
+
+<body class="dark-theme">
+    <header class="main-header">
+        <div class="header-content">
+            <div class="logo-left">
+                <img src="images/desktop.jpg" alt="SNIP ME Logo">
+            </div>
+        </div>
+    </header>
+
+    <nav class="nav-bar">
+        <div class="nav-toggle">&#9776;</div>
+        <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="about.html">About Us</a></li>
+            <li><a href="login.html" class="active">Login</a></li>
+            <li><a href="#">Services</a></li>
+        </ul>
+    </nav>
+
+    <!-- Background Video -->
+    <video class="bg-video" autoplay muted loop playsinline>
+        <source src="videos/bc.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+
+    <!-- Main Section -->
+    <main class="customer-login-section">
+        <div class="login-wrapper">
+            <div class="login-box">
+
+                <!-- LOGIN VIEW -->
+                <div id="customerLoginView">
+                    <h1>Welcome Back</h1>
+                    <p class="subtitle">Sign in to your account</p>
+
+                    <button class="google-btn" type="button">
+                        <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/google/google-original.svg" alt="Google icon">
+                        <span>Sign in with Google</span>
+                    </button>
+
+                    <div class="separator">
+                        <span>OR</span>
+                    </div>
+
+                    <form id="loginForm">
+                        <label for="loginEmail">Email address</label>
+                        <input type="email" id="loginEmail" placeholder="Enter your email" required>
+
+                        <label for="loginPassword">Password</label>
+                        <div class="password-wrapper">
+                            <input type="password" id="loginPassword" placeholder="Enter your password" required>
+
+                            <button type="button" class="toggle-password" id="toggleLoginPassword" aria-label="Show password">
+                                <svg id="loginEyeOpen" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12S5 4 12 4s11 8 11 8-4 8-11 8S1 12 1 12z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+
+                                <svg id="loginEyeClosed" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                                    <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C5 20 1 12 1 12a21.77 21.77 0 0 1 5.06-6.94"></path>
+                                    <path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.8 21.8 0 0 1-3.17 4.53"></path>
+                                    <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"></path>
+                                    <path d="M1 1l22 22"></path>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <button type="submit" class="signin-btn">Sign In</button>
+                    </form>
+
+                    <div class="signup-link">
+                        Don't have an account? <a href="#" id="showCustomerSignup">Sign up now</a>
+                    </div>
+                </div>
+
+                <!-- SIGNUP VIEW -->
+                <div id="customerSignupView" class="hidden-view">
+                    <h1>Create Account</h1>
+                    <p class="subtitle">Sign up as a customer</p>
+
+                    <form id="customerSignupForm">
+                        <label for="signupFullName">Full name</label>
+                        <input type="text" id="signupFullName" placeholder="Enter your full name" required>
+
+                        <label for="signupEmail">Email address</label>
+                        <input type="email" id="signupEmail" placeholder="Enter your email" required>
+
+                        <label for="signupPhone">Phone number</label>
+                        <input type="tel" id="signupPhone" placeholder="Enter your phone number" required>
+
+                        <label for="signupPassword">Password</label>
+                        <div class="password-wrapper">
+                            <input type="password" id="signupPassword" placeholder="Create a password" required>
+
+                            <button type="button" class="toggle-password" id="toggleSignupPassword" aria-label="Show password">
+                                <svg id="signupEyeOpen" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12S5 4 12 4s11 8 11 8-4 8-11 8S1 12 1 12z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+
+                                <svg id="signupEyeClosed" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                                    <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C5 20 1 12 1 12a21.77 21.77 0 0 1 5.06-6.94"></path>
+                                    <path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.8 21.8 0 0 1-3.17 4.53"></path>
+                                    <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"></path>
+                                    <path d="M1 1l22 22"></path>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <label for="signupConfirmPassword">Confirm password</label>
+                        <div class="password-wrapper">
+                            <input type="password" id="signupConfirmPassword" placeholder="Re-enter your password" required>
+
+                            <button type="button" class="toggle-password" id="toggleConfirmPassword" aria-label="Show password">
+                                <svg id="confirmEyeOpen" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12S5 4 12 4s11 8 11 8-4 8-11 8S1 12 1 12z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+
+                                <svg id="confirmEyeClosed" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                                    <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C5 20 1 12 1 12a21.77 21.77 0 0 1 5.06-6.94"></path>
+                                    <path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.8 21.8 0 0 1-3.17 4.53"></path>
+                                    <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"></path>
+                                    <path d="M1 1l22 22"></path>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <button type="submit" class="signin-btn">Sign Up</button>
+                    </form>
+
+                    <div class="signup-link">
+                        Already have an account? <a href="#" id="showCustomerLogin">Sign in</a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 <a href="index.html">SNIP ME</a>. All rights reserved.</p>
+    </footer>
+
+    <script src="js/customer_login.js"></script>
+</body>
+</html>
