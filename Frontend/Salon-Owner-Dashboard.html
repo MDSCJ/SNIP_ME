@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Snip Me - Owner Dashboard</title>
-    <link rel="stylesheet" href="">
+    <link rel="stylesheet" href="../Frontend/css/Salon-Owner-Styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
@@ -21,7 +21,7 @@
                 <header class="calendar-header">
                     <div class="calendar-nav-wrapper">
                         <button class="nav-btn" onclick="changeMonth(-1)">
-                            <i class="fas fa-chevron-left"></i> <span>previous</span>
+                            <i class="fas fa-chevron-left"></i> <span>Previous</span>
                         </button>
         
                         <div class="month-group">
@@ -30,7 +30,7 @@
                         </div>
         
                         <button class="nav-btn" onclick="changeMonth(1)">
-                            <span>next</span> <i class="fas fa-chevron-right"></i>
+                            <span>Next</span> <i class="fas fa-chevron-right"></i>
                         </button>
                     </div>
                 </header>
@@ -47,7 +47,7 @@
 
                     <aside class="side-panel">
                         <div class="info-card">
-                            <button class="today-btn" onclick="returnToToday()">Jump to today</button>
+                            <button class="btn btn-today" onclick="returnToToday()"> Jump to today </button>
                             <p class="label-sub">Selected Day</p>
                             <h1 id="selected-date">16</h1>
                             <p id="selected-day-name">Monday</p>
@@ -61,8 +61,8 @@
                             </div>
                             
                         </div>
-                        <button class="btn" onclick="toggleModal('daily-modal', true)">View Schedule</button>
-                        <button class="btn" onclick="toggleModal('event-modal', true)">Add Event</button>
+                        <button class="btn btn-view-schedule" onclick="toggleModal('daily-modal', true)">View Schedule</button>
+                        <button class="btn btn-add-event" onclick="toggleModal('event-modal', true)">Add Event</button>
                         <button class="btn btn-holiday" onclick="setAsHoliday()">Set Holiday</button>
                     </aside>
                 </div>

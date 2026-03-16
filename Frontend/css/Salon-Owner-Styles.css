@@ -1,10 +1,12 @@
 :root {
-    --primary-color: #2c3e50;
-    --accent-color: #e67e22;
-    --bg-light: #f4f7f6;
-    --sidebar-width: 250px;
+    --primary-color: #1a1a15;
+    --accent-color: #c5a059;
+    --bg-light: #faf9f6;
+    --sidebar-width: 200px;
+    --sidebar-text: #ffffff;
     --white: #ffffff;
-    --border-color: #ddd;
+    --border-color: #d1b557;
+    --card-shadow: 0 10px 30px rgba(89, 5, 5, 0.08);
 }
 
 * {
@@ -67,8 +69,9 @@ body {
 .calendar-header {
     background: var(--white);
     padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    border: 1px solid rgba(0,0,0,0.03);
+    border-radius: 15px;
+    box-shadow: var(--card-shadow);
     margin-bottom: 20px;
 }
 
@@ -128,8 +131,10 @@ body {
 }
 
 .day-box:hover {
-    background-color: #fef5ed;
-    border-color: var(--accent-color);
+    background-color: rgba(219, 223, 222, 0.955); 
+    color: rgba(55, 9, 9, 0.87);
+    transform: translateY(-2px);
+    box-shadow:  0 4px 8px rgba(82, 98, 88, 0.955);
 }
 
 /* Side Panel & Cards */
@@ -156,8 +161,8 @@ body {
 
 .card-divider {
     margin: 20px 0;
-    border: 0;
-    border-top: 1px solid #eee;
+    border: 0.25 px;
+    border-top: 1px solid #661212;
 }
 
 /* Buttons */
@@ -169,9 +174,18 @@ body {
     color: white;
     cursor: pointer;
     font-weight: bold;
+    letter-spacing: 1px;
+    font-size: 0.75rem;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.btn-holiday { background-color: #c0392b; }
+.btn-today { background-color:#089614 ;}
+.btn-view-schedule {background-color: #315e7d;}
+.btn-add-event {
+    background-color: #390404;
+    color: #ffffff;
+}
+.btn-holiday { background-color: #033a26; }
 .btn-outline { background: none; border: 1px solid var(--primary-color); color: var(--primary-color); }
 
 /* Modal Styling */
