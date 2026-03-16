@@ -136,6 +136,35 @@
     display: block;
 }
 
+.date-wrapper { position: relative; }
+.date-wrapper input {
+    padding-right: 36px;
+    color-scheme: dark;
+}
+.date-wrapper input::-webkit-calendar-picker-indicator {
+    opacity: 0;
+    cursor: pointer;
+}
+.date-btn {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: var(--accent-yellow);
+    cursor: pointer;
+    padding: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.date-icon {
+    width: 16px;
+    height: 16px;
+    display: block;
+}
+
 body.modal-open {
     overflow: hidden;
 }
@@ -285,6 +314,8 @@ body.modal-open {
 
     .location-wrapper input { padding-right: 44px; }
     .loc-btn { right: 12px; }
+    .date-wrapper input { padding-right: 44px; }
+    .date-btn { right: 12px; }
 
     .input-group:last-child {
         border-bottom: none;

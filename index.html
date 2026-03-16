@@ -58,9 +58,14 @@
 
                 <div class="divider"></div>
 
-                <div class="input-group">
+                <div class="input-group date-group">
                     <label for="date">When</label>
-                    <input type="date" id="date">
+                    <div class="date-wrapper">
+                        <input type="date" id="date" aria-label="Date">
+                        <button type="button" id="dateBtn" class="date-btn" title="Choose date" aria-label="Choose date">
+                            <img src="Frontend/images/calendar.png" alt="Calendar" class="date-icon" aria-hidden="true">
+                        </button>
+                    </div>
                 </div>
 
                 <button class="btn-search-round">
@@ -131,6 +136,8 @@
 
             var locBtn = document.getElementById('locBtn');
             var locInput = document.getElementById('location');
+            var dateInput = document.getElementById('date');
+            var dateBtn = document.getElementById('dateBtn');
             var locationModal = document.getElementById('locationModal');
             var closeLocationModal = document.getElementById('closeLocationModal');
             var cancelLocationModal = document.getElementById('cancelLocationModal');
@@ -241,6 +248,36 @@
                 locationModal.setAttribute('aria-hidden', 'true');
                 document.body.classList.remove('modal-open');
                 locBtn.classList.remove('loading');
+            }
+
+            function setMinimumBookingDate() {
+                if (!dateInput) {
+                    return;
+                }
+
+                var tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                var minDate = tomorrow.getFullYear() + '-' +
+                    String(tomorrow.getMonth() + 1).padStart(2, '0') + '-' +
+                    String(tomorrow.getDate()).padStart(2, '0');
+                dateInput.min = minDate;
+
+                if (dateInput.value && dateInput.value < minDate) {
+                    dateInput.value = '';
+                }
+            }
+
+            setMinimumBookingDate();
+
+            if (dateBtn && dateInput) {
+                dateBtn.addEventListener('click', function() {
+                    if (typeof dateInput.showPicker === 'function') {
+                        dateInput.showPicker();
+                    } else {
+                        dateInput.focus();
+                        dateInput.click();
+                    }
+                });
             }
 
             if (locBtn && locInput && locationModal) {
