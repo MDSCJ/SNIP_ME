@@ -86,23 +86,85 @@ function selectDate(day) {
 
     const holidayLabel = document.getElementById('holiday-label');
     if (holidayLabel) {
-        holidayLabel.style.display = holidays.includes(day) ? 'block' : 'none';
+        if(holidays.includes(day)) {
+            holidayLabel.innerText = "HOLIDAY";
+            holidayLabel.style.display = "block";
+            holidayLabel.style.color = "#a47109"
+        }
+        else{
+            holidayLabel.innerText = "WORKING DAY";
+            holidayLabel.style.display = "block";
+            holidayLabel.style.color = "#1b7450"
+        }
     }
+    
+
+    const holidayBtn = document.querySelector('.btn-holiday');
+    // Update the button text according to the current day type.
+    if (holidayBtn) {
+        holidayBtn.innerText = holidays.includes(currentSelectedDay) ? "Remove Holiday" : "Set Holiday";
+        holidayBtn.style.backgroundColor = holidays.includes(day) ? "#1b7450" : "#a47109";
+    }
+    
+
 
     CalenderBuild(); 
 }
 
-function setAsHoliday() {
-    if (!holidays.includes(currentSelectedDay)) {
-        holidays.push(currentSelectedDay);
-        alert(`Day ${currentSelectedDay} marked as Holiday!`);
-        selectDate(currentSelectedDay);
+
+// helper function to make notification styled alerts
+function showToast(message, type = 'working day') {
+    const toast = document.getElementById("toast");
+    if (!toast) return;
+    toast.innerText = message;
+    
+    
+    //change notification color 
+    if (type === 'holiday') {
+        toast.style.backgroundColor = "#a47109"; 
+        toast.style.border = "1px solid #ffffff";
     } else {
-        alert("Already a holiday.");
+        toast.style.backgroundColor = "#1b7450"; 
+        toast.style.border = "1px solid #ffffff";
     }
+
+    toast.classList.add("show");
+    // Auto-hide after 5.1 seconds
+    setTimeout(() => { 
+        toast.className = toast.className.replace("show", ""); 
+    }, 5100);
 }
 
-function saveEvent() {
+
+// set the current day as holiday
+function setAsHoliday() {
+    const index = holidays.indexOf(currentSelectedDay);
+    
+
+    const monthNames = ["January", "February", "March", "April", "May", "June", 
+                        "July", "August", "September", "October", "November", "December"];
+    
+    const dateString = `${currentSelectedDay}, ${monthNames[currentMonth]} ${currentYear}`;
+
+    if (index === -1) {
+        // normal day ---> holiday
+        holidays.push(currentSelectedDay);
+        showToast(`${dateString} marked as Holiday!`, 'holiday');
+    } else {
+        // holiday ---> normal day
+        holidays.splice(index, 1);
+        showToast(`${dateString} is now a normal working day.`, 'working day');
+    }
+
+    // Refresh the calendar colors
+    selectDate(currentSelectedDay);
+}
+
+
+
+
+// Appointment saving 
+function saveAppointment() {
     const customer = document.getElementById('custName').value;
     const time = document.getElementById('startTime').value;
 
