@@ -207,3 +207,35 @@ body {
     flex-direction: column;
     gap: 15px;
 }
+
+
+/*Notification part for holiday*/
+/* Toast Notification Styles */
+#toast {
+    visibility: hidden;
+    min-width: 300px;
+    background-color:#5a3811 ; 
+    color: #ffffff; 
+    text-align: center;
+    border: 1px solid var(--accent-gold);
+    border-radius: 10px;
+    padding: 16px;
+    position: fixed;
+    z-index: 9999;
+    left: 50%;
+    bottom: 30px;
+    transform: translateX(-50%);
+    font-size: 14px;
+    letter-spacing: 1px;
+    box-shadow: 0 10px 30px rgba(126, 124, 124, 0.3);
+   
+}
+
+#toast.show {
+    visibility: visible;
+    animation: fadein 0.8s forwards, fadeout 0.8s 2.5s forwards;
+    
+}
+
+@keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+@keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
