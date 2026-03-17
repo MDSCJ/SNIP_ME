@@ -1,13 +1,18 @@
 package com.starc.snipme.repository;
 
-import com.starc.snipme.model.User;
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.Optional;
+import com.starc.snipme.model.User;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
-    Optional<User> findByUsername(String username);
+    
+    // Used for Login and JWT validation
     Optional<User> findByEmail(String email);
+
+    // Used during Sign-Up to prevent duplicate accounts
+    boolean existsByEmail(String email);
 }

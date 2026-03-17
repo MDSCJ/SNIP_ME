@@ -1,4 +1,7 @@
 document.addEventListener("DOMContentLoaded", function () {
+    const LOGIN_FLAG_KEY = "snipmeCustomerLoggedIn";
+    const USERNAME_KEY = "snipmeCustomerUsername";
+
     const loginView = document.getElementById("customerLoginView");
     const signupView = document.getElementById("customerSignupView");
 
@@ -72,7 +75,15 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
-            alert("Customer login successful (demo).");
+            const username = email.split("@")[0] || "Customer";
+
+            localStorage.setItem(LOGIN_FLAG_KEY, "true");
+            localStorage.setItem(USERNAME_KEY, username);
+            window.isCustomerLoggedIn = true;
+            window.dispatchEvent(new Event("customer-auth-changed"));
+
+            alert("Customer login successful.");
+            window.location.href = "../index.html";
         });
     }
 

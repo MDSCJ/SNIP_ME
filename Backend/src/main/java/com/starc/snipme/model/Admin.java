@@ -16,9 +16,5 @@ import lombok.NoArgsConstructor;
 public class Admin extends User {
     
     private Integer accessLevel;
-    
-    public Admin(Long id, String username, String email, String password, UserRole role, Integer accessLevel) {
-        super(id, username, email, password, role);
-        this.accessLevel = accessLevel;
-    }
+
 }

@@ -15,15 +15,9 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 public class SalonOwner extends User {
     
+    private String name;
+    private String phoneNumber;
     private String salonName;
     private String salonAddress;
-    private String phoneNumber;
-    
-    public SalonOwner(Long id, String username, String email, String password, UserRole role,
-                     String salonName, String salonAddress, String phoneNumber) {
-        super(id, username, email, password, role);
-        this.salonName = salonName;
-        this.salonAddress = salonAddress;
-        this.phoneNumber = phoneNumber;
-    }
+
 }
