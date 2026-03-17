@@ -180,9 +180,39 @@ function saveAppointment() {
     toggleModal('event-modal', false);
 }
 
+
+
+// scrolling bar maintain.
+function scrollStart() {
+    // display from 7 AM 
+    const targetRow = document.getElementById('starting-row');
+    const scrollContainer = document.querySelector('.modal-scroll-area');
+
+    if (targetRow && scrollContainer){
+        setTimeout(() => {
+            targetRow.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'start' 
+            });
+        }, 50); 
+    }
+}
+
+
+
 function toggleModal(id, show) {
     const modal = document.getElementById(id);
-    if (modal) modal.style.display = show ? 'flex' : 'none'; 
+    if (!modal) return;
+    //TO DO : modify this function 001.....
+    if (show) {
+        modal.style.display = 'flex';
+        //trigging scroll if opening the view schedule
+        if (id === 'daily-modal') {
+            scrollStart();
+        }
+    } else {
+        modal.style.display = 'none';
+    }
 }
 
 
