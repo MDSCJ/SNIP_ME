@@ -89,6 +89,53 @@ body {
     margin-left: auto; /* push toggle to the right */
 }
 
+/* Customer login session pill shown below the nav bar */
+.customer-session-pill {
+    position: fixed;
+    top: 72px;
+    right: 20px;
+    display: none;
+    align-items: center;
+    gap: 10px;
+    background: rgba(0, 0, 0, 0.9);
+    border: 1px solid var(--accent-yellow);
+    border-radius: 999px;
+    padding: 8px 12px;
+    color: #fff;
+    z-index: 1100;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.3);
+}
+
+.customer-session-pill.visible {
+    display: inline-flex;
+}
+
+.customer-session-label {
+    font-size: 0.82rem;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.customer-logout-btn {
+    border: none;
+    border-radius: 999px;
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+    background: var(--accent-yellow);
+    color: #111;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.customer-logout-btn:hover {
+    filter: brightness(1.05);
+}
+
 /* --- Mobile Responsive Styles --- */
 @media (max-width: 768px) {
     .nav-toggle { display: block; }
@@ -116,6 +163,17 @@ body {
     .nav-bar ul li { margin: 8px 0; }
 
     .nav-bar ul li a.active::after { display: none; }
+
+    .customer-session-pill {
+        right: 12px;
+        top: 68px;
+        max-width: calc(100vw - 24px);
+    }
+
+    .customer-session-label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 }
 
 /* Footer styles (ensure footer sits below content) */

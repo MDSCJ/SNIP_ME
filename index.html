@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SNIP ME | Book Your Style</title>
+    <link rel="stylesheet" href="Frontend/css/style.css">
+    <link rel="stylesheet" href="Frontend/css/home.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+    <script src="https://unpkg.com/scrollreveal"></script>
+</head>
+<body class="dark-theme">
+    <header class="main-header">
+        <div class="header-content">
+            <div class="logo-left">
+                <img src="Frontend/images/desktop.jpg" alt="SNIP ME Logo">
+            </div>
+            
+        </div>
+    </header>
+
+    <nav class="nav-bar">
+        <div class="nav-toggle">&#9776;</div>
+        <ul>
+            <li><a href="index.html" class="active">Home</a></li>
+            <li><a href="Frontend/about.html">About Us</a></li>
+            <li><a href="Frontend/login.html">Login</a></li>
+            <li><a href="#">Services</a></li>
+        </ul>
+    </nav>
+
+    <section class="hero">
+        <video class="bg-video" autoplay muted loop playsinline>
+            <source src="Frontend/videos/bc.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+        <div class="search-container">
+            <h2>Find & Book Nearby Salons</h2>
+            
+            <form class="search-pill">
+                
+                <div class="input-group">
+                    <label for="treatment">What</label>
+                    <input type="text" id="treatment" placeholder="All treatments and venues">
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="input-group location-group">
+                    <label for="location">Where</label>
+                    <div class="location-wrapper">
+                        <input type="text" id="location" placeholder="Current location" aria-label="Location">
+                        <button type="button" id="locBtn" class="loc-btn" title="Use my current location" aria-label="Use my current location">
+                            <img src="Frontend/images/loc.png" alt="Location" class="loc-icon" aria-hidden="true">
+                        </button>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="input-group date-group">
+                    <label for="date">When</label>
+                    <div class="date-wrapper">
+                        <input type="date" id="date" aria-label="Date">
+                        <button type="button" id="dateBtn" class="date-btn" title="Choose date" aria-label="Choose date">
+                            <img src="Frontend/images/calendar.png" alt="Calendar" class="date-icon" aria-hidden="true">
+                        </button>
+                    </div>
+                </div>
+
+                <button class="btn-search-round">
+                    <i class="fas fa-search"></i> Search
+                </button>
+
+            </form>
+        </div>
+    </section>
+
+    <section class="trending">
+        <h3>Trending Styles</h3>
+        <div class="grid">
+            <div class="card">
+                <div class="card-img"></div>
+                <div class="card-info">
+                    <h4>Modern Fade</h4>
+                    <span>Rating: 4.8</span>
+                    <button class="btn-outline">RESERVE</button>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-img"></div>
+                <div class="card-info">
+                    <h4>Classic Bob</h4>
+                    <span>Rating: 4.6</span>
+                    <button class="btn-outline">RESERVE</button>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-img"></div>
+                <div class="card-info">
+                    <h4>Beard Trim</h4>
+                    <span>Rating: 4.2</span>
+                    <button class="btn-outline">RESERVE</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div id="locationModal" class="location-modal-overlay" aria-hidden="true">
+        <div class="location-modal" role="dialog" aria-modal="true" aria-labelledby="locationModalTitle">
+            <div class="location-modal-header">
+                <h4 id="locationModalTitle">Select Location</h4>
+                <button type="button" id="closeLocationModal" class="location-modal-close" aria-label="Close location picker">&times;</button>
+            </div>
+            <div id="locationMap" class="location-map" aria-label="Location map"></div>
+            <div class="location-modal-actions">
+                <button type="button" id="cancelLocationModal" class="btn-location-secondary">Close</button>
+                <button type="button" id="confirmLocationBtn" class="btn-location-primary">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script>
+        ScrollReveal().reveal('.card', { delay: 200, distance: '50px', origin: 'bottom' });
+
+        // simple nav toggle for mobile + location picker handler
+        document.addEventListener('DOMContentLoaded', function() {
+            var toggle = document.querySelector('.nav-toggle');
+            var list = document.querySelector('.nav-bar ul');
+            if (toggle && list) {
+                toggle.addEventListener('click', function() {
+                    list.classList.toggle('open');
+                });
+            }
+
+            var locBtn = document.getElementById('locBtn');
+            var locInput = document.getElementById('location');
+            var dateInput = document.getElementById('date');
+            var dateBtn = document.getElementById('dateBtn');
+            var locationModal = document.getElementById('locationModal');
+            var closeLocationModal = document.getElementById('closeLocationModal');
+            var cancelLocationModal = document.getElementById('cancelLocationModal');
+            var confirmLocationBtn = document.getElementById('confirmLocationBtn');
+            var mapInstance = null;
+            var mapMarker = null;
+            var selectedLatLng = null;
+            var sriLankaBounds = L.latLngBounds(
+                L.latLng(5.85, 79.45),
+                L.latLng(10.05, 81.98)
+            );
+            var sriLankaCenter = L.latLng(7.8731, 80.7718);
+
+            function isInsideSriLanka(lat, lng) {
+                return sriLankaBounds.contains(L.latLng(lat, lng));
+            }
+
+            function normalizeToSriLanka(lat, lng) {
+                if (isInsideSriLanka(lat, lng)) {
+                    return { lat: lat, lng: lng };
+                }
+                return { lat: sriLankaCenter.lat, lng: sriLankaCenter.lng };
+            }
+
+            function setSelectedLocation(lat, lng, shouldCenterMap) {
+                var safePoint = normalizeToSriLanka(lat, lng);
+                selectedLatLng = { lat: safePoint.lat, lng: safePoint.lng };
+
+                if (mapMarker) {
+                    mapMarker.setLatLng([selectedLatLng.lat, selectedLatLng.lng]);
+                } else {
+                    mapMarker = L.marker([selectedLatLng.lat, selectedLatLng.lng], { draggable: true }).addTo(mapInstance);
+                    mapMarker.on('dragend', function() {
+                        var markerPos = mapMarker.getLatLng();
+                        setSelectedLocation(markerPos.lat, markerPos.lng, false);
+                    });
+                }
+
+                if (shouldCenterMap) {
+                    mapInstance.setView([selectedLatLng.lat, selectedLatLng.lng], 14);
+                }
+            }
+
+            function ensureMap() {
+                if (mapInstance) {
+                    return;
+                }
+
+                mapInstance = L.map('locationMap', {
+                    zoomControl: true,
+                    maxBounds: sriLankaBounds,
+                    maxBoundsViscosity: 1.0,
+                    minZoom: 8
+                });
+
+                mapInstance.fitBounds(sriLankaBounds);
+
+                L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+                    maxZoom: 19,
+                    attribution: 'Tiles &copy; Esri'
+                }).addTo(mapInstance);
+
+                mapInstance.on('click', function(e) {
+                    setSelectedLocation(e.latlng.lat, e.latlng.lng, false);
+                });
+            }
+
+            function openLocationModal() {
+                if (!locationModal) {
+                    return;
+                }
+
+                ensureMap();
+                locationModal.classList.add('open');
+                locationModal.setAttribute('aria-hidden', 'false');
+                document.body.classList.add('modal-open');
+
+                setTimeout(function() {
+                    if (mapInstance) {
+                        mapInstance.invalidateSize();
+                        if (!selectedLatLng) {
+                            mapInstance.fitBounds(sriLankaBounds);
+                        }
+                    }
+                }, 100);
+
+                if (navigator.geolocation) {
+                    locBtn.classList.add('loading');
+                    navigator.geolocation.getCurrentPosition(function(pos) {
+                        setSelectedLocation(pos.coords.latitude, pos.coords.longitude, true);
+                        locBtn.classList.remove('loading');
+                    }, function() {
+                        if (!selectedLatLng) {
+                            setSelectedLocation(sriLankaCenter.lat, sriLankaCenter.lng, true);
+                        }
+                        locBtn.classList.remove('loading');
+                    }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+                } else if (!selectedLatLng) {
+                    setSelectedLocation(sriLankaCenter.lat, sriLankaCenter.lng, true);
+                }
+            }
+
+            function closeModal() {
+                if (!locationModal) {
+                    return;
+                }
+                locationModal.classList.remove('open');
+                locationModal.setAttribute('aria-hidden', 'true');
+                document.body.classList.remove('modal-open');
+                locBtn.classList.remove('loading');
+            }
+
+            function setMinimumBookingDate() {
+                if (!dateInput) {
+                    return;
+                }
+
+                var tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                var minDate = tomorrow.getFullYear() + '-' +
+                    String(tomorrow.getMonth() + 1).padStart(2, '0') + '-' +
+                    String(tomorrow.getDate()).padStart(2, '0');
+                dateInput.min = minDate;
+
+                if (dateInput.value && dateInput.value < minDate) {
+                    dateInput.value = '';
+                }
+            }
+
+            setMinimumBookingDate();
+
+            if (dateBtn && dateInput) {
+                dateBtn.addEventListener('click', function() {
+                    if (typeof dateInput.showPicker === 'function') {
+                        dateInput.showPicker();
+                    } else {
+                        dateInput.focus();
+                        dateInput.click();
+                    }
+                });
+            }
+
+            if (locBtn && locInput && locationModal) {
+                locBtn.addEventListener('click', function() {
+                    openLocationModal();
+                });
+
+                confirmLocationBtn.addEventListener('click', function() {
+                    if (selectedLatLng) {
+                        locInput.value = selectedLatLng.lat.toFixed(5) + ', ' + selectedLatLng.lng.toFixed(5);
+                    }
+                    closeModal();
+                });
+
+                closeLocationModal.addEventListener('click', closeModal);
+                cancelLocationModal.addEventListener('click', closeModal);
+
+                locationModal.addEventListener('click', function(event) {
+                    if (event.target === locationModal) {
+                        closeModal();
+                    }
+                });
+
+                document.addEventListener('keydown', function(event) {
+                    if (event.key === 'Escape' && locationModal.classList.contains('open')) {
+                        closeModal();
+                    }
+                });
+            } else if (locBtn && locInput) {
+                locBtn.addEventListener('click', function() {
+                    locInput.value = 'Location picker unavailable';
+                });
+            }
+        });
+    </script>
+        <footer>
+        <p>&copy; 2026 SNIP ME. All rights reserved.</p>
+    </footer>
+<script src="Frontend/js/main.js"></script>
+<script src="Frontend/js/customer_session.js"></script>
+</body>
+</html>

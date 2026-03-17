@@ -1,0 +1,21 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "sqlproj: Build SNIP_ME",
+			"type": "process",
+			"command": "dotnet",
+			"args": [
+				"build",
+				"e:/Program_Files/HTML/SNIP_ME/Database/SNIP_ME/SNIP_ME.sqlproj"
+			],
+			"problemMatcher": "$sqlproj-problem-matcher",
+			"isBackground": true,
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"detail": "Builds the SNIP_ME SQL project"
+		}
+	]
+}

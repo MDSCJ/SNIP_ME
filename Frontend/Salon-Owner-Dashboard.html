@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snip Me - Owner Dashboard</title>
+    <link rel="stylesheet" href="../Frontend/css/Salon-Owner-Styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <nav class="sidebar">
+            <div class="logo"><h2>Snip Me</h2></div>
+            <ul>
+                <li class="nav-link active" data-target="calendar-section"><i class="fas fa-calendar-alt"></i> Calendar</li>
+            </ul>
+        </nav>
+
+        <main class="main-content">
+            <section id="calendar-section" class="content-section">
+                <header class="calendar-header">
+                    <div class="calendar-nav-wrapper">
+                        <button class="nav-btn" onclick="changeMonth(-1)">
+                            <i class="fas fa-chevron-left"></i> <span>Previous</span>
+                        </button>
+        
+                        <div class="month-group">
+                            <h2 id="monthDisplay">March 2026</h2>
+                            
+                        </div>
+        
+                        <button class="nav-btn" onclick="changeMonth(1)">
+                            <span>Next</span> <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </header>
+
+                <div class="calendar-layout">
+                    <div class="calendar-wrapper">
+                        <div class="weekday-labels">
+                            <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+                        </div>
+                        <div id="calendar-grid" class="calendar-grid">
+                            <div class="day-box" id="slot-0"></div><div class="day-box" id="slot-1"></div><div class="day-box" id="slot-2"></div><div class="day-box" id="slot-3"></div><div class="day-box" id="slot-4"></div><div class="day-box" id="slot-5"></div><div class="day-box" id="slot-6"></div><div class="day-box" id="slot-7"></div><div class="day-box" id="slot-8"></div><div class="day-box" id="slot-9"></div><div class="day-box" id="slot-10"></div><div class="day-box" id="slot-11"></div><div class="day-box" id="slot-12"></div><div class="day-box" id="slot-13"></div><div class="day-box" id="slot-14"></div><div class="day-box" id="slot-15"></div><div class="day-box" id="slot-16"></div><div class="day-box" id="slot-17"></div><div class="day-box" id="slot-18"></div><div class="day-box" id="slot-19"></div><div class="day-box" id="slot-20"></div><div class="day-box" id="slot-21"></div><div class="day-box" id="slot-22"></div><div class="day-box" id="slot-23"></div><div class="day-box" id="slot-24"></div><div class="day-box" id="slot-25"></div><div class="day-box" id="slot-26"></div><div class="day-box" id="slot-27"></div><div class="day-box" id="slot-28"></div><div class="day-box" id="slot-29"></div><div class="day-box" id="slot-30"></div><div class="day-box" id="slot-31"></div><div class="day-box" id="slot-32"></div><div class="day-box" id="slot-33"></div><div class="day-box" id="slot-34"></div>
+                        </div>
+                    </div>
+
+                    <aside class="side-panel">
+                        <div class="info-card">
+                            <button class="btn btn-today" onclick="returnToToday()"> Jump to today </button>
+                            <p class="label-sub">Selected Day</p>
+                            <h1 id="selected-date">16</h1>
+                            <p id="selected-day-name">Monday</p>
+                            <br>
+                            <p id="holiday-label" class="holiday-text" style="display: none;">Holiday</p>
+                            
+                            <hr class="card-divider">
+                            
+                            <p class="label-sub">Real-Time</p>
+                            <div class="live-clock">
+                                <h2 id="current-time">00:00:00</h2>
+                            </div>
+                            
+                        </div>
+                        <button class="btn btn-view-schedule" onclick="toggleModal('daily-modal', true)">View Schedule</button>
+                        <button class="btn btn-add-event" onclick="toggleModal('event-modal', true)">Add Appointment</button>
+                        <button class="btn btn-holiday" onclick="setAsHoliday()">Set Holiday</button>
+                    </aside>
+                </div>
+            </section>
+            
+            
+        </main>
+    </div>
+
+    <div id="daily-modal" class="modal" style="display: none;">
+        <div class="modal-content schedule-modal">
+            <div class="modal-header">
+                <h3>Daily Schedule</h3>
+                <span class="close-x" onclick="toggleModal('daily-modal', false)">&times;</span>
+            </div>
+        
+            <div class="modal-scroll-area">
+                <table class="schedule-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Customer</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="schedule-list">
+                        <tr><td>00:00 AM</td><td>Person 01</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>01:00 AM</td><td>Person 02</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>02:00 AM</td><td>Person 03</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>03:00 AM</td><td>Person 04</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>04:00 AM</td><td>Person 05</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>05:00 AM</td><td>Person 06</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>06:00 AM</td><td>Person 07</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>07:00 AM</td><td>Person 08</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr id="starting-row" ><td>08:00 AM</td><td>Person 09</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>09:00 AM</td><td>Person 10</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>10:00 AM</td><td>Person 11</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>11:00 AM</td><td>Person 12</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>12:00 PM</td><td>Person 13</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>01:00 PM</td><td>Person 14</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>02:00 PM</td><td>Person 15</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>03:00 PM</td><td>Person 16</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>04:00 PM</td><td>Person 17</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>05:00 PM</td><td>Person 18</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>06:00 PM</td><td>Person 19</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>07:00 PM</td><td>Person 20</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>08:00 PM</td><td>Person 21</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>09:00 PM</td><td>Person 22</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>10:00 PM</td><td>Person 23</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>11:00 PM</td><td>Person 24</td><td><button class="btn-small">Edit</button></td></tr>
+
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="toggleModal('daily-modal', false)">Close</button>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="event-modal" class="modal">
+        <div class="modal-content">
+            <h3>Add Appointment</h3>
+            <input type="text" id="custName" placeholder="Customer Name">
+            <input type="time" id="startTime" min="07:00" max="20:00">
+            <button class="btn" onclick="saveEvent()">Save</button>
+            <button class="btn btn-outline" onclick="toggleModal('event-modal', false)">Cancel</button>
+        </div>
+    </div>
+
+    <script src="../Frontend/js/Salon-Owner-Script.js"></script>
+    <div id="toast">Notification Message Here</div>
+</body>
+</html>
