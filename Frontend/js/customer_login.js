@@ -1,12 +1,26 @@
 document.addEventListener("DOMContentLoaded", function () {
     const LOGIN_FLAG_KEY = "snipmeCustomerLoggedIn";
-    const USERNAME_KEY = "snipmeCustomerUsername";
+    const USERNAME_KEY   = "snipmeCustomerUsername";
+    const EMAIL_KEY      = "snipmeCustomerEmail";
+    const PASSWORD_KEY   = "snipmeCustomerPassword";
+    const EMAIL_REGEX    = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
+    const PHONE_REGEX    = /^0[0-9]{9,14}$/;
 
-    const loginView = document.getElementById("customerLoginView");
-    const signupView = document.getElementById("customerSignupView");
+    const loginView  = document.getElementById("customerLoginView");
+    const signupView  = document.getElementById("customerSignupView");
+    const forgotView  = document.getElementById("customerForgotView");
 
-    const showSignup = document.getElementById("showCustomerSignup");
-    const showLogin = document.getElementById("showCustomerLogin");
+    const showSignup  = document.getElementById("showCustomerSignup");
+    const showLogin   = document.getElementById("showCustomerLogin");
+    const showForgot  = document.getElementById("showForgotPassword");
+    const showLoginFromForgot = document.getElementById("showLoginFromForgot");
+
+    function switchView(show) {
+        [loginView, signupView, forgotView].forEach(function (v) {
+            if (v) v.classList.add("hidden-view");
+        });
+        if (show) show.classList.remove("hidden-view");
+    }
 
     const loginForm = document.getElementById("loginForm");
     const signupForm = document.getElementById("customerSignupForm");
@@ -32,25 +46,18 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+    function isValidEmail(email) {
+        return EMAIL_REGEX.test(email);
+    }
+
     setupPasswordToggle("toggleLoginPassword", "loginPassword", "loginEyeOpen", "loginEyeClosed");
     setupPasswordToggle("toggleSignupPassword", "signupPassword", "signupEyeOpen", "signupEyeClosed");
     setupPasswordToggle("toggleConfirmPassword", "signupConfirmPassword", "confirmEyeOpen", "confirmEyeClosed");
 
-    if (showSignup) {
-        showSignup.addEventListener("click", function (e) {
-            e.preventDefault();
-            loginView.classList.add("hidden-view");
-            signupView.classList.remove("hidden-view");
-        });
-    }
-
-    if (showLogin) {
-        showLogin.addEventListener("click", function (e) {
-            e.preventDefault();
-            signupView.classList.add("hidden-view");
-            loginView.classList.remove("hidden-view");
-        });
-    }
+    if (showSignup)  showSignup.addEventListener("click",  function (e) { e.preventDefault(); switchView(signupView); });
+    if (showLogin)   showLogin.addEventListener("click",   function (e) { e.preventDefault(); switchView(loginView); });
+    if (showForgot)  showForgot.addEventListener("click",  function (e) { e.preventDefault(); switchView(forgotView); });
+    if (showLoginFromForgot) showLoginFromForgot.addEventListener("click", function (e) { e.preventDefault(); switchView(loginView); });
 
     if (loginForm) {
         loginForm.addEventListener("submit", function (e) {
@@ -64,8 +71,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
-            const emailPattern = /^[^ ]+@[^ ]+\.[a-z]{2,}$/i;
-            if (!emailPattern.test(email)) {
+            if (!isValidEmail(email)) {
                 alert("Please enter a valid email address.");
                 return;
             }
@@ -79,6 +85,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             localStorage.setItem(LOGIN_FLAG_KEY, "true");
             localStorage.setItem(USERNAME_KEY, username);
+            localStorage.setItem(EMAIL_KEY, email);
             window.isCustomerLoggedIn = true;
             window.dispatchEvent(new Event("customer-auth-changed"));
 
@@ -102,14 +109,13 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
-            const emailPattern = /^[^ ]+@[^ ]+\.[a-z]{2,}$/i;
-            if (!emailPattern.test(email)) {
+            if (!isValidEmail(email)) {
                 alert("Please enter a valid email address.");
                 return;
             }
 
-            if (!/^[0-9]{10,15}$/.test(phone)) {
-                alert("Please enter a valid phone number.");
+            if (!PHONE_REGEX.test(phone)) {
+                alert("Please enter a valid phone number starting with 0.");
                 return;
             }
 
@@ -123,7 +129,49 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
+            localStorage.setItem(EMAIL_KEY, email);
+            localStorage.setItem(PASSWORD_KEY, btoa(password));
+
             alert("Customer signup successful (demo).");
+        });
+    }
+
+    // ========= Forgot Password =========
+    var forgotForm = document.getElementById("forgotPasswordForm");
+    if (forgotForm) {
+        forgotForm.addEventListener("submit", function (e) {
+            e.preventDefault();
+            var enteredEmail = document.getElementById("forgotEmail").value.trim();
+
+            if (!enteredEmail) {
+                alert("Please enter your email address.");
+                return;
+            }
+            if (!isValidEmail(enteredEmail)) {
+                alert("Please enter a valid Gmail address.");
+                return;
+            }
+
+            var submitBtn = forgotForm.querySelector("button[type=submit]");
+            if (submitBtn) submitBtn.disabled = true;
+
+            fetch("http://localhost:8080/api/auth/forgot-password", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: enteredEmail })
+            })
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                alert(data.message || "If that email is registered, a temporary password has been sent.");
+                switchView(loginView);
+                document.getElementById("forgotEmail").value = "";
+            })
+            .catch(function () {
+                alert("Could not reach the server. Please try again later.");
+            })
+            .finally(function () {
+                if (submitBtn) submitBtn.disabled = false;
+            });
         });
     }
 });

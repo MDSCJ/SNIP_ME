@@ -212,6 +212,24 @@ input::placeholder {
     text-decoration: underline;
 }
 
+/* Forgot password link */
+.forgot-link {
+    text-align: right;
+    margin-top: 3px;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+.forgot-link a {
+    color: #07132b;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.forgot-link a:hover {
+    text-decoration: underline;
+}
+
 /* Hidden view */
 .hidden-view {
     display: none;
