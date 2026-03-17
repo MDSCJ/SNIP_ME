@@ -73,6 +73,59 @@
         </main>
     </div>
 
+    <div id="daily-modal" class="modal" style="display: none;">
+        <div class="modal-content schedule-modal">
+            <div class="modal-header">
+                <h3>Daily Schedule</h3>
+                <span class="close-x" onclick="toggleModal('daily-modal', false)">&times;</span>
+            </div>
+        
+            <div class="modal-scroll-area">
+                <table class="schedule-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Customer</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="schedule-list">
+                        <tr><td>00:00 AM</td><td>Person 01</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>01:00 AM</td><td>Person 02</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>02:00 AM</td><td>Person 03</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>03:00 AM</td><td>Person 04</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>04:00 AM</td><td>Person 05</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>05:00 AM</td><td>Person 06</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>06:00 AM</td><td>Person 07</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>07:00 AM</td><td>Person 08</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr id="starting-row" ><td>08:00 AM</td><td>Person 09</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>09:00 AM</td><td>Person 10</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>10:00 AM</td><td>Person 11</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>11:00 AM</td><td>Person 12</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>12:00 PM</td><td>Person 13</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>01:00 PM</td><td>Person 14</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>02:00 PM</td><td>Person 15</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>03:00 PM</td><td>Person 16</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>04:00 PM</td><td>Person 17</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>05:00 PM</td><td>Person 18</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>06:00 PM</td><td>Person 19</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>07:00 PM</td><td>Person 20</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>08:00 PM</td><td>Person 21</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>09:00 PM</td><td>Person 22</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>10:00 PM</td><td>Person 23</td><td><button class="btn-small">Edit</button></td></tr>
+                        <tr><td>11:00 PM</td><td>Person 24</td><td><button class="btn-small">Edit</button></td></tr>
+
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="toggleModal('daily-modal', false)">Close</button>
+            </div>
+        </div>
+    </div>
+
+
     <div id="event-modal" class="modal">
         <div class="modal-content">
             <h3>Add Appointment</h3>
