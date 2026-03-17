@@ -32,18 +32,26 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable) 
-            // Allows the H2 console to load inside a browser frame
+            // 1. Disable CSRF for development and stateless API testing
+            .csrf(AbstractHttpConfigurer::disable)
+            
+            // 2. Disable Frame Options so the H2 Console can load in your browser
             .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
+            
+            // 3. Configure URL permissions
             .authorizeHttpRequests(auth -> auth
-                // Permits public access to Auth endpoints and the Database console
-                .requestMatchers("/api/auth/**", "/h2-console/**").permitAll() 
-                .anyRequest().authenticated() 
+                // Allow anyone to access Auth endpoints and the Database console
+                .requestMatchers("/api/auth/**", "/h2-console/**").permitAll()
+                // Everything else requires a valid JWT
+                .anyRequest().authenticated()
             )
+            
+            // 4. Ensure the server does not create a session (Stateless)
             .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS) 
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
-            // Adds your custom JWT guard before the standard login check
+            
+            // 5. Place your JWT Gatekeeper filter before the default login filter
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class); 
 
         return http.build();
