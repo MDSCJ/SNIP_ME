@@ -1,6 +1,7 @@
 document.addEventListener("DOMContentLoaded", function () {
     const LOGIN_FLAG_KEY = "snipmeCustomerLoggedIn";
     const USERNAME_KEY = "snipmeCustomerUsername";
+    const GOOGLE_CLIENT_ID = "366250450099-j5sle9ukjhobugsj3g9rr0o0jrg6p3so.apps.googleusercontent.com";
 
     const loginView = document.getElementById("customerLoginView");
     const signupView = document.getElementById("customerSignupView");
@@ -30,6 +31,60 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             });
         }
+    }
+
+    function parseJwt(token) {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(
+            atob(base64)
+                .split('')
+                .map(function (c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                })
+                .join('')
+        );
+        return JSON.parse(jsonPayload);
+    }
+
+    function handleCustomerGoogleResponse(response) {
+        console.log("Customer Google response:", response);
+
+        if (response && response.credential) {
+            const payload = parseJwt(response.credential);
+            console.log("Decoded customer user:", payload);
+
+            const username =
+                payload.given_name ||
+                payload.name ||
+                (payload.email ? payload.email.split("@")[0] : "Customer");
+
+            localStorage.setItem(LOGIN_FLAG_KEY, "true");
+            localStorage.setItem(USERNAME_KEY, username);
+            window.isCustomerLoggedIn = true;
+            window.dispatchEvent(new Event("customer-auth-changed"));
+
+            alert("Customer Google login successful: " + (payload.email || "Unknown user"));
+            window.location.href = "../index.html";
+        }
+    }
+
+    if (window.google && document.getElementById("customerGoogleButton")) {
+        google.accounts.id.initialize({
+            client_id: GOOGLE_CLIENT_ID,
+            callback: handleCustomerGoogleResponse
+        });
+
+        google.accounts.id.renderButton(
+            document.getElementById("customerGoogleButton"),
+            {
+                theme: "outline",
+                size: "large",
+                shape: "pill",
+                text: "signin_with",
+                width: 400
+            }
+        );
     }
 
     setupPasswordToggle("toggleLoginPassword", "loginPassword", "loginEyeOpen", "loginEyeClosed");
