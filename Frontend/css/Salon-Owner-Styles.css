@@ -373,3 +373,75 @@ body {
     color: var(--white);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
+
+
+
+/**/
+/* Container for the Details Form */
+.details-form-card {
+    max-width: 650px;
+    margin: 20px auto;
+    padding: 40px;
+    border-radius: 20px;
+    background: #fff;
+    box-shadow: var(--card-shadow);
+}
+
+/* Individual Form Groups */
+.form-group {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    flex: 0 0 150px; /* Fixed width for labels so inputs align */
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--primary-color);
+    text-align: right;
+    margin-right: 20px;
+}
+
+/* Inputs & Textarea Styling */
+.form-group input, 
+.form-group textarea {
+    flex: 1;
+    padding: 12px 20px;
+    border: 1px solid #ddd;
+    border-radius: 30px; 
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.3s;
+}
+
+.form-group textarea {
+    border-radius: 15px; 
+    height: 80px;
+    resize: none;
+}
+.form-group input:focus, 
+.form-group textarea:focus {
+    border-color: var(--accent-color);
+}
+
+.btn-save-details {
+    display: block;
+    width: 200px;
+    margin: 30px auto 0;
+    padding: 14px;
+    background-color: var(--accent-color);
+    color: #000;
+    border: none;
+    border-radius: 30px;
+    font-weight: 700;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(182, 182, 182, 0.3);
+}
+
+.btn-save-details:hover {
+    transform: scale(1.05);
+    background-color: #000000;
+    color: #fff;
+}

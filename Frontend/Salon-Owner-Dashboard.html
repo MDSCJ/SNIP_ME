@@ -13,6 +13,7 @@
             <div class="logo"><h2>Snip Me</h2></div>
             <ul>
                 <li class="nav-link active" data-target="calendar-section"><i class="fas fa-calendar-alt"></i> Calendar</li>
+                <li class="nav-link active" data-target="details-section"><i class="fas fa-info-circle"></i> Details</li>
             </ul>
         </nav>
 
@@ -20,7 +21,7 @@
             <section id="calendar-section" class="content-section">
                 <header class="calendar-header">
                     <div class="calendar-nav-wrapper">
-                        <button class="nav-btn" onclick="changeMonth(-1)">
+                        <button class="nav-btn1" onclick="changeMonth(-1)">
                             <i class="fas fa-chevron-left"></i> <span>Previous</span>
                         </button>
         
@@ -29,7 +30,7 @@
                             
                         </div>
         
-                        <button class="nav-btn" onclick="changeMonth(1)">
+                        <button class="nav-btn1" onclick="changeMonth(1)">
                             <span>Next</span> <i class="fas fa-chevron-right"></i>
                         </button>
                     </div>
@@ -68,6 +69,48 @@
                     </aside>
                 </div>
             </section>
+            <section id="details-section" class="content-section" style="display: none;">
+                <div class="details-container">
+                    <header class="calendar-header">
+                        <h2>Salon Details</h2>
+                        <p>Manage Your Salon's Details </p>
+                    </header>
+                    <div class="info-card details-form-card">
+                        <form id="salon-details-form">
+                            <div class="profile-upload-area">
+                                <div class="profile-preview" id="profilePreview">
+                                    <i class="fas fa-upload"></i>
+                                </div>
+                                <br>
+                                <label for="imageUpload" class="btn btn-small">Change Photo</label>
+                                <input type="file" id="imageUpload" accept="image/*" hidden>
+                            </div>
+                            <br>
+                            <div class="form-group">
+                                <label>Salon Name</label>
+                                <input type="text" id="salonName"  placeholder=" Enter salon name">
+                            </div>
+                            <br>
+                            <div class="form-group">
+                                <label>Business Address</label>
+                                <textarea id="salonAddress" placeholder="Enter address"></textarea>
+                            </div>
+                            <br>
+                            <div class="form-group">
+                                <label>Contact Number</label>
+                                <input type="text" id="salonContact" placeholder="+94 00 000 000">
+                            </div>
+                            <br>
+                            <button type="button" class="btn btn-save-details" onclick="showToast('Details updated successfully!', 'working day')">
+                                Save Changes
+                            </button>
+                        </form>
+                    </div>
+
+
+                </div>
+            </section>
+
             
             
         </main>
@@ -120,7 +163,7 @@
             </div>
 
             <div class="modal-footer">
-                <button class="btn btn-outline" onclick="toggleModal('daily-modal', false)">Close</button>
+                <button class="btn view-schedule-menu"  onclick="toggleModal('daily-modal', false)">Close</button>
             </div>
         </div>
     </div>
