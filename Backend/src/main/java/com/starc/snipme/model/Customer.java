@@ -17,8 +17,8 @@ public class Customer extends User {
     
     private String name;
     
-    public Customer(Long id, String username, String email, String password, UserRole role, String name) {
-        super(id, username, email, password, role);
+    public Customer(Long id, String email, String password, UserRole role, String name) {
+        super(id, email, password, role);
         this.name = name;
     }
 }

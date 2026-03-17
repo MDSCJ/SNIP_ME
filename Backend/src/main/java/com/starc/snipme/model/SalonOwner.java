@@ -19,9 +19,9 @@ public class SalonOwner extends User {
     private String salonAddress;
     private String phoneNumber;
     
-    public SalonOwner(Long id, String username, String email, String password, UserRole role,
+    public SalonOwner(Long id, String email, String password, UserRole role,
                      String salonName, String salonAddress, String phoneNumber) {
-        super(id, username, email, password, role);
+        super(id, email, password, role);
         this.salonName = salonName;
         this.salonAddress = salonAddress;
         this.phoneNumber = phoneNumber;
