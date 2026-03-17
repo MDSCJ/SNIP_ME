@@ -38,4 +38,6 @@ public abstract class User {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private UserRole role;
+
+    // Manual constructor removed to prevent Lombok conflicts.
 }
