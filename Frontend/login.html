@@ -49,10 +49,30 @@
         </button>
 
     </div>
-        <footer>
-        <p>&copy; 2026 SNIP ME. All rights reserved.</p>
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+    var toggle = document.querySelector('.nav-toggle');
+    var navList = document.querySelector('.nav-bar ul');
+
+    if (toggle && navList) {
+        toggle.addEventListener('click', function () {
+            navList.classList.toggle('open');
+        });
+    }
+
+    var navLinks = document.querySelectorAll('.nav-bar ul li a');
+    navLinks.forEach(function(link) {
+        link.addEventListener('click', function() {
+            navList.classList.remove('open');
+        });
+    });
+});
+</script>
+    <footer>
+        <p>&copy; 2026 <a href="index.html">SNIP ME</a>. All rights reserved.</p>
     </footer>
 
+    <script src="js/main.js"></script>
 
     <script src="js/customer_session.js"></script>
 </body>
