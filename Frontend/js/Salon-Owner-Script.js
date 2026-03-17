@@ -45,10 +45,10 @@ function CalenderBuild() {
             }
 
             if (dateNum === currentSelectedDay) {
-                slot.style.border = "3px solid #2c3e50";
+                slot.style.border = "1.5px solid #4e3505";
             } 
             else if (dateNum === realToday && currentMonth === realMonth && currentYear === realYear) {
-                slot.style.border = "2px solid #4ecca3"; 
+                slot.style.border = "2px dashed #f0c312"; 
             }
 
             slot.onclick = () => selectDate(dateNum);
