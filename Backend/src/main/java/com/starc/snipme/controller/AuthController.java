@@ -5,6 +5,8 @@ import com.starc.snipme.model.*;
 import com.starc.snipme.repository.UserRepository;
 import com.starc.snipme.security.JwtUtils;
 import com.starc.snipme.service.EmailService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +17,8 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
+
+    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -88,6 +92,7 @@ public class AuthController {
 
         // Always respond the same way to prevent user-enumeration
         if (userOpt.isEmpty()) {
+            logger.info("Forgot-password requested for non-existing account: {}", email.trim().toLowerCase());
             return ResponseEntity.ok(Map.of("message", "If that email is registered, a temporary password has been sent."));
         }
 
@@ -99,7 +104,9 @@ public class AuthController {
 
         try {
             emailService.sendTemporaryPassword(email.trim(), tempPassword);
+            logger.info("Temporary password email sent to {}", email.trim().toLowerCase());
         } catch (Exception ex) {
+            logger.error("Failed to send temporary password email to {}", email.trim().toLowerCase(), ex);
             return ResponseEntity.internalServerError()
                     .body(Map.of("error", "Failed to send email. Please try again later."));
         }
