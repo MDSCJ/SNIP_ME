@@ -48,6 +48,7 @@ SNIP_ME/
 │   ├── about.html
 │   ├── login.html
 │   ├── customer_login.html
+│   ├── salon-owner-login.html
 │   └── .gitignore            # Ignore rules for Frontend
 │
 ├── Database/                   # SQL Server project
