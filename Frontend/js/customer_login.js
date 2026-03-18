@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
-    const AUTH_BASE_URL = "http://localhost:8080/api/auth";
+    const AUTH_BASE_URL = "https://snip-me.onrender.com/api/auth";
     const LOGIN_FLAG_KEY = "snipmeCustomerLoggedIn";
     const USERNAME_KEY = "snipmeCustomerUsername";
     const EMAIL_KEY = "snipmeCustomerEmail";
@@ -302,7 +302,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const submitBtn = forgotForm.querySelector("button[type=submit]");
             if (submitBtn) submitBtn.disabled = true;
 
-            fetch("http://localhost:8080/api/auth/forgot-password", {
+            fetch("https://snip-me.onrender.com/api/auth/forgot-password", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email: enteredEmail })
