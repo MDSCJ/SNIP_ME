@@ -48,7 +48,6 @@ SNIP_ME/
 │   ├── about.html
 │   ├── login.html
 │   ├── customer_login.html
-│   ├── salon-owner-login.html
 │   └── .gitignore            # Ignore rules for Frontend
 │
 ├── Database/                   # SQL Server project
@@ -92,21 +91,38 @@ touch Backend/src/main/resources/application-secrets.properties
 ```
 
 Add your local credentials:
-```properties
-# MySQL Database Credentials
-# Change 'root' to your MySQL username if different
-spring.datasource.username=root
-# Change to your MySQL password
-spring.datasource.password=your_mysql_password_here
+```# IMPORTANT: This file contains sensitive data and should NEVER be committed to version control
+# See .gitignore to ensure this file is excluded from git
 
-# JWT Secret Key
-# Generate a secure random key for production
+# MySQL Database Credentials
+spring.datasource.username=avnadmin
+spring.datasource.password={ENTER_YOUR_ONLINE_DATABASE_PASSWORD}
+
+# JWT Secret Key - Change this to a secure, random value in production
 app.jwt.secret=YourSuperSecretKeyThatIsAtLeast32CharactersLong!
+
+
+spring.datasource.url=jdbc:mysql://snip-me-blahblahblah.f.aivencloud.com:13934/defaultdb?sslMode=REQUIRED
+
+
+# Dummy Email Configuration to stop Spring Boot from crashing
+spring.mail.host=smtp.gmail.com
+spring.mail.port=587
+spring.mail.username=admin.snipme@gmail.com
+spring.mail.password={ENTER_YOUR_12_DIGIT_MAIL_APP_PASSWORD}
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true
 ```
 
 
 #### 2. Configure MySQL Database
 
+## Getting Started with MySQL
+
+If you're completely new to MySQL, the easiest way to begin is by installing the official MySQL Installer.
+
+👉 **Download here:**  
+[Download MySQL Installer](https://dev.mysql.com/get/Downloads/MySQLInstaller/mysql-installer-community-8.0.45.0.msi)
 1. Create a new database:
 ```sql
 CREATE DATABASE snipme_db;
