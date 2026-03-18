@@ -35,7 +35,13 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody AuthRequest request) {
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+        String normalizedEmail = request.getEmail() == null ? "" : request.getEmail().trim().toLowerCase();
+
+        if (normalizedEmail.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Email is required."));
+        }
+
+        if (userRepository.existsByEmailIgnoreCase(normalizedEmail)) {
             return ResponseEntity.badRequest().body(Map.of("error", "Email already in use!"));
         }
 
@@ -60,7 +66,7 @@ public class AuthController {
             user = customer;
         }
 
-        user.setEmail(request.getEmail());
+        user.setEmail(normalizedEmail);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole(UserRole.valueOf(roleStr));
 
@@ -70,7 +76,8 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody AuthRequest authRequest) {
-        Optional<User> userOpt = userRepository.findByEmail(authRequest.getEmail());
+        String normalizedEmail = authRequest.getEmail() == null ? "" : authRequest.getEmail().trim().toLowerCase();
+        Optional<User> userOpt = userRepository.findByEmailIgnoreCase(normalizedEmail);
 
         if (userOpt.isPresent() && passwordEncoder.matches(authRequest.getPassword(), userOpt.get().getPassword())) {
             String token = jwtUtils.generateToken(userOpt.get().getEmail());
@@ -88,11 +95,12 @@ public class AuthController {
             return ResponseEntity.badRequest().body(Map.of("error", "Email is required."));
         }
 
-        Optional<User> userOpt = userRepository.findByEmail(email.trim().toLowerCase());
+        String normalizedEmail = email.trim().toLowerCase();
+        Optional<User> userOpt = userRepository.findByEmailIgnoreCase(normalizedEmail);
 
         // Always respond the same way to prevent user-enumeration
         if (userOpt.isEmpty()) {
-            logger.info("Forgot-password requested for non-existing account: {}", email.trim().toLowerCase());
+            logger.info("Forgot-password requested for non-existing account: {}", normalizedEmail);
             return ResponseEntity.ok(Map.of("message", "If that email is registered, a temporary password has been sent."));
         }
 
@@ -103,10 +111,10 @@ public class AuthController {
         userRepository.save(user);
 
         try {
-            emailService.sendTemporaryPassword(email.trim(), tempPassword);
-            logger.info("Temporary password email sent to {}", email.trim().toLowerCase());
+            emailService.sendTemporaryPassword(normalizedEmail, tempPassword);
+            logger.info("Temporary password email sent to {}", normalizedEmail);
         } catch (Exception ex) {
-            logger.error("Failed to send temporary password email to {}", email.trim().toLowerCase(), ex);
+            logger.error("Failed to send temporary password email to {}", normalizedEmail, ex);
             return ResponseEntity.internalServerError()
                     .body(Map.of("error", "Failed to send email. Please try again later."));
         }

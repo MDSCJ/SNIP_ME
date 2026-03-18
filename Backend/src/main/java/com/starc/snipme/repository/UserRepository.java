@@ -13,6 +13,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // Used for Login and JWT validation
     Optional<User> findByEmail(String email);
 
+    // Use case-insensitive email lookup for auth flows
+    Optional<User> findByEmailIgnoreCase(String email);
+
     // Used during Sign-Up to prevent duplicate accounts
     boolean existsByEmail(String email);
+
+    // Case-insensitive duplicate check during registration
+    boolean existsByEmailIgnoreCase(String email);
 }
