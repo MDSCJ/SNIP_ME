@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
-    const GOOGLE_CLIENT_ID = "366250450099-j5sle9ukjhobugsj3g9rr0o0jrg6p3so.apps.googleusercontent.com";
+    const GOOGLE_CLIENT_ID = "520195887658-u2vcovmf6k1htff623gc92ak3j3g1r67.apps.googleusercontent.com";
 
     const loginView = document.getElementById("ownerLoginView");
     const signupView = document.getElementById("ownerSignupView");
