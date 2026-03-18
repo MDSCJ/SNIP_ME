@@ -1,4 +1,6 @@
 document.addEventListener("DOMContentLoaded", function () {
+    const GOOGLE_CLIENT_ID = "366250450099-j5sle9ukjhobugsj3g9rr0o0jrg6p3so.apps.googleusercontent.com";
+
     const loginView = document.getElementById("ownerLoginView");
     const signupView = document.getElementById("ownerSignupView");
 
@@ -28,6 +30,60 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         }
     }
+
+    function parseJwt(token) {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(
+            atob(base64)
+                .split('')
+                .map(function (c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                })
+                .join('')
+        );
+        return JSON.parse(jsonPayload);
+    }
+
+    function handleSalonOwnerGoogleResponse(response) {
+        console.log("Salon owner Google response:", response);
+
+        if (response && response.credential) {
+            const payload = parseJwt(response.credential);
+            console.log("Decoded owner user:", payload);
+
+            alert("Salon owner Google login successful: " + (payload.email || "Unknown user"));
+            window.location.href = "../index.html";
+        }
+    }
+
+    function renderGoogleButtonWhenReady() {
+        const target = document.getElementById("ownerGoogleButton");
+
+        if (!target) {
+            console.error("ownerGoogleButton container not found");
+            return;
+        }
+
+        if (window.google && google.accounts && google.accounts.id) {
+            google.accounts.id.initialize({
+                client_id: GOOGLE_CLIENT_ID,
+                callback: handleSalonOwnerGoogleResponse
+            });
+
+            google.accounts.id.renderButton(target, {
+                theme: "outline",
+                size: "large",
+                shape: "pill",
+                text: "signin_with",
+                width: 420
+            });
+        } else {
+            console.error("Google Identity Services script not loaded");
+        }
+    }
+
+    setTimeout(renderGoogleButtonWhenReady, 300);
 
     setupPasswordToggle("toggleOwnerLoginPassword", "ownerLoginPassword", "ownerLoginEyeOpen", "ownerLoginEyeClosed");
     setupPasswordToggle("toggleOwnerSignupPassword", "ownerSignupPassword", "ownerSignupEyeOpen", "ownerSignupEyeClosed");

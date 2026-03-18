@@ -7,6 +7,9 @@
 
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/salon-owner-login.css">
+
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 
 <body class="dark-theme">
@@ -28,11 +31,13 @@
         </ul>
     </nav>
 
+    <!-- Background Video -->
     <video class="bg-video" autoplay muted loop playsinline>
         <source src="videos/bc.mp4" type="video/mp4">
         Your browser does not support the video tag.
     </video>
 
+    <!-- Main Section -->
     <main class="owner-login-section">
         <div class="login-wrapper">
             <div class="login-box">
@@ -42,10 +47,8 @@
                     <h1>Welcome Back</h1>
                     <p class="subtitle">Sign in to manage your salon</p>
 
-                    <button class="google-btn" type="button">
-                        <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/google/google-original.svg" alt="Google icon">
-                        <span>Sign in with Google</span>
-                    </button>
+                    <!-- REAL GOOGLE BUTTON WILL RENDER HERE -->
+                    <div id="ownerGoogleButton" style="display:flex; justify-content:center; margin-bottom:28px;"></div>
 
                     <div class="separator">
                         <span>OR</span>
@@ -155,25 +158,27 @@
     </footer>
 
     <script src="js/salon-owner-login.js"></script>
+
     <script>
     document.addEventListener('DOMContentLoaded', function () {
-    var toggle = document.querySelector('.nav-toggle');
-    var navList = document.querySelector('.nav-bar ul');
+        var toggle = document.querySelector('.nav-toggle');
+        var navList = document.querySelector('.nav-bar ul');
 
-    if (toggle && navList) {
-        toggle.addEventListener('click', function () {
-            navList.classList.toggle('open');
-        });
-    }
+        if (toggle && navList) {
+            toggle.addEventListener('click', function () {
+                navList.classList.toggle('open');
+            });
+        }
 
-    var navLinks = document.querySelectorAll('.nav-bar ul li a');
-    navLinks.forEach(function(link) {
-        link.addEventListener('click', function() {
-            navList.classList.remove('open');
+        var navLinks = document.querySelectorAll('.nav-bar ul li a');
+        navLinks.forEach(function(link) {
+            link.addEventListener('click', function() {
+                navList.classList.remove('open');
+            });
         });
     });
-});
-</script>
+    </script>
+
     <script src="js/main.js"></script>
 </body>
 </html>
