@@ -69,23 +69,34 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    if (window.google && document.getElementById("customerGoogleButton")) {
-        google.accounts.id.initialize({
-            client_id: GOOGLE_CLIENT_ID,
-            callback: handleCustomerGoogleResponse
-        });
+    function renderGoogleButtonWhenReady() {
+        const target = document.getElementById("customerGoogleButton");
 
-        google.accounts.id.renderButton(
-            document.getElementById("customerGoogleButton"),
-            {
+        if (!target) {
+            console.error("customerGoogleButton container not found");
+            return;
+        }
+
+        if (window.google && google.accounts && google.accounts.id) {
+            google.accounts.id.initialize({
+                client_id: GOOGLE_CLIENT_ID,
+                callback: handleCustomerGoogleResponse
+            });
+
+            google.accounts.id.renderButton(target, {
                 theme: "outline",
                 size: "large",
                 shape: "pill",
                 text: "signin_with",
-                width: 400
-            }
-        );
+                width: 420
+            });
+        } else {
+            console.error("Google Identity Services script not loaded");
+        }
     }
+
+    // Small delay helps ensure GIS script is loaded
+    setTimeout(renderGoogleButtonWhenReady, 300);
 
     setupPasswordToggle("toggleLoginPassword", "loginPassword", "loginEyeOpen", "loginEyeClosed");
     setupPasswordToggle("toggleSignupPassword", "signupPassword", "signupEyeOpen", "signupEyeClosed");
