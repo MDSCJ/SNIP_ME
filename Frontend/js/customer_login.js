@@ -6,7 +6,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const PASSWORD_KEY = "snipmeCustomerPassword";
     const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
     const PHONE_REGEX = /^0[0-9]{9,14}$/;
-    const GOOGLE_CLIENT_ID = "366250450099-j5sle9ukjhobugsj3g9rr0o0jrg6p3so.apps.googleusercontent.com";
+    const GOOGLE_CLIENT_ID = "520195887658-u2vcovmf6k1htff623gc92ak3j3g1r67.apps.googleusercontent.com";
+    const GITHUB_PAGES_ORIGIN = "https://mdscj.github.io";
 
     const loginView = document.getElementById("customerLoginView");
     const signupView = document.getElementById("customerSignupView");
@@ -89,11 +90,30 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+    function showGoogleOriginMessage(target) {
+        if (!target) return;
+        target.innerHTML = "";
+
+        const message = document.createElement("p");
+        message.textContent = "Google Sign-In is enabled only on https://mdscj.github.io";
+        message.style.fontSize = "0.9rem";
+        message.style.lineHeight = "1.4";
+        message.style.textAlign = "center";
+        message.style.color = "#fff";
+        target.appendChild(message);
+    }
+
     function renderGoogleButtonWhenReady() {
         const target = document.getElementById("customerGoogleButton");
 
         if (!target) {
             console.error("customerGoogleButton container not found");
+            return;
+        }
+
+        if (window.location.origin !== GITHUB_PAGES_ORIGIN) {
+            showGoogleOriginMessage(target);
+            console.error("Blocked Google Sign-In for non-GitHub origin:", window.location.origin);
             return;
         }
 
