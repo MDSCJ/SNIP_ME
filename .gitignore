@@ -1,0 +1,4 @@
+# Local secrets and machine-specific config
+Backend/src/main/resources/application-local.properties
+.env
+.env.*

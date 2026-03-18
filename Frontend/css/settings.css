@@ -1,0 +1,154 @@
+/* css/settings.css */
+
+/* Background */
+.settings-section {
+    min-height: calc(100vh - 220px);
+    display: flex;
+    justify-content: center;
+    padding: 40px 20px 80px;
+    box-sizing: border-box;
+    background: var(--bg-dark);
+}
+
+.settings-wrapper {
+    width: 100%;
+    max-width: 580px;
+}
+
+.settings-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--accent-yellow);
+    margin: 0 0 32px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #2d2d2d;
+}
+
+/* Card */
+.settings-card {
+    background: #1e1e1e;
+    border: 1px solid #2d2d2d;
+    border-radius: 14px;
+    padding: 28px 30px;
+    margin-bottom: 24px;
+}
+
+.settings-card h2 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #fff;
+    margin: 0 0 6px;
+}
+
+.settings-desc {
+    font-size: 0.85rem;
+    color: #7b8290;
+    margin: 0 0 22px;
+}
+
+/* Fields */
+.field-group {
+    margin-bottom: 18px;
+}
+
+.field-group label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #ccc;
+    margin-bottom: 6px;
+}
+
+.field-group input {
+    width: 100%;
+    padding: 13px 16px;
+    background: #121212;
+    border: 1px solid #3a3a3a;
+    border-radius: 9px;
+    color: #fff;
+    font-size: 0.95rem;
+    box-sizing: border-box;
+    outline: none;
+    transition: border-color 0.2s;
+    margin: 0;
+}
+
+.field-group input:focus {
+    border-color: var(--accent-yellow);
+}
+
+/* Buttons */
+.settings-btn {
+    width: 100%;
+    padding: 13px;
+    background: var(--accent-yellow);
+    color: #111;
+    border: none;
+    border-radius: 9px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: filter 0.2s, transform 0.15s;
+    margin-top: 4px;
+}
+
+.settings-btn:hover {
+    filter: brightness(1.08);
+    transform: scale(1.01);
+}
+
+/* Danger card */
+.danger-card {
+    border-color: #4a1a1a;
+    background: #1e1111;
+}
+
+.danger-text {
+    color: #e57373 !important;
+}
+
+.danger-btn {
+    background: #c0392b;
+    color: #fff;
+}
+
+.danger-btn:hover {
+    background: #e74c3c;
+    filter: none;
+}
+
+/* Status messages */
+.settings-msg {
+    margin-top: 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-align: center;
+    min-height: 1em;
+}
+
+.settings-msg.hidden {
+    visibility: hidden;
+}
+
+.settings-msg.msg-success {
+    color: #2ecc71;
+}
+
+.settings-msg.msg-error {
+    color: #e74c3c;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .settings-section {
+        padding: 28px 14px 60px;
+    }
+
+    .settings-card {
+        padding: 22px 18px;
+    }
+
+    .settings-title {
+        font-size: 1.5rem;
+    }
+}

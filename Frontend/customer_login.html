@@ -27,7 +27,7 @@
             <li><a href="../index.html">Home</a></li>
             <li><a href="about.html">About Us</a></li>
             <li><a href="login.html" class="active">Login</a></li>
-            <li><a href="#">Services</a></li>
+            <li><a href="settings.html">Settings</a></li>
         </ul>
     </nav>
 
@@ -80,8 +80,28 @@
                         <button type="submit" class="signin-btn">Sign In</button>
                     </form>
 
+                    <div class="forgot-link">
+                        <a href="#" id="showForgotPassword">Forgot password?</a>
+                    </div>
+
                     <div class="signup-link">
                         Don't have an account? <a href="#" id="showCustomerSignup">Sign up now</a>
+                    </div>
+                </div>
+
+                <!-- FORGOT PASSWORD VIEW -->
+                <div id="customerForgotView" class="hidden-view">
+                    <h1>Forgot Password</h1>
+                    <p class="subtitle">Enter your registered Gmail and we'll open your email client with your password.</p>
+
+                    <form id="forgotPasswordForm" novalidate>
+                        <label for="forgotEmail">Email address</label>
+                        <input type="email" id="forgotEmail" placeholder="Enter your registered Gmail" required>
+                        <button type="submit" class="signin-btn">Send Password</button>
+                    </form>
+
+                    <div class="signup-link">
+                        Remembered it? <a href="#" id="showLoginFromForgot">Back to Sign In</a>
                     </div>
                 </div>
 
