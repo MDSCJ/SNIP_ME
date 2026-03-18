@@ -1,6 +1,5 @@
 package com.starc.snipme.service;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -8,10 +7,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class EmailService {
 
-    private final JavaMailSender mailSender;
+    private static final String FROM_ADDRESS = "admin.snipme@gmail.com";
 
-    @Value("${app.mail.from}")
-    private String fromAddress;
+    private final JavaMailSender mailSender;
 
     public EmailService(JavaMailSender mailSender) {
         this.mailSender = mailSender;
@@ -19,7 +17,7 @@ public class EmailService {
 
     public void sendTemporaryPassword(String toEmail, String tempPassword) {
         SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(fromAddress);
+        message.setFrom(FROM_ADDRESS);
         message.setTo(toEmail);
         message.setSubject("SNIP ME – Temporary Password");
         message.setText(

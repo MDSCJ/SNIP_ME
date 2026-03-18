@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
+    const AUTH_BASE_URL = "http://localhost:8080/api/auth";
     const LOGIN_FLAG_KEY = "snipmeCustomerLoggedIn";
     const USERNAME_KEY = "snipmeCustomerUsername";
     const EMAIL_KEY = "snipmeCustomerEmail";
@@ -157,7 +158,7 @@ document.addEventListener("DOMContentLoaded", function () {
         loginForm.addEventListener("submit", function (e) {
             e.preventDefault();
 
-            const email = document.getElementById("loginEmail").value.trim();
+            const email = document.getElementById("loginEmail").value.trim().toLowerCase();
             const password = document.getElementById("loginPassword").value.trim();
 
             if (email === "" || password === "") {
@@ -175,17 +176,38 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
-            const username = email.split("@")[0] || "Customer";
+            fetch(AUTH_BASE_URL + "/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: email, password: password })
+            })
+            .then(function (res) {
+                return res.json().then(function (data) {
+                    return { ok: res.ok, data: data };
+                });
+            })
+            .then(function (result) {
+                if (!result.ok) {
+                    alert(result.data.error || "Invalid email or password.");
+                    return;
+                }
 
-            localStorage.setItem(LOGIN_FLAG_KEY, "true");
-            localStorage.setItem(USERNAME_KEY, username);
-            localStorage.setItem(EMAIL_KEY, email);
+                const username = email.split("@")[0] || "Customer";
+                localStorage.setItem(LOGIN_FLAG_KEY, "true");
+                localStorage.setItem(USERNAME_KEY, username);
+                localStorage.setItem(EMAIL_KEY, email);
+                if (result.data.token) {
+                    localStorage.setItem(TOKEN_KEY, result.data.token);
+                }
+                window.isCustomerLoggedIn = true;
+                window.dispatchEvent(new Event("customer-auth-changed"));
 
-            window.isCustomerLoggedIn = true;
-            window.dispatchEvent(new Event("customer-auth-changed"));
-
-            alert("Customer login successful.");
-            window.location.href = "../index.html";
+                alert("Customer login successful.");
+                window.location.href = "../index.html";
+            })
+            .catch(function () {
+                alert("Could not reach the server. Please try again later.");
+            });
         });
     }
 
@@ -194,7 +216,7 @@ document.addEventListener("DOMContentLoaded", function () {
             e.preventDefault();
 
             const fullName = document.getElementById("signupFullName").value.trim();
-            const email = document.getElementById("signupEmail").value.trim();
+            const email = document.getElementById("signupEmail").value.trim().toLowerCase();
             const phone = document.getElementById("signupPhone").value.trim();
             const password = document.getElementById("signupPassword").value.trim();
             const confirmPassword = document.getElementById("signupConfirmPassword").value.trim();
@@ -224,10 +246,39 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
-            localStorage.setItem(EMAIL_KEY, email);
-            localStorage.setItem(PASSWORD_KEY, btoa(password));
+            fetch(AUTH_BASE_URL + "/register", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name: fullName,
+                    email: email,
+                    phoneNumber: phone,
+                    password: password,
+                    role: "CUSTOMER"
+                })
+            })
+            .then(function (res) {
+                return res.json().then(function (data) {
+                    return { ok: res.ok, data: data };
+                });
+            })
+            .then(function (result) {
+                if (!result.ok) {
+                    alert(result.data.error || "Sign up failed.");
+                    return;
+                }
 
-            alert("Customer signup successful (demo).");
+                localStorage.setItem(EMAIL_KEY, email);
+                localStorage.setItem(PASSWORD_KEY, btoa(password));
+
+                alert("Customer signup successful. Please log in.");
+                switchView(loginView);
+                document.getElementById("loginEmail").value = email;
+                document.getElementById("loginPassword").value = "";
+            })
+            .catch(function () {
+                alert("Could not reach the server. Please try again later.");
+            });
         });
     }
 
