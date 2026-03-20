@@ -252,3 +252,22 @@ document.querySelectorAll('.nav-link').forEach(link => {
         if (target) target.style.display = 'block';
     });
 });
+
+
+// service section 
+function addServiceToTable(name, price) {
+    const tableBody = document.getElementById('active-services-list');
+    const today = new Date().toISOString().split('T')[0];
+
+    const newRow = `
+        <tr>
+            <td>${name}</td>
+            <td>${price}</td>
+            <td>${today}</td>
+            <td><span class="status-tag active">Live</span></td>
+        </tr>
+    `;
+    
+    tableBody.innerHTML += newRow;
+    showToast(`${name} added!`, 'working day');
+}
