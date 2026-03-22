@@ -50,8 +50,7 @@ public class SecurityConfig {
             // 3. Configure URL permissions
             .authorizeHttpRequests(auth -> auth
                 // Allow anyone to access Auth endpoints and the Database console
-                .requestMatchers("/api/auth/**", "/h2-console/**").permitAll()
-                // Everything else requires a valid JWT
+                .requestMatchers("/api/auth/**", "/h2-console/**", "/api/bookings/**").permitAll()                // Everything else requires a valid JWT
                 .anyRequest().authenticated()
             )
             
