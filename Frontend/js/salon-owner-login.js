@@ -215,7 +215,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     hideLoader();
                     console.error('Login error:', error);
                     const errorMsg = error.message || "Could not reach the server";
-                    alert("Connection Error: " + errorMsg + "\n\nPlease check:\n- Internet connection\n- Backend server status\n- Visit: " + AUTH_BASE_URL + "/ping");
+                    alert("Connection Error: " + errorMsg + "\n\nPlease check:\n- Internet connection\n- Backend server status");
                 });
         });
     }
