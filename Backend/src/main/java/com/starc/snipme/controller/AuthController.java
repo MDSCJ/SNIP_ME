@@ -69,6 +69,7 @@ public class AuthController {
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.badRequest().body(Map.of("error", "Invalid role."));
         }
+        user.setUserType(roleStr);
 
         userRepository.save(user);
         return ResponseEntity.ok(Map.of("message", "User registered successfully!"));
