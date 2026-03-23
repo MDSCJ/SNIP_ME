@@ -140,6 +140,24 @@ document.addEventListener("DOMContentLoaded", function () {
         return EMAIL_REGEX.test(email);
     }
 
+    function parseResponseSafely(res) {
+        return res.text().then(function (text) {
+            if (!text || !text.trim()) {
+                return { ok: res.ok, data: {}, status: res.status };
+            }
+
+            try {
+                return { ok: res.ok, data: JSON.parse(text), status: res.status };
+            } catch (parseError) {
+                return {
+                    ok: res.ok,
+                    data: { error: "Received an unexpected response from server." },
+                    status: res.status
+                };
+            }
+        });
+    }
+
     // wait a bit so Google script can load
     setTimeout(renderGoogleButtonWhenReady, 300);
 
@@ -205,9 +223,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 body: JSON.stringify({ email: email, password: password })
             })
             .then(function (res) {
-                return res.json().then(function (data) {
-                    return { ok: res.ok, data: data };
-                });
+                return parseResponseSafely(res);
             })
             .then(function (result) {
                 hideLoader();
@@ -287,9 +303,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 })
             })
             .then(function (res) {
-                return res.json().then(function (data) {
-                    return { ok: res.ok, data: data };
-                });
+                return parseResponseSafely(res);
             })
             .then(function (result) {
                 hideLoader();
@@ -342,11 +356,16 @@ document.addEventListener("DOMContentLoaded", function () {
                 body: JSON.stringify({ email: enteredEmail })
             })
             .then(function (res) {
-                return res.json();
+                return parseResponseSafely(res);
             })
-            .then(function (data) {
+            .then(function (result) {
                 hideLoader();
-                alert(data.message || "If that email is registered, a temporary password has been sent.");
+                if (!result.ok) {
+                    alert(result.data.error || "Forgot password request failed.");
+                    return;
+                }
+
+                alert(result.data.message || "If that email is registered, a temporary password has been sent.");
                 switchView(loginView);
                 document.getElementById("forgotEmail").value = "";
             })

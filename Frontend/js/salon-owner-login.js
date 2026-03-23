@@ -53,6 +53,24 @@ document.addEventListener("DOMContentLoaded", function () {
         return JSON.parse(jsonPayload);
     }
 
+    function parseResponseSafely(res) {
+        return res.text().then(function (text) {
+            if (!text || !text.trim()) {
+                return { ok: res.ok, data: {}, status: res.status };
+            }
+
+            try {
+                return { ok: res.ok, data: JSON.parse(text), status: res.status };
+            } catch (parseError) {
+                return {
+                    ok: res.ok,
+                    data: { error: "Received an unexpected response from server." },
+                    status: res.status
+                };
+            }
+        });
+    }
+
     function handleSalonOwnerGoogleResponse(response) {
         console.log("Salon owner Google response:", response);
 
@@ -173,9 +191,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 body: JSON.stringify({ email: email, password: password })
             })
                 .then(function (res) {
-                    return res.json().then(function (data) {
-                        return { ok: res.ok, data: data };
-                    });
+                    return parseResponseSafely(res);
                 })
                 .then(function (result) {
                     hideLoader();
@@ -257,9 +273,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 })
             })
                 .then(function (res) {
-                    return res.json().then(function (data) {
-                        return { ok: res.ok, data: data };
-                    });
+                    return parseResponseSafely(res);
                 })
                 .then(function (result) {
                     hideLoader();
