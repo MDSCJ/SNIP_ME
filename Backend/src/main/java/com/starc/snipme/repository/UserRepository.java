@@ -8,7 +8,7 @@ import org.springframework.stereotype.Repository;
 import com.starc.snipme.model.User;
 
 @Repository
-public interface UserRepository extends JpaRepository<User, Long> {
+public interface UserRepository extends JpaRepository<User, String> {
     
     // Used for Login and JWT validation
     Optional<User> findByEmail(String email);
