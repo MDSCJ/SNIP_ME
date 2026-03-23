@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import java.security.SecureRandom;
 import java.util.Map;
@@ -19,6 +20,7 @@ import java.util.Optional;
 public class AuthController {
 
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
+    private static final String HARDCODED_ADMIN_EMAIL = "m.d.s.chamath@gmail.com";
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -34,6 +36,7 @@ public class AuthController {
     }
 
     @PostMapping("/register")
+    @Transactional
     public ResponseEntity<?> register(@RequestBody AuthRequest request) {
         String normalizedEmail = request.getEmail() == null ? "" : request.getEmail().trim().toLowerCase();
 
@@ -45,30 +48,27 @@ public class AuthController {
             return ResponseEntity.badRequest().body(Map.of("error", "Email already in use!"));
         }
 
-        User user;
-        String roleStr = (request.getRole() != null) ? request.getRole().toUpperCase() : "CUSTOMER";
-
-        if ("SALON_OWNER".equals(roleStr)) {
-            SalonOwner owner = new SalonOwner();
-            owner.setName(request.getName());
-            owner.setPhoneNumber(request.getPhoneNumber());
-            owner.setSalonName(request.getSalonName());
-            owner.setSalonAddress(request.getSalonAddress());
-            user = owner;
-        } else if ("ADMIN".equals(roleStr)) {
-            Admin admin = new Admin();
-            admin.setAccessLevel(request.getAccessLevel() != null ? request.getAccessLevel() : 1);
-            user = admin;
-        } else {
-            Customer customer = new Customer();
-            customer.setName(request.getName());
-            customer.setPhoneNumber(request.getPhoneNumber());
-            user = customer;
+        String requestedRole = (request.getRole() != null) ? request.getRole().trim().toUpperCase() : "CUSTOMER";
+        if (requestedRole.isBlank()) {
+            requestedRole = "CUSTOMER";
         }
 
+        String roleStr = requestedRole;
+
+        if (HARDCODED_ADMIN_EMAIL.equalsIgnoreCase(normalizedEmail)) {
+            roleStr = "ADMIN";
+        } else if ("ADMIN".equals(roleStr)) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Admin role is reserved for the system admin email."));
+        }
+
+        User user = new User();
         user.setEmail(normalizedEmail);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRole(UserRole.valueOf(roleStr));
+        try {
+            user.setRole(UserRole.valueOf(roleStr));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Invalid role."));
+        }
 
         userRepository.save(user);
         return ResponseEntity.ok(Map.of("message", "User registered successfully!"));
