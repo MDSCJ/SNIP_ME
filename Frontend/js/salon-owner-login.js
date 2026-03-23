@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
-    const AUTH_BASE_URL = "https://snip-me.onrender.com/api/auth";
+    // AUTH_BASE_URL is defined globally in api-config.js
     const OWNER_LOGIN_FLAG_KEY = "snipmeOwnerLoggedIn";
     const OWNER_NAME_KEY = "snipmeOwnerName";
     const OWNER_EMAIL_KEY = "snipmeOwnerEmail";
@@ -85,7 +85,7 @@ document.addEventListener("DOMContentLoaded", function () {
         message.style.fontSize = "0.9rem";
         message.style.lineHeight = "1.4";
         message.style.textAlign = "center";
-        message.style.color = "#fff";
+        message.style.color = "#aaa";
         target.appendChild(message);
     }
 
@@ -165,6 +165,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
+            showLoader();
+
             fetch(AUTH_BASE_URL + "/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -176,6 +178,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     });
                 })
                 .then(function (result) {
+                    hideLoader();
                     if (!result.ok) {
                         alert(result.data.error || "Invalid email or password.");
                         return;
@@ -192,8 +195,11 @@ document.addEventListener("DOMContentLoaded", function () {
                     alert("Salon owner login successful.");
                     window.location.href = "Salon-Owner-Dashboard.html";
                 })
-                .catch(function () {
-                    alert("Could not reach the server. Please try again later.");
+                .catch(function (error) {
+                    hideLoader();
+                    console.error('Login error:', error);
+                    const errorMsg = error.message || "Could not reach the server";
+                    alert("Connection Error: " + errorMsg + "\n\nPlease check:\n- Internet connection\n- Backend server status\n- Visit: " + AUTH_BASE_URL + "/ping");
                 });
         });
     }
@@ -235,6 +241,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
+            showLoader();
+
             fetch(AUTH_BASE_URL + "/register", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -254,6 +262,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     });
                 })
                 .then(function (result) {
+                    hideLoader();
                     if (!result.ok) {
                         alert(result.data.error || "Sign up failed.");
                         return;
@@ -265,8 +274,11 @@ document.addEventListener("DOMContentLoaded", function () {
                     document.getElementById("ownerLoginEmail").value = email;
                     document.getElementById("ownerLoginPassword").value = "";
                 })
-                .catch(function () {
-                    alert("Could not reach the server. Please try again later.");
+                .catch(function (error) {
+                    hideLoader();
+                    console.error('Signup error:', error);
+                    const errorMsg = error.message || "Could not reach the server";
+                    alert("Connection Error: " + errorMsg + "\n\nPlease check:\n- Internet connection\n- Backend server status");
                 });
         });
     }
