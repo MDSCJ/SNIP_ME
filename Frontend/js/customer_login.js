@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const LOGIN_FLAG_KEY = "snipmeCustomerLoggedIn";
     const USERNAME_KEY = "snipmeCustomerUsername";
     const EMAIL_KEY = "snipmeCustomerEmail";
+    const TOKEN_KEY = "snipmeCustomerToken";
     const PASSWORD_KEY = "snipmeCustomerPassword";
     const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
     const PHONE_REGEX = /^0[0-9]{9,14}$/;
@@ -335,7 +336,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const submitBtn = forgotForm.querySelector("button[type=submit]");
             if (submitBtn) submitBtn.disabled = true;
 
-            fetch("https://snip-me.onrender.com/api/auth/forgot-password", {
+            fetch(AUTH_BASE_URL + "/forgot-password", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email: enteredEmail })
@@ -347,13 +348,13 @@ document.addEventListener("DOMContentLoaded", function () {
                 hideLoader();
                 alert(data.message || "If that email is registered, a temporary password has been sent.");
                 switchView(loginView);
-                document.getEerror) {
+                document.getElementById("forgotEmail").value = "";
+            })
+            .catch(function (error) {
                 hideLoader();
-                console.error('Forgot password error:', error);
+                console.error("Forgot password error:", error);
                 const errorMsg = error.message || "Could not reach the server";
-                alert("Connection Error: " + errorMsg + "\n\nPlease check:\n- Internet connection\n- Backend server status
-                hideLoader();
-                alert("Could not reach the server. Please try again later.");
+                alert("Connection Error: " + errorMsg + "\n\nPlease check:\n- Internet connection\n- Backend server status");
             })
             .finally(function () {
                 if (submitBtn) submitBtn.disabled = false;
