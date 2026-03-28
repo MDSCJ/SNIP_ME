@@ -23,6 +23,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class BookingController {
 
     @Autowired
+    private com.starc.snipme.repositories.BookingRepository bookingRepository;
+
+    @Autowired
     private com.starc.snipme.repositories.TimeSlotRepository timeSlotRepository;
 
     @Autowired
@@ -77,6 +80,20 @@ public class BookingController {
         } catch (RuntimeException e) {
             // Returns a 400 Bad Request if the booking doesn't exist or is already canceled
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
+    // DASHBOARD API: Fetch all confirmed appointments
+    @GetMapping("/all")
+    public ResponseEntity<?> getAllBookings() {
+        try {
+            // Grab every single booking saved in the database
+            List<Booking> allBookings = bookingRepository.findAll();
+            
+            // Send the list back to Developer 3's frontend!
+            return ResponseEntity.ok(allBookings);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Could not load dashboard data.");
         }
     }
 
