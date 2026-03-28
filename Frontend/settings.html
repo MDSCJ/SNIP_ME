@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Settings | SNIP ME</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/settings.css">
+</head>
+
+<body class="dark-theme">
+    <header class="main-header">
+        <div class="header-content">
+            <div class="logo-left">
+                <img src="images/desktop.jpg" alt="SNIP ME Logo">
+            </div>
+        </div>
+    </header>
+
+    <nav class="nav-bar">
+        <div class="nav-toggle">&#9776;</div>
+        <ul>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="about.html">About Us</a></li>
+            <li><a href="login.html">Login</a></li>
+            <li><a href="settings.html" class="active">Settings</a></li>
+        </ul>
+    </nav>
+
+    <main class="settings-section">
+        <div class="settings-wrapper">
+            <h1 class="settings-title">Account Settings</h1>
+
+            <!-- Change Username -->
+            <div class="settings-card">
+                <h2>Change Username</h2>
+                <p class="settings-desc">Update the display name shown in the login pill.</p>
+                <form id="changeUsernameForm" novalidate>
+                    <div class="field-group">
+                        <label for="newUsername">New Username</label>
+                        <input type="text" id="newUsername" placeholder="Enter new username" autocomplete="off">
+                    </div>
+                    <button type="submit" class="settings-btn">Save Username</button>
+                    <p id="usernameMsg" class="settings-msg hidden"></p>
+                </form>
+            </div>
+
+            <!-- Change Password -->
+            <div class="settings-card">
+                <h2>Change Password</h2>
+                <p class="settings-desc">Leave current password blank if you are already logged in.</p>
+                <form id="changePasswordForm" novalidate>
+                    <div class="field-group" id="currentPwGroup">
+                        <label for="currentPassword">Current Password</label>
+                        <input type="password" id="currentPassword" placeholder="Enter current password" autocomplete="current-password">
+                    </div>
+                    <div class="field-group">
+                        <label for="newPassword">New Password</label>
+                        <input type="password" id="newPassword" placeholder="Enter new password" autocomplete="new-password">
+                    </div>
+                    <div class="field-group">
+                        <label for="confirmNewPassword">Confirm New Password</label>
+                        <input type="password" id="confirmNewPassword" placeholder="Re-enter new password" autocomplete="new-password">
+                    </div>
+                    <button type="submit" class="settings-btn">Update Password</button>
+                    <p id="passwordMsg" class="settings-msg hidden"></p>
+                </form>
+            </div>
+
+            <!-- Delete Account -->
+            <div class="settings-card danger-card">
+                <h2>Delete Account</h2>
+                <p class="settings-desc danger-text">This action is permanent and cannot be undone. All your data will be erased.</p>
+                <button id="deleteAccountBtn" class="settings-btn danger-btn">Delete My Account</button>
+                <p id="deleteMsg" class="settings-msg hidden"></p>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 <a href="../index.html">SNIP ME</a>. All rights reserved.</p>
+    </footer>
+
+    <script src="js/customer_session.js"></script>
+    <script src="js/settings.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var toggle = document.querySelector('.nav-toggle');
+            var list = document.querySelector('.nav-bar ul');
+            if (toggle && list) {
+                toggle.addEventListener('click', function () {
+                    list.classList.toggle('open');
+                });
+            }
+        });
+    </script>
+    <script src="js/devtools-warning.js"></script>
+</body>
+</html>

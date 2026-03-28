@@ -1,0 +1,7 @@
+# Local secrets and machine-specific config
+Backend/src/main/resources/application-local.properties
+Backend/src/main/resources/application-secrets.properties
+.env
+.env.*
+index1.html
+script.js

@@ -1,5 +1,7 @@
 package com.starc.snipme.controllers;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,12 +14,30 @@ import com.starc.snipme.model.Booking;
 import com.starc.snipme.model.TimeSlot;
 import com.starc.snipme.services.BookingService;
 
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+
 @RestController
+@CrossOrigin(origins = "*") // <-- This tells Spring Boot: "Allow HTML/JS files to talk to me!"s
 @RequestMapping("/api/bookings")
 public class BookingController {
 
     @Autowired
+    private com.starc.snipme.repositories.TimeSlotRepository timeSlotRepository;
+
+    @Autowired
     private BookingService bookingService;
+
+    @GetMapping("/available")
+    public ResponseEntity<?> getAvailableSlots() {
+        try {
+            // Fetches all slots where status = 'AVAILABLE'
+            List<TimeSlot> availableSlots = timeSlotRepository.findByStatus("AVAILABLE");
+            return ResponseEntity.ok(availableSlots);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Could not fetch slots");
+        }
+    }
 
     // The lock endpoint you already tested
     @PostMapping("/initiate")

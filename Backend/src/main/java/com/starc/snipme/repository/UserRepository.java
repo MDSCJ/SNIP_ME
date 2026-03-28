@@ -8,11 +8,17 @@ import org.springframework.stereotype.Repository;
 import com.starc.snipme.model.User;
 
 @Repository
-public interface UserRepository extends JpaRepository<User, Long> {
+public interface UserRepository extends JpaRepository<User, String> {
     
     // Used for Login and JWT validation
     Optional<User> findByEmail(String email);
 
+    // Use case-insensitive email lookup for auth flows
+    Optional<User> findByEmailIgnoreCase(String email);
+
     // Used during Sign-Up to prevent duplicate accounts
     boolean existsByEmail(String email);
+
+    // Case-insensitive duplicate check during registration
+    boolean existsByEmailIgnoreCase(String email);
 }

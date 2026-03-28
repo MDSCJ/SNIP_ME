@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+//import javax.swing.Spring;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -14,6 +16,8 @@ import com.starc.snipme.model.TimeSlot;
 import jakarta.persistence.LockModeType;
 
 public interface TimeSlotRepository extends JpaRepository<TimeSlot, Long> {
+    //Spring Boot will automatically write the SQL for this based on the method name!
+    List<TimeSlot> findByStatus(String status);
 
     // 1. The Pessimistic Lock for Concurrency
     @Lock(LockModeType.PESSIMISTIC_WRITE)
