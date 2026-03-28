@@ -418,7 +418,7 @@ body.modal-open {
     margin: 0 18px;
     border-radius: 18px;
     background:
-        linear-gradient(rgba(0, 0, 0, 0.10), rgba(0, 0, 0, 0.18)),
+        linear-gradient(rgba(0, 0, 0, 0.04), rgba(0, 0, 0, 0.10)),
         url("../images/default-salon.jpg") center/cover no-repeat;
     border: 1px solid #2f2f2f;
     position: relative;

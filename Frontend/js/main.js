@@ -29,9 +29,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }));
 });
 
-// =========================
-// SALON CARD FEATURES
-// =========================
 
 document.addEventListener('DOMContentLoaded', () => {
     const salonSlider = document.getElementById('salonSlider');
