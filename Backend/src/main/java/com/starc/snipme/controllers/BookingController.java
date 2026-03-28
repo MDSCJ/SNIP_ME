@@ -51,13 +51,17 @@ public class BookingController {
     }
 
     // --- The Confirmation Endpoint ---
+    // Developer 3 calls this after the credit card clears!
     @PostMapping("/confirm")
     public ResponseEntity<?> confirmBooking(@RequestParam Long slotID, @RequestParam Long customerID) {
         try {
+            // This calls the method YOU wrote earlier to permanently save the appointment!
             Booking confirmedBooking = bookingService.confirmBooking(slotID, customerID);
-            return ResponseEntity.ok("Booking confirmed successfully! Your official Booking ID is: " + confirmedBooking.getBookingID());
+            
+            // In a real app, Developer 3's code would also save the Payment object to the database right here.
+            
+            return ResponseEntity.ok("Payment Successful! Appointment Confirmed. Booking ID: " + confirmedBooking.getBookingID());
         } catch (RuntimeException e) {
-            // Returns a 400 Bad Request if the slot wasn't locked first
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
@@ -75,4 +79,6 @@ public class BookingController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
+
+
 }
