@@ -1,19 +1,7 @@
 .trending { padding: 40px 5%; }
 .trending h3 { border-left: 5px solid var(--accent-yellow); padding-left: 15px; margin-bottom: 30px; }
 
-.grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
-}
 
-.card {
-    background: var(--card-bg);
-    border: 1px solid #333;
-    padding: 15px;
-    transition: 0.3s;
-    transform: translateZ(0); /* Fixes some weird hover issues */
-}
 /* --- NEW SEARCH PILL STYLES --- */
 
 /* 1. The Hero Container (Centered) */
@@ -394,7 +382,9 @@ body.modal-open {
 .salon-card:hover {
     transform: translateY(-8px);
     border-color: rgba(241, 196, 15, 0.7);
-    box-shadow: 0 18px 38px rgba(0, 0, 0, 0.42);
+    box-shadow:
+        0 0 20px rgba(241, 196, 15, 0.12),
+        0 18px 38px rgba(0, 0, 0, 0.42);
 }
 
 .salon-card:hover::before {
@@ -412,7 +402,13 @@ body.modal-open {
     display: flex;
     align-items: center;
 }
+.salon-img {
+    transition: transform 0.35s ease;
+}
 
+.salon-card:hover .salon-img {
+    transform: scale(1.03);
+}
 .salon-img {
     height: 180px;
     margin: 0 18px;
@@ -445,6 +441,7 @@ body.modal-open {
     color: #e3e3e3;
     font-size: 0.93rem;
     line-height: 1.6;
+    min-height: 62px;
 }
 
 .view-more {
@@ -485,6 +482,7 @@ body.modal-open {
     font-size: 0.95rem;
     font-weight: 700;
     letter-spacing: 0.3px;
+    margin-bottom: 4px;
 }
 
 .salon-actions {
@@ -505,17 +503,18 @@ body.modal-open {
     cursor: pointer;
     transition: transform 0.24s ease, box-shadow 0.24s ease, background 0.24s ease, color 0.24s ease;
 }
-
 .btn-view {
     background: #272727;
     color: #fff;
     border: 1px solid #3a3a3a;
+    opacity: 0.92;
 }
 
 .btn-view:hover {
     background: #323232;
     transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.24);
+    opacity: 1;
 }
 
 .btn-book {
@@ -528,6 +527,7 @@ body.modal-open {
     transform: translateY(-2px) scale(1.02);
     box-shadow: 0 14px 26px rgba(241, 196, 15, 0.24);
 }
+
 
 .btn-view:active,
 .btn-book:active {
@@ -688,12 +688,22 @@ body.modal-open {
     }
 
     .salon-details {
-        font-size: 0.8rem;
-        padding: 0 14px;
-    }
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    padding: 0 18px;
+    color: #d1d1d1;
+    font-size: 0.9rem;
+    line-height: 1.65;
+    transition: max-height 0.34s ease, opacity 0.28s ease, padding-bottom 0.28s ease;
+    border-top: 1px solid transparent;
+   }
 
     .salon-card.active .salon-details {
-        padding-bottom: 14px;
+    max-height: 220px;
+    opacity: 1;
+    padding-bottom: 18px;
+    border-top: 1px solid #2d2d2d;
     }
 
     .slider-btn {
