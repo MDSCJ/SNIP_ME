@@ -614,6 +614,7 @@ body.modal-open {
     .salon-card {
         min-width: 0;
         flex: unset;
+        cursor: pointer;
     }
 
     .salon-img {
