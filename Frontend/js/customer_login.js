@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const LOGIN_FLAG_KEY = "snipmeCustomerLoggedIn";
     const USERNAME_KEY = "snipmeCustomerUsername";
     const EMAIL_KEY = "snipmeCustomerEmail";
+    const PHONE_KEY = "snipmeCustomerPhone";
     const TOKEN_KEY = "snipmeCustomerToken";
     const PASSWORD_KEY = "snipmeCustomerPassword";
     const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
@@ -232,10 +233,16 @@ document.addEventListener("DOMContentLoaded", function () {
                     return;
                 }
 
-                const username = email.split("@")[0] || "Customer";
+                const serverName = typeof result.data.name === "string" ? result.data.name.trim() : "";
+                const serverPhone = typeof result.data.phoneNumber === "string" ? result.data.phoneNumber.trim() : "";
+                const username = serverName || email.split("@")[0] || "Customer";
+
                 localStorage.setItem(LOGIN_FLAG_KEY, "true");
                 localStorage.setItem(USERNAME_KEY, username);
                 localStorage.setItem(EMAIL_KEY, email);
+                if (serverPhone) {
+                    localStorage.setItem(PHONE_KEY, serverPhone);
+                }
                 if (result.data.token) {
                     localStorage.setItem(TOKEN_KEY, result.data.token);
                 }

@@ -39,6 +39,8 @@ public class AuthController {
     @Transactional
     public ResponseEntity<?> register(@RequestBody AuthRequest request) {
         String normalizedEmail = request.getEmail() == null ? "" : request.getEmail().trim().toLowerCase();
+        String normalizedName = request.getName() == null ? "" : request.getName().trim();
+        String normalizedPhone = request.getPhoneNumber() == null ? "" : request.getPhoneNumber().trim();
 
         if (normalizedEmail.isBlank()) {
             return ResponseEntity.badRequest().body(Map.of("error", "Email is required."));
@@ -61,9 +63,16 @@ public class AuthController {
             return ResponseEntity.badRequest().body(Map.of("error", "Admin role is reserved for the system admin email."));
         }
 
+        if (("CUSTOMER".equals(roleStr) || "SALON_OWNER".equals(roleStr))
+                && (normalizedName.isBlank() || normalizedPhone.isBlank())) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Name and phone number are required."));
+        }
+
         User user = new User();
         user.setEmail(normalizedEmail);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setName(normalizedName.isBlank() ? null : normalizedName);
+        user.setPhoneNumber(normalizedPhone.isBlank() ? null : normalizedPhone);
         try {
             user.setRole(UserRole.valueOf(roleStr));
         } catch (IllegalArgumentException ex) {
@@ -81,8 +90,13 @@ public class AuthController {
         Optional<User> userOpt = userRepository.findByEmailIgnoreCase(normalizedEmail);
 
         if (userOpt.isPresent() && passwordEncoder.matches(authRequest.getPassword(), userOpt.get().getPassword())) {
-            String token = jwtUtils.generateToken(userOpt.get().getEmail());
-            return ResponseEntity.ok(new AuthResponse(token));
+            User user = userOpt.get();
+            String token = jwtUtils.generateToken(user.getEmail());
+            String safeName = (user.getName() == null || user.getName().isBlank())
+                    ? user.getEmail().split("@")[0]
+                    : user.getName();
+            String safePhone = user.getPhoneNumber() == null ? "" : user.getPhoneNumber();
+            return ResponseEntity.ok(new AuthResponse(token, safeName, safePhone, user.getEmail()));
         }
 
         return ResponseEntity.status(401).body(Map.of("error", "Invalid email or password"));

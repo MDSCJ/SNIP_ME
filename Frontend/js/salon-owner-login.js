@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const OWNER_LOGIN_FLAG_KEY = "snipmeOwnerLoggedIn";
     const OWNER_NAME_KEY = "snipmeOwnerName";
     const OWNER_EMAIL_KEY = "snipmeOwnerEmail";
+    const OWNER_PHONE_KEY = "snipmeOwnerPhone";
     const OWNER_TOKEN_KEY = "snipmeOwnerToken";
     const OWNER_EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
     const OWNER_PHONE_REGEX = /^[0-9]{10,15}$/;
@@ -200,10 +201,15 @@ document.addEventListener("DOMContentLoaded", function () {
                         return;
                     }
 
-                    const ownerName = email.split("@")[0] || "Salon Owner";
+                    const serverName = typeof result.data.name === "string" ? result.data.name.trim() : "";
+                    const serverPhone = typeof result.data.phoneNumber === "string" ? result.data.phoneNumber.trim() : "";
+                    const ownerName = serverName || email.split("@")[0] || "Salon Owner";
                     localStorage.setItem(OWNER_LOGIN_FLAG_KEY, "true");
                     localStorage.setItem(OWNER_NAME_KEY, ownerName);
                     localStorage.setItem(OWNER_EMAIL_KEY, email);
+                    if (serverPhone) {
+                        localStorage.setItem(OWNER_PHONE_KEY, serverPhone);
+                    }
                     if (result.data.token) {
                         localStorage.setItem(OWNER_TOKEN_KEY, result.data.token);
                     }
