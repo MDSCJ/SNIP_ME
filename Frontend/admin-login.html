@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Login | SNIP ME</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/customer_login.css">
+    <link rel="stylesheet" href="css/loader.css">
+</head>
+
+<body class="dark-theme">
+    <header class="main-header">
+        <div class="header-content">
+            <div class="logo-left">
+                <img src="images/desktop.jpg" alt="SNIP ME Logo">
+            </div>
+        </div>
+    </header>
+
+    <nav class="nav-bar">
+        <div class="nav-toggle">&#9776;</div>
+        <ul>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="about.html">About Us</a></li>
+            <li><a href="login.html" class="active">Login</a></li>
+            <li><a href="settings.html">Settings</a></li>
+        </ul>
+    </nav>
+
+    <video class="bg-video" autoplay muted loop playsinline>
+        <source src="videos/bc.mp4" type="video/mp4">
+    </video>
+
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="glass-card">
+            <svg class="scissor-loader" viewBox="0 0 100 50" xmlns="http://www.w3.org/2000/svg">
+                <g fill="none" stroke="rgba(255, 255, 255, 0.85)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M 28 15 C 28 5 12 5 12 15 C 12 25 25 24 40 25" class="wave-line delay-1" />
+                    <path d="M 28 35 C 28 45 12 45 12 35 C 12 25 25 26 40 25" class="wave-line delay-1" />
+                    <circle cx="20" cy="15" r="4.5" class="wave-line delay-2" />
+                    <circle cx="20" cy="35" r="4.5" class="wave-line delay-2" />
+                    <path d="M 40 25 L 85 31 L 45 25" class="wave-line delay-3" />
+                    <path d="M 40 25 L 85 19 L 45 25" class="wave-line delay-3" />
+                    <circle cx="43" cy="25" r="1.5" class="wave-line delay-4" />
+                </g>
+            </svg>
+            <div class="loader-text">
+                <span>.</span><span>.</span><span>.</span>
+            </div>
+        </div>
+    </div>
+
+    <main class="customer-login-section">
+        <div class="login-wrapper">
+            <div class="login-box">
+                <h1>Admin Login</h1>
+                <p class="subtitle">Sign in with an admin account</p>
+
+                <form id="adminLoginForm">
+                    <label for="adminEmail">Admin email</label>
+                    <input type="email" id="adminEmail" placeholder="Enter admin email" required>
+
+                    <label for="adminPassword">Password</label>
+                    <input type="password" id="adminPassword" placeholder="Enter password" required>
+
+                    <button type="submit" class="signin-btn">Sign In</button>
+                </form>
+
+                <div class="signup-link">
+                    Not an admin? <a href="login.html">Back to login options</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 <a href="../index.html">SNIP ME</a>. All rights reserved.</p>
+    </footer>
+
+    <script src="js/api-config.js"></script>
+    <script src="js/loader.js"></script>
+    <script src="js/admin-login.js"></script>
+    <script src="js/devtools-warning.js"></script>
+</body>
+</html>
