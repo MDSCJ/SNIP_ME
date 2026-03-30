@@ -137,7 +137,7 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Admin access required."));
         }
 
-        return userRepository.findById(email)
+        return userRepository.findByEmailIgnoreCase(email)
                 .map(user -> {
                     String name = payload.get("name");
                     String phone = payload.get("phoneNumber");
@@ -167,11 +167,12 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Admin access required."));
         }
 
-        if (!userRepository.existsById(email)) {
+        var userOpt = userRepository.findByEmailIgnoreCase(email);
+        if (userOpt.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "User not found."));
         }
 
-        userRepository.deleteById(email);
+        userRepository.delete(userOpt.get());
         return ResponseEntity.ok(Map.of("message", "User deleted successfully."));
     }
 
@@ -247,6 +248,7 @@ public class AdminController {
 
     private Map<String, Object> toUserDto(User user) {
         Map<String, Object> dto = new LinkedHashMap<>();
+        dto.put("id", user.getId());
         dto.put("email", user.getEmail());
         dto.put("name", user.getName());
         dto.put("phoneNumber", user.getPhoneNumber());
@@ -263,6 +265,7 @@ public class AdminController {
         dto.put("city", salon.getCity());
         dto.put("phoneNumber", salon.getPhoneNumber());
         dto.put("email", salon.getEmail());
+        dto.put("ownerUserId", salon.getOwnerUserId());
         dto.put("isActive", salon.isActive());
         dto.put("rate", salon.getRate());
         dto.put("nOfRatings", salon.getNOfRatings());

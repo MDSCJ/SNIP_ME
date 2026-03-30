@@ -37,6 +37,9 @@ public class Salon {
     @Column(name = "is_active", nullable = false)
     private boolean isActive = true;
 
+    @Column(name = "owner_user_id", unique = true)
+    private Long ownerUserId;
+
     // Default constructor
     public Salon() {}
 
@@ -64,6 +67,9 @@ public class Salon {
     public void setLongitude(Double longitude) { this.longitude = longitude; }
     public boolean isActive() { return isActive; }
     public void setActive(boolean active) { isActive = active; }
+
+    public Long getOwnerUserId() { return ownerUserId; }
+    public void setOwnerUserId(Long ownerUserId) { this.ownerUserId = ownerUserId; }
 
     public int getNOfRatings() { return nOfRatings; }
     public void setNOfRatings(int nOfRatings) { this.nOfRatings = nOfRatings; }

@@ -53,6 +53,83 @@
         });
     }
 
+    function initMatrixRain() {
+        const matrixLayer = document.querySelector(".matrix-overlay");
+        if (!matrixLayer) return;
+
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+        matrixLayer.innerHTML = "";
+        matrixLayer.appendChild(canvas);
+
+        const glyphs = "01ABCDEFGHIJKLMNOPQRSTUVWXYZ#$%&*+-<>";
+        const fontSize = 15;
+        const frameIntervalMs = 85;
+        const dropStep = 0.45;
+        let columns = 0;
+        let drops = [];
+        let animationId = null;
+        let lastFrameTime = 0;
+
+        function resizeRain() {
+            const ratio = window.devicePixelRatio || 1;
+            canvas.width = Math.floor(window.innerWidth * ratio);
+            canvas.height = Math.floor(window.innerHeight * ratio);
+            ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+
+            columns = Math.ceil(window.innerWidth / fontSize);
+            drops = new Array(columns).fill(0).map(function () {
+                return Math.floor(Math.random() * -40);
+            });
+        }
+
+        function drawRain(timestamp) {
+            if (timestamp - lastFrameTime < frameIntervalMs) {
+                animationId = window.requestAnimationFrame(drawRain);
+                return;
+            }
+            lastFrameTime = timestamp;
+
+            ctx.fillStyle = "rgba(2, 7, 6, 0.14)";
+            ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+
+            ctx.font = fontSize + "px Consolas, monospace";
+            for (let i = 0; i < columns; i += 1) {
+                const text = glyphs.charAt(Math.floor(Math.random() * glyphs.length));
+                const x = i * fontSize;
+                const y = drops[i] * fontSize;
+
+                ctx.fillStyle = "rgba(115, 255, 180, 0.85)";
+                ctx.fillText(text, x, y);
+
+                if (y > window.innerHeight && Math.random() > 0.975) {
+                    drops[i] = Math.floor(Math.random() * -20);
+                }
+                drops[i] += dropStep;
+            }
+
+            animationId = window.requestAnimationFrame(drawRain);
+        }
+
+        function onVisibilityChange() {
+            if (document.hidden && animationId) {
+                window.cancelAnimationFrame(animationId);
+                animationId = null;
+                return;
+            }
+            if (!document.hidden && !animationId) {
+                lastFrameTime = 0;
+                drawRain();
+            }
+        }
+
+        resizeRain();
+        drawRain();
+        window.addEventListener("resize", resizeRain);
+        document.addEventListener("visibilitychange", onVisibilityChange);
+    }
+
     function handleAuthFailure(res) {
         if (res.status === 401 || res.status === 403) {
             alert("Admin session expired or unauthorized. Please login again.");
@@ -89,6 +166,31 @@
             .replace(/'/g, "&#39;");
     }
 
+    function syncTableScroll(tableBody) {
+        if (!tableBody) return;
+
+        const tableWrap = tableBody.closest(".table-wrap");
+        const table = tableBody.closest("table");
+        if (!tableWrap || !table) return;
+
+        const rows = tableBody.querySelectorAll("tr");
+        if (rows.length <= 5) {
+            tableWrap.classList.remove("scroll-enabled");
+            tableWrap.style.maxHeight = "";
+            return;
+        }
+
+        const header = table.querySelector("thead");
+        const headerHeight = header ? header.offsetHeight : 0;
+        let fiveRowHeight = 0;
+        for (let i = 0; i < 5; i += 1) {
+            fiveRowHeight += rows[i].offsetHeight;
+        }
+
+        tableWrap.style.maxHeight = (headerHeight + fiveRowHeight + 2) + "px";
+        tableWrap.classList.add("scroll-enabled");
+    }
+
     function fetchUsers() {
         const q = encodeURIComponent((userSearch.value || "").trim());
         fetch(apiRoot + "/admin/users?query=" + q, { headers: headers })
@@ -108,6 +210,8 @@
                         "<td><button class=\"delete-btn\" data-email=\"" + (u.email || "") + "\">Delete</button></td>";
                     usersTableBody.appendChild(tr);
                 });
+
+                syncTableScroll(usersTableBody);
 
                 usersTableBody.querySelectorAll(".edit-btn").forEach(function (btn) {
                     btn.addEventListener("click", function () {
@@ -197,6 +301,8 @@
                     salonsTableBody.appendChild(tr);
                 });
 
+                syncTableScroll(salonsTableBody);
+
                 salonsTableBody.querySelectorAll(".ban-btn").forEach(function (btn) {
                     btn.addEventListener("click", function () {
                         const salonId = btn.getAttribute("data-id");
@@ -245,6 +351,8 @@
                         "<td><button class=\"delete-btn\" data-service-id=\"" + (svc.id ?? "") + "\">Delete</button></td>";
                     servicesTableBody.appendChild(tr);
                 });
+
+                syncTableScroll(servicesTableBody);
 
                 servicesTableBody.querySelectorAll(".delete-btn").forEach(function (btn) {
                     btn.addEventListener("click", function () {
@@ -325,9 +433,15 @@
         });
     }
 
+    initMatrixRain();
     fetchOverview();
     fetchUsers();
     fetchSalons();
     fetchServices();
+    window.addEventListener("resize", function () {
+        syncTableScroll(usersTableBody);
+        syncTableScroll(salonsTableBody);
+        syncTableScroll(servicesTableBody);
+    });
     setInterval(fetchOverview, 15000);
 })();

@@ -103,6 +103,9 @@ public class AuthController {
             Salon salon = new Salon();
             salon.setName(normalizedSalonName);
             salon.setDetails(normalizedSalonDetails);
+            salon.setEmail(normalizedEmail);
+            salon.setPhoneNumber(normalizedPhone.isBlank() ? null : normalizedPhone);
+            salon.setOwnerUserId(user.getId());
             salonRepository.save(salon);
         }
 
