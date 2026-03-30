@@ -188,3 +188,8 @@ footer {
     z-index: 1;
 }
 footer a { color: var(--accent-yellow); text-decoration: none; }
+
+.footer-starc {
+    color: var(--accent-yellow);
+    font-weight: 700;
+}
