@@ -201,6 +201,16 @@ document.addEventListener("DOMContentLoaded", function () {
                         return;
                     }
 
+                    const userType = typeof result.data.userType === "string" ? result.data.userType.trim().toUpperCase() : "CUSTOMER";
+                    if (userType !== "SALON_OWNER") {
+                        if (userType === "ADMIN") {
+                            alert("This account is an admin account. Please use admin login.");
+                        } else {
+                            alert("This account is not registered as a salon owner. Please use customer login.");
+                        }
+                        return;
+                    }
+
                     const serverName = typeof result.data.name === "string" ? result.data.name.trim() : "";
                     const serverPhone = typeof result.data.phoneNumber === "string" ? result.data.phoneNumber.trim() : "";
                     const ownerName = serverName || email.split("@")[0] || "Salon Owner";

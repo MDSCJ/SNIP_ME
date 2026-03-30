@@ -41,7 +41,11 @@
                 
                 <div class="input-group">
                     <label for="treatment">What</label>
-                    <input type="text" id="treatment" placeholder="All treatments and venues">
+                    <select id="treatment" aria-label="Service type">
+                        <option value="">All treatments and venues</option>
+                        <option value="School cut - boys">School cut - boys</option>
+                        <option value="School cut - girls">School cut - girls</option>
+                    </select>
                 </div>
 
                 <div class="divider"></div>
@@ -541,6 +545,7 @@
         <footer>
         <p>&copy; 2026 SNIP ME. All rights reserved.</p>
     </footer>
+<script src="Frontend/js/api-config.js"></script>
 <script src="Frontend/js/main.js"></script>
 <script src="Frontend/js/customer_session.js"></script>
 <script src="Frontend/js/devtools-warning.js"></script>
