@@ -1,19 +1,7 @@
 .trending { padding: 40px 5%; }
 .trending h3 { border-left: 5px solid var(--accent-yellow); padding-left: 15px; margin-bottom: 30px; }
 
-.grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
-}
 
-.card {
-    background: var(--card-bg);
-    border: 1px solid #333;
-    padding: 15px;
-    transition: 0.3s;
-    transform: translateZ(0); /* Fixes some weird hover issues */
-}
 /* --- NEW SEARCH PILL STYLES --- */
 
 /* 1. The Hero Container (Centered) */
@@ -338,5 +326,398 @@ body.modal-open {
        hero container and keeps focus on the center of the frame. */
     .bg-video {
         transform: scale(1.2);
+    }
+}
+
+
+
+.salon-slider-wrapper {
+    position: relative;
+    margin-top: 35px;
+    padding: 0 46px;
+}
+
+.salon-slider {
+    display: flex;
+    gap: 20px;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    padding: 10px 4px 18px;
+}
+
+.salon-slider::-webkit-scrollbar {
+    display: none;
+}
+
+.salon-card {
+    flex: 0 0 calc(50% - 10px);
+    min-width: calc(50% - 10px);
+    background: linear-gradient(180deg, #1b1b1b 0%, #141414 100%);
+    border: 1px solid #2e2e2e;
+    border-radius: 22px;
+    overflow: hidden;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+    transition: transform 0.32s ease, box-shadow 0.32s ease, border-color 0.32s ease;
+    position: relative;
+    backdrop-filter: blur(4px);
+}
+
+.salon-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        135deg,
+        rgba(241, 196, 15, 0.07),
+        transparent 35%,
+        transparent 65%,
+        rgba(241, 196, 15, 0.04)
+    );
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.salon-card:hover {
+    transform: translateY(-8px);
+    border-color: rgba(241, 196, 15, 0.7);
+    box-shadow:
+        0 0 20px rgba(241, 196, 15, 0.12),
+        0 18px 38px rgba(0, 0, 0, 0.42);
+}
+
+.salon-card:hover::before {
+    opacity: 1;
+}
+
+.salon-title {
+    margin: 0;
+    padding: 18px 18px 12px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.35;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+}
+.salon-img {
+    transition: transform 0.35s ease;
+}
+
+.salon-card:hover .salon-img {
+    transform: scale(1.03);
+}
+.salon-img {
+    height: 180px;
+    margin: 0 18px;
+    border-radius: 18px;
+    background:
+        linear-gradient(rgba(0, 0, 0, 0.04), rgba(0, 0, 0, 0.10)),
+        url("../images/default-salon.jpg") center/cover no-repeat;
+    border: 1px solid #2f2f2f;
+    position: relative;
+    overflow: hidden;
+}
+
+.salon-img::after {
+    content: "Featured Salon";
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: rgba(17, 17, 17, 0.88);
+    color: var(--accent-yellow);
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(241, 196, 15, 0.28);
+}
+
+.salon-services {
+    padding: 16px 18px 0;
+    color: #e3e3e3;
+    font-size: 0.93rem;
+    line-height: 1.6;
+    min-height: 62px;
+}
+
+.view-more {
+    display: inline-block;
+    margin-left: 8px;
+    color: var(--accent-yellow);
+    font-weight: 700;
+    cursor: pointer;
+    transition: color 0.25s ease, transform 0.25s ease;
+}
+
+.view-more:hover {
+    color: #fff;
+    transform: translateX(2px);
+}
+
+.more-services {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: max-height 0.32s ease, opacity 0.26s ease, transform 0.26s ease, margin-top 0.26s ease;
+    color: #bfbfbf;
+    font-size: 0.89rem;
+    margin-top: 0;
+}
+
+.salon-services.active .more-services {
+    max-height: 120px;
+    opacity: 1;
+    transform: translateY(0);
+    margin-top: 8px;
+}
+
+.salon-rating {
+    padding: 14px 18px 0;
+    color: #ffd65a;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    margin-bottom: 4px;
+}
+
+.salon-actions {
+    display: flex;
+    gap: 12px;
+    padding: 18px;
+    padding-bottom: 14px;
+}
+
+.btn-view,
+.btn-book {
+    flex: 1;
+    height: 44px;
+    border: none;
+    border-radius: 999px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.24s ease, box-shadow 0.24s ease, background 0.24s ease, color 0.24s ease;
+}
+.btn-view {
+    background: #272727;
+    color: #fff;
+    border: 1px solid #3a3a3a;
+    opacity: 0.92;
+}
+
+.btn-view:hover {
+    background: #323232;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.24);
+    opacity: 1;
+}
+
+.btn-book {
+    background: linear-gradient(135deg, #f1c40f, #ffd84d);
+    color: #111;
+    box-shadow: 0 10px 22px rgba(241, 196, 15, 0.18);
+}
+
+.btn-book:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 14px 26px rgba(241, 196, 15, 0.24);
+}
+
+
+.btn-view:active,
+.btn-book:active {
+    transform: scale(0.98);
+}
+
+.salon-details {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    padding: 0 18px;
+    color: #d1d1d1;
+    font-size: 0.9rem;
+    line-height: 1.65;
+    transition: max-height 0.34s ease, opacity 0.28s ease, padding-bottom 0.28s ease;
+    border-top: 1px solid transparent;
+}
+
+.salon-card.active .salon-details {
+    max-height: 220px;
+    opacity: 1;
+    padding-bottom: 18px;
+    border-top: 1px solid #2d2d2d;
+}
+
+.slider-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 42px;
+    height: 42px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(241, 196, 15, 0.96);
+    color: #111;
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+    z-index: 5;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.28);
+    transition: transform 0.24s ease, box-shadow 0.24s ease, background 0.24s ease;
+}
+
+.slider-btn:hover {
+    transform: translateY(-50%) scale(1.08);
+    background: #fff;
+    box-shadow: 0 12px 26px rgba(0, 0, 0, 0.34);
+}
+
+.slider-btn.left {
+    left: 0;
+}
+
+.slider-btn.right {
+    right: 0;
+}
+
+/* tablet */
+@media (min-width: 769px) and (max-width: 1199px) {
+    .salon-card {
+        flex: 0 0 calc(33.333% - 14px);
+        min-width: calc(33.333% - 14px);
+    }
+
+    .salon-img {
+        height: 170px;
+    }
+}
+
+/* desktop / laptop */
+@media (min-width: 1200px) {
+    .salon-slider-wrapper {
+        padding: 0;
+    }
+
+    .salon-slider {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 22px;
+        overflow: visible;
+        padding: 10px 0 0;
+    }
+
+    .salon-card {
+        min-width: 0;
+        flex: unset;
+        cursor: pointer;
+    }
+
+    .salon-img {
+        height: 155px;
+    }
+
+    .slider-btn {
+        display: none;
+    }
+}
+
+/* mobile */
+@media (max-width: 768px) {
+    .salon-slider-wrapper {
+        padding: 0 38px;
+        margin-top: 28px;
+    }
+
+    .salon-slider {
+        gap: 14px;
+        padding: 8px 2px 14px;
+    }
+
+    .salon-card {
+        flex: 0 0 calc(50% - 7px);
+        min-width: calc(50% - 7px);
+        border-radius: 18px;
+    }
+
+    .salon-title {
+        font-size: 0.95rem;
+        padding: 14px 14px 10px;
+        min-height: 44px;
+    }
+
+    .salon-img {
+        height: 120px;
+        margin: 0 14px;
+        border-radius: 14px;
+    }
+
+    .salon-img::after {
+        font-size: 0.66rem;
+        padding: 5px 8px;
+        top: 10px;
+        left: 10px;
+    }
+
+    .salon-services {
+        padding: 12px 14px 0;
+        font-size: 0.84rem;
+    }
+
+    .more-services {
+        font-size: 0.8rem;
+    }
+
+    .salon-rating {
+        padding: 12px 14px 0;
+        font-size: 0.86rem;
+    }
+
+    .salon-actions {
+        padding: 14px;
+        gap: 8px;
+    }
+
+    .btn-view,
+    .btn-book {
+        height: 38px;
+        font-size: 0.8rem;
+    }
+
+    .salon-details {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    padding: 0 18px;
+    color: #d1d1d1;
+    font-size: 0.9rem;
+    line-height: 1.65;
+    transition: max-height 0.34s ease, opacity 0.28s ease, padding-bottom 0.28s ease;
+    border-top: 1px solid transparent;
+   }
+
+    .salon-card.active .salon-details {
+    max-height: 220px;
+    opacity: 1;
+    padding-bottom: 18px;
+    border-top: 1px solid #2d2d2d;
+    }
+
+    .slider-btn {
+        width: 34px;
+        height: 34px;
+        font-size: 1rem;
+    }
+
+    .slider-btn.left {
+        left: -2px;
+    }
+
+    .slider-btn.right {
+        right: -2px;
     }
 }
