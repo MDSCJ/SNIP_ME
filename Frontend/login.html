@@ -48,6 +48,21 @@
             Log in as Salon Owner
         </button>
 
+        <button class="btn-outline"
+            onclick="window.location.href='admin-login.html'">
+            Log in as Admin
+        </button>
+
+        <button id="goToOwnerDashboardBtn" class="btn-outline" style="display: none;"
+            onclick="window.location.href='Salon-Owner-Dashboard.html'">
+            Go to My Dashboard
+        </button>
+
+        <button id="goToAdminDashboardBtn" class="btn-outline" style="display: none;"
+            onclick="window.location.href='admin-dashboard.html'">
+            Go to Admin Dashboard
+        </button>
+
     </div>
     <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -58,6 +73,56 @@
         toggle.addEventListener('click', function () {
             navList.classList.toggle('open');
         });
+    }
+
+    var goToOwnerDashboardBtn = document.getElementById('goToOwnerDashboardBtn');
+    var goToAdminDashboardBtn = document.getElementById('goToAdminDashboardBtn');
+
+    function isValidJwt(token) {
+        if (!token || token.split('.').length !== 3) {
+            return false;
+        }
+
+        try {
+            var payloadPart = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+            var payload = JSON.parse(atob(payloadPart));
+            if (!payload.exp) {
+                return false;
+            }
+            return (payload.exp * 1000) > Date.now();
+        } catch (e) {
+            return false;
+        }
+    }
+
+    var ownerLoggedIn = localStorage.getItem('snipmeOwnerLoggedIn') === 'true';
+    var ownerToken = localStorage.getItem('snipmeOwnerToken');
+    var ownerEmail = localStorage.getItem('snipmeOwnerEmail');
+    var adminLoggedIn = localStorage.getItem('snipmeAdminLoggedIn') === 'true';
+
+    var ownerSessionValid = ownerLoggedIn && ownerToken && ownerEmail && isValidJwt(ownerToken);
+    if (!ownerSessionValid) {
+        localStorage.removeItem('snipmeOwnerLoggedIn');
+        localStorage.removeItem('snipmeOwnerToken');
+        localStorage.removeItem('snipmeOwnerEmail');
+        localStorage.removeItem('snipmeOwnerName');
+        localStorage.removeItem('snipmeOwnerPhone');
+    }
+
+    var adminToken = localStorage.getItem('snipmeAdminToken');
+    var adminSessionValid = adminLoggedIn && adminToken && isValidJwt(adminToken);
+    if (!adminSessionValid) {
+        localStorage.removeItem('snipmeAdminLoggedIn');
+        localStorage.removeItem('snipmeAdminToken');
+        localStorage.removeItem('snipmeAdminEmail');
+        localStorage.removeItem('snipmeAdminName');
+    }
+
+    if (goToOwnerDashboardBtn && ownerSessionValid) {
+        goToOwnerDashboardBtn.style.display = 'block';
+    }
+    if (goToAdminDashboardBtn && adminSessionValid) {
+        goToAdminDashboardBtn.style.display = 'block';
     }
 
     var navLinks = document.querySelectorAll('.nav-bar ul li a');
@@ -72,6 +137,7 @@
         <p>&copy; 2026 <a href="../index.html">SNIP ME</a>. All rights reserved.</p>
     </footer>
 
+    <script src="js/api-config.js"></script>
     <script src="js/main.js"></script>
 
     <script src="js/customer_session.js"></script>

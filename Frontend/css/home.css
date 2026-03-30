@@ -92,12 +92,41 @@
 .input-group input {
     background: transparent;
     border: none;
-    color: #fff;
+    color: #d9dde3;
     font-size: 1rem;
     font-weight: 500;
     width: 100%;
     outline: none;
     padding: 5px 0;
+}
+
+.input-group select {
+    background: transparent;
+    border: none;
+    color: #d9dde3;
+    font-size: 1rem;
+    font-weight: 500;
+    width: 100%;
+    outline: none;
+    padding: 5px 28px 5px 0;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--accent-yellow) 50%), linear-gradient(135deg, var(--accent-yellow) 50%, transparent 50%);
+    background-position: calc(100% - 14px) calc(50% - 3px), calc(100% - 8px) calc(50% - 3px);
+    background-size: 6px 6px, 6px 6px;
+    background-repeat: no-repeat;
+    cursor: pointer;
+}
+
+.input-group select option {
+    color: #e3e6eb;
+    background: #2c3138;
+}
+
+.input-group input::placeholder {
+    color: #d9dde3;
+    opacity: 1;
 }
 
 /* Location button inside input */
@@ -304,6 +333,11 @@ body.modal-open {
     .loc-btn { right: 12px; }
     .date-wrapper input { padding-right: 44px; }
     .date-btn { right: 12px; }
+
+    .input-group select {
+        padding-right: 34px;
+        background-position: calc(100% - 18px) calc(50% - 3px), calc(100% - 12px) calc(50% - 3px);
+    }
 
     .input-group:last-child {
         border-bottom: none;
