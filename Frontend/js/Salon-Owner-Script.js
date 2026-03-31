@@ -68,6 +68,7 @@ function startLiveClock() {
         const timeEl = document.getElementById('current-time');
         if (timeEl) timeEl.innerText = timeString;
 
+
         const dateOptions = { month: 'long', day: 'numeric', year: 'numeric' };
         const fullDateEl = document.getElementById('full-date-display');
         if (fullDateEl) fullDateEl.innerText = now.toLocaleDateString('en-US', dateOptions);
@@ -271,3 +272,5 @@ function addServiceToTable(name, price) {
     tableBody.innerHTML += newRow;
     showToast(`${name} added!`, 'working day');
 }
+
+
