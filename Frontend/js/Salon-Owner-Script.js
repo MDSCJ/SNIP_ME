@@ -45,10 +45,10 @@ function CalenderBuild() {
             }
 
             if (dateNum === currentSelectedDay) {
-                slot.style.border = "3px solid #2c3e50";
+                slot.style.border = "1.5px solid #4e3505";
             } 
             else if (dateNum === realToday && currentMonth === realMonth && currentYear === realYear) {
-                slot.style.border = "2px solid #4ecca3"; 
+                slot.style.border = "2px dashed #f0c312"; 
             }
 
             slot.onclick = () => selectDate(dateNum);
@@ -67,6 +67,7 @@ function startLiveClock() {
         
         const timeEl = document.getElementById('current-time');
         if (timeEl) timeEl.innerText = timeString;
+
 
         const dateOptions = { month: 'long', day: 'numeric', year: 'numeric' };
         const fullDateEl = document.getElementById('full-date-display');
@@ -180,9 +181,39 @@ function saveAppointment() {
     toggleModal('event-modal', false);
 }
 
+
+
+// scrolling bar maintain.
+function scrollStart() {
+    // display from 7 AM 
+    const targetRow = document.getElementById('starting-row');
+    const scrollContainer = document.querySelector('.modal-scroll-area');
+
+    if (targetRow && scrollContainer){
+        setTimeout(() => {
+            targetRow.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'start' 
+            });
+        }, 50); 
+    }
+}
+
+
+
 function toggleModal(id, show) {
     const modal = document.getElementById(id);
-    if (modal) modal.style.display = show ? 'flex' : 'none'; 
+    if (!modal) return;
+    //TO DO : modify this function 001.....
+    if (show) {
+        modal.style.display = 'flex';
+        //trigging scroll if opening the view schedule
+        if (id === 'daily-modal') {
+            scrollStart();
+        }
+    } else {
+        modal.style.display = 'none';
+    }
 }
 
 
@@ -222,3 +253,24 @@ document.querySelectorAll('.nav-link').forEach(link => {
         if (target) target.style.display = 'block';
     });
 });
+
+
+// service section 
+function addServiceToTable(name, price) {
+    const tableBody = document.getElementById('active-services-list');
+    const today = new Date().toISOString().split('T')[0];
+
+    const newRow = `
+        <tr>
+            <td>${name}</td>
+            <td>${price}</td>
+            <td>${today}</td>
+            <td><span class="status-tag active">Live</span></td>
+        </tr>
+    `;
+    
+    tableBody.innerHTML += newRow;
+    showToast(`${name} added!`, 'working day');
+}
+
+
