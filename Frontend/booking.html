@@ -25,6 +25,10 @@
             <li><a href="settings.html">Settings</a></li>
         </ul>
     </nav>
+    <video class="bg-video" autoplay muted loop playsinline>
+        <source src="videos/bc.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
 
     <div class="booking-container">
         <div class="booking-header">
@@ -65,9 +69,14 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="dateInput">Select Date</label>
-                        <input type="date" id="dateInput" required>
-                        <small id="dateError" class="error-text"></small>
+                    <label for="dateInput">Select Date</label>
+                        <div class="date-input-wrapper">
+                         <input type="date" id="dateInput" required>
+                        <button type="button" class="calendar-btn" id="calendarBtn" aria-label="Open calendar">
+                         📅
+                        </button>
+                        </div>
+                         <small id="dateError" class="error-text"></small>
                     </div>
 
                     <div class="form-actions">
