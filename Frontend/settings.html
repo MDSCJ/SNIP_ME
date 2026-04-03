@@ -29,10 +29,18 @@
 
     <main class="settings-section">
         <div class="settings-wrapper">
-            <h1 class="settings-title">Account Settings</h1>
+            <!-- Tab Navigation -->
+            <div class="settings-tabs">
+                <button class="tab-btn active" data-tab="account">Account Settings</button>
+                <button class="tab-btn" data-tab="bookings">My Bookings</button>
+            </div>
 
-            <!-- Change Username -->
-            <div class="settings-card">
+            <!-- ACCOUNT SETTINGS TAB -->
+            <div class="tab-content active" id="account-tab">
+                <h1 class="settings-title">Account Settings</h1>
+
+                <!-- Change Username -->
+                <div class="settings-card">
                 <h2>Change Username</h2>
                 <p class="settings-desc">Update the display name shown in the login pill.</p>
                 <form id="changeUsernameForm" novalidate>
@@ -74,6 +82,16 @@
                 <button id="deleteAccountBtn" class="settings-btn danger-btn">Delete My Account</button>
                 <p id="deleteMsg" class="settings-msg hidden"></p>
             </div>
+            </div>
+
+            <!-- BOOKINGS TAB -->
+            <div class="tab-content" id="bookings-tab">
+                <h1 class="settings-title">My Bookings</h1>
+                
+                <div class="bookings-container" id="bookingsContainer">
+                    <p class="loading-text">Loading your bookings...</p>
+                </div>
+            </div>
         </div>
     </main>
 
@@ -81,6 +99,7 @@
         <p>&copy; 2026 <a href="../index.html">SNIP ME</a>. All rights reserved. by <span class="footer-starc">STARC</span>.</p>
     </footer>
 
+    <script src="js/api-config.js"></script>
     <script src="js/customer_session.js"></script>
     <script src="js/settings.js"></script>
     <script>

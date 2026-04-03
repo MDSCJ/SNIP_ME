@@ -125,12 +125,33 @@ document.addEventListener('DOMContentLoaded', () => {
     bookButtons.forEach((button) => {
         button.addEventListener('click', () => {
             const isLoggedIn = localStorage.getItem('snipmeCustomerLoggedIn');
+            const currentCard = button.closest('.salon-card');
+
+            if (!currentCard) return;
+
+            const salonName = currentCard.querySelector('.salon-title')?.textContent.trim() || 'Salon';
+            const salonDescription = currentCard.querySelector('.salon-details')?.textContent.trim() || 'Professional salon services';
+
+            const servicesText = currentCard.querySelector('.salon-services')?.childNodes[0]?.textContent.trim() || '';
+            const moreServicesText = currentCard.querySelector('.more-services')?.textContent.trim() || '';
+
+            const allServices = (servicesText + ',' + moreServicesText)
+               .split('•')
+               .join(',')
+               .split(',')
+               .map(service => service.trim())
+               .filter(service => service.length > 0 && service.toLowerCase() !== 'view more');
+
+            sessionStorage.setItem('selectedSalonId', salonName.toLowerCase().replace(/\s+/g, '-'));
+            sessionStorage.setItem('selectedSalonName', salonName);
+            sessionStorage.setItem('selectedSalonDesc', salonDescription);
+            sessionStorage.setItem('selectedServices', JSON.stringify(allServices));
 
             if (isLoggedIn === 'true') {
                 window.location.href = 'Frontend/booking.html';
-            } else {
+            }   else {
                 window.location.href = 'Frontend/customer_login.html';
-            }
+           }
         });
     });
 });

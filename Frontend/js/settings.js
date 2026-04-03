@@ -119,4 +119,121 @@ document.addEventListener("DOMContentLoaded", function () {
             window.location.href = "customer_login.html";
         });
     }
+
+    // ========= 4. Tab Navigation =========
+    var tabBtns = document.querySelectorAll('.tab-btn');
+    tabBtns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var tabName = this.getAttribute('data-tab');
+            
+            // Remove active class from all tabs and buttons
+            document.querySelectorAll('.tab-btn').forEach(function(b) {
+                b.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-content').forEach(function(content) {
+                content.classList.remove('active');
+            });
+            
+            // Add active class to clicked tab and content
+            this.classList.add('active');
+            document.getElementById(tabName + '-tab').classList.add('active');
+            
+            // Load bookings if switching to bookings tab
+            if (tabName === 'bookings') {
+                loadBookings();
+            }
+        });
+    });
+
+    // ========= 5. Bookings Management =========
+    function loadBookings() {
+        var bookingsContainer = document.getElementById('bookingsContainer');
+        var bookings = JSON.parse(localStorage.getItem('userBookings') || '[]');
+        
+        if (!bookings || bookings.length === 0) {
+            bookingsContainer.innerHTML = '<p class="no-bookings">No bookings yet. <a href="booking.html">Book an appointment now!</a></p>';
+            return;
+        }
+        
+        var bookingsHTML = '<div class="bookings-list">';
+        bookings.forEach(function(booking, index) {
+            var bookingDate = new Date(booking.date);
+            var formattedDate = bookingDate.toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            
+            var statusClass = booking.status === 'CANCELED' ? 'status-canceled' : 'status-confirmed';
+            
+            bookingsHTML += `
+                <div class="booking-card ${statusClass}">
+                    <div class="booking-info">
+                        <h3>${booking.salonName}</h3>
+                        <p><strong>Service:</strong> ${booking.service}</p>
+                        <p><strong>Date:</strong> ${formattedDate}</p>
+                        <p><strong>Payment Method:</strong> ${booking.paymentMethod === 'online' ? 'Online Payment' : 'Cash After Order'}</p>
+                        <p><strong>Status:</strong> <span class="status-badge">${booking.status}</span></p>
+                    </div>
+                    <div class="booking-actions">
+                        ${booking.status === 'CONFIRMED' ? `
+                            <button onclick="editBooking(${index})" class="btn-edit">Edit Date</button>
+                            <button onclick="cancelBooking(${index})" class="btn-cancel">Cancel Booking</button>
+                        ` : `
+                            <p class="booking-canceled">This booking has been canceled</p>
+                        `}
+                    </div>
+                </div>
+            `;
+        });
+        bookingsHTML += '</div>';
+        bookingsContainer.innerHTML = bookingsHTML;
+    }
+
+    window.editBooking = function(index) {
+        var bookings = JSON.parse(localStorage.getItem('userBookings') || '[]');
+        if (bookings[index]) {
+            sessionStorage.setItem('editingBookingIndex', index);
+            window.location.href = 'booking.html?edit=' + index;
+        }
+    };
+
+    window.cancelBooking = function(index) {
+        var bookings = JSON.parse(localStorage.getItem('userBookings') || '[]');
+        if (!bookings[index]) return;
+        
+        var confirmed = confirm('Are you sure you want to cancel this booking?');
+        if (!confirmed) return;
+        
+        var booking = bookings[index];
+        
+        // Call backend to cancel
+        fetch(API_BASE_URL + '/bookings/cancel?bookingID=' + booking.bookingID, {
+            method: 'POST'
+        })
+        .then(function(response) {
+            if (response.ok) {
+                bookings[index].status = 'CANCELED';
+                localStorage.setItem('userBookings', JSON.stringify(bookings));
+                loadBookings();
+                alert('Booking canceled successfully!');
+            } else {
+                alert('Failed to cancel booking. Please try again.');
+            }
+        })
+        .catch(function(error) {
+            console.error('Error canceling booking:', error);
+            // Still update local state even if API fails
+            bookings[index].status = 'CANCELED';
+            localStorage.setItem('userBookings', JSON.stringify(bookings));
+            loadBookings();
+            alert('Booking canceled (offline mode)');
+        });
+    };
+
+    // Load bookings on page if bookings tab is active
+    if (window.location.search.includes('tab=bookings')) {
+        document.querySelector('[data-tab="bookings"]').click();
+    }
 });
