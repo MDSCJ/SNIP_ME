@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Appointment | SNIP ME</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/booking.css">
+</head>
+<body class="dark-theme">
+    <header class="main-header">
+        <div class="header-content">
+            <div class="logo-left">
+                <img src="images/desktop.jpg" alt="SNIP ME Logo">
+            </div>
+        </div>
+    </header>
+
+    <nav class="nav-bar">
+        <div class="nav-toggle">&#9776;</div>
+        <ul>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="about.html">About Us</a></li>
+            <li><a href="login.html">Login</a></li>
+            <li><a href="settings.html">Settings</a></li>
+        </ul>
+    </nav>
+
+    <div class="booking-container">
+        <div class="booking-header">
+            <h1>Book Now</h1>
+            <a href="javascript:history.back()" class="back-btn">← Back</a>
+        </div>
+
+        <div class="booking-steps">
+            <div class="step active" id="step1">
+                <div class="step-indicator">1</div>
+                <span>Salon Details</span>
+            </div>
+            <div class="step" id="step2">
+                <div class="step-indicator">2</div>
+                <span>Select Time</span>
+            </div>
+            <div class="step" id="step3">
+                <div class="step-indicator">3</div>
+                <span>Payment</span>
+            </div>
+        </div>
+
+        <!-- STEP 1: SALON DETAILS -->
+        <div class="step-content active" id="step1-content">
+            <div class="salon-info-card">
+                <div class="salon-header">
+                    <h2 id="salonName">Loading...</h2>
+                    <p id="salonDescription">Loading salon details...</p>
+                </div>
+
+                <div class="booking-form">
+                    <div class="form-group">
+                        <label for="serviceSelect">Select Service</label>
+                        <select id="serviceSelect" required>
+                            <option value="">-- Select a service --</option>
+                        </select>
+                        <small id="selectedServiceDisplay">None selected</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="dateInput">Select Date</label>
+                        <input type="date" id="dateInput" required>
+                        <small id="dateError" class="error-text"></small>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" onclick="goBack()">Cancel</button>
+                        <button type="button" class="btn-primary" id="nextBtn1" onclick="proceedToSlots()">Next →</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 2: TIME SLOT SELECTION -->
+        <div class="step-content" id="step2-content">
+            <div class="slots-container">
+                <h3>Available Time Slots</h3>
+                <p id="salonNameStep2"></p>
+
+                <div class="time-slots-grid" id="timeSlotsGrid">
+                    <p class="loading">Loading available slots...</p>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="goToPreviousStep(2)">← Back</button>
+                    <button type="button" class="btn-primary" id="nextBtn2" onclick="proceedToPayment()" disabled>Next →</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 3: PAYMENT METHOD -->
+        <div class="step-content" id="step3-content">
+            <div class="payment-container">
+                <h3>Payment Method</h3>
+                <p id="bookingSummary" class="summary-text"></p>
+
+                <div class="payment-options">
+                    <div class="payment-option">
+                        <input type="radio" id="onlinePayment" name="paymentMethod" value="online" checked>
+                        <label for="onlinePayment">
+                            <span class="radio-custom"></span>
+                            <span class="payment-title">Online Payment</span>
+                            <span class="payment-subtitle">Credit/Debit Card (Visa, Mastercard, etc.)</span>
+                        </label>
+                    </div>
+
+                    <div class="payment-option">
+                        <input type="radio" id="cashPayment" name="paymentMethod" value="cash">
+                        <label for="cashPayment">
+                            <span class="radio-custom"></span>
+                            <span class="payment-title">Cash After Order</span>
+                            <span class="payment-subtitle">Pay at salon (For testing)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="payment-form" id="cardForm">
+                    <div class="form-group">
+                        <label for="cardName">Full Name</label>
+                        <input type="text" id="cardName" placeholder="Name on card" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="cardNumber">Card Number</label>
+                        <input type="text" id="cardNumber" placeholder="1234 5678 9012 3456" maxlength="19" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="cardExpiry">Expiry Date</label>
+                            <input type="text" id="cardExpiry" placeholder="MM/YY" maxlength="5" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="cardCVV">CVV</label>
+                            <input type="text" id="cardCVV" placeholder="123" maxlength="3" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="paymentError" class="error-text"></div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="goToPreviousStep(3)">← Back</button>
+                    <button type="button" class="btn-primary" id="confirmBtn" onclick="confirmBooking()">Confirm Booking</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SUCCESS MESSAGE -->
+        <div class="step-content" id="successContent">
+            <div class="success-container">
+                <div class="success-icon">✓</div>
+                <h2>Booking Confirmed!</h2>
+                <p id="confirmationMessage">Your appointment has been successfully booked.</p>
+                <div class="confirmation-details" id="confirmationDetails"></div>
+                <div class="form-actions">
+                    <button type="button" class="btn-primary" onclick="goToSettings()">View in Settings</button>
+                    <button type="button" class="btn-secondary" onclick="goHome()">Back to Home</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api-config.js"></script>
+    <script src="js/customer_session.js"></script>
+    <script src="js/booking.js"></script>
+</body>
+</html>
