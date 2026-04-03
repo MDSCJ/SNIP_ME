@@ -46,7 +46,24 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Event listeners
     serviceSelect.addEventListener('change', updateServiceDisplay);
-    document.getElementById('dateInput').addEventListener('change', validateDate);
+
+    // ✅ UPDATED PART (calendar fix)
+    const dateInput = document.getElementById('dateInput');
+    const calendarBtn = document.getElementById('calendarBtn');
+
+    dateInput.addEventListener('change', validateDate);
+
+    if (calendarBtn && dateInput) {
+        calendarBtn.addEventListener('click', function () {
+            if (dateInput.showPicker) {
+                dateInput.showPicker();
+            } else {
+                dateInput.focus();
+                dateInput.click();
+            }
+        });
+    }
+    // ✅ END OF UPDATED PART
     
     // Payment method toggle
     document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
@@ -282,7 +299,6 @@ function confirmBooking() {
         console.log('Booking confirmed:', data);
         bookingState.bookingID = data.bookingID;
         
-        // Save booking to localStorage for settings page
         let bookings = JSON.parse(localStorage.getItem('userBookings') || '[]');
         bookings.push({
             bookingID: bookingState.bookingID,
@@ -296,7 +312,6 @@ function confirmBooking() {
         });
         localStorage.setItem('userBookings', JSON.stringify(bookings));
         
-        // Show success message
         goToStep(4);
         confirmBtn.disabled = false;
         confirmBtn.textContent = 'Confirm Booking';
@@ -310,17 +325,14 @@ function confirmBooking() {
 }
 
 function goToStep(stepNumber) {
-    // Hide all steps
     document.querySelectorAll('.step-content').forEach(content => {
         content.classList.remove('active');
     });
     
-    // Remove active class from step indicators
     document.querySelectorAll('.step').forEach(step => {
         step.classList.remove('active');
     });
     
-    // Show selected step
     if (stepNumber === 4) {
         document.getElementById('successContent').classList.add('active');
     } else {
