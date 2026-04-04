@@ -1,6 +1,22 @@
 let currentMonth = new Date().getMonth();
 let currentYear = new Date().getFullYear();
 
+const OWNER_NAME_KEY = "snipmeOwnerName";
+const OWNER_SALON_NAME_KEY = "snipmeOwnerSalonName";
+const OWNER_EMAIL_KEY = "snipmeOwnerEmail";
+let ownerProfilePhotoLowQuality = "";
+let ownerWorkingDaysCache = "";
+let ownerLocationMapInstance = null;
+let ownerLocationMarker = null;
+let ownerSelectedLatLng = null;
+
+const sriLankaBounds = (typeof L !== 'undefined')
+    ? L.latLngBounds(L.latLng(5.85, 79.45), L.latLng(10.05, 81.98))
+    : null;
+const sriLankaCenter = (typeof L !== 'undefined')
+    ? L.latLng(7.8731, 80.7718)
+    : { lat: 7.8731, lng: 80.7718 };
+
 
 const realToday = new Date().getDate();
 const realMonth = new Date().getMonth();
@@ -11,10 +27,122 @@ let currentSelectedDay = realToday;
 let holidays = [];
 let appointments = [];
 
+function formatDateKey(dateObj) {
+    const yyyy = dateObj.getFullYear();
+    const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const dd = String(dateObj.getDate()).padStart(2, '0');
+    return yyyy + '-' + mm + '-' + dd;
+}
+
+function getSelectedDateObject() {
+    return new Date(currentYear, currentMonth, currentSelectedDay);
+}
+
+function getBookingWindowDateObjects() {
+    const dates = [];
+    const tomorrow = new Date();
+    tomorrow.setHours(0, 0, 0, 0);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    for (let i = 0; i < 7; i++) {
+        const next = new Date(tomorrow);
+        next.setDate(tomorrow.getDate() + i);
+        dates.push(next);
+    }
+
+    return dates;
+}
+
+function isInBookingWindow(dateObj) {
+    const testDate = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
+    const windowDates = getBookingWindowDateObjects();
+    return windowDates.some(function (d) {
+        return d.getTime() === testDate.getTime();
+    });
+}
+
+function isHolidayForDate(day, month, year) {
+    const key = formatDateKey(new Date(year, month, day));
+    return holidays.includes(key);
+}
+
+function removePastHolidays() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayKey = formatDateKey(today);
+    
+    const filteredHolidays = holidays.filter(function (dateKey) {
+        return dateKey >= todayKey;
+    });
+    
+    if (filteredHolidays.length !== holidays.length) {
+        holidays = filteredHolidays;
+        return true; // indicates cleanup was performed
+    }
+    return false;
+}
+
+function computeWorkingDaysString() {
+    const windowKeys = getBookingWindowDateObjects().map(formatDateKey);
+    const workingDays = windowKeys.filter(function (dateKey) {
+        return !holidays.includes(dateKey);
+    });
+    return workingDays.join(',');
+}
+
+function syncWorkingDaysToServer() {
+    const ownerEmail = localStorage.getItem(OWNER_EMAIL_KEY);
+    const authBaseUrl = (typeof AUTH_BASE_URL !== 'undefined' && AUTH_BASE_URL)
+        ? AUTH_BASE_URL
+        : ((typeof API_BASE_URL !== 'undefined' && API_BASE_URL) ? (API_BASE_URL + '/auth') : '');
+
+    if (!ownerEmail || !authBaseUrl) {
+        console.error('Sync failed: Missing email or API URL');
+        return Promise.reject(new Error('Owner session or auth API URL is missing.'));
+    }
+
+    removePastHolidays(); // Clean up any past holidays before syncing
+    const holidaysString = holidays.join(',');
+    ownerWorkingDaysCache = holidaysString;
+
+    const requestPayload = {
+        email: ownerEmail,
+        holidays: holidaysString
+    };
+    
+    console.log('Syncing holidays to server:', requestPayload);
+
+    return fetch(authBaseUrl + '/owner-working-days', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestPayload)
+    }).then(function (response) {
+        console.log('Sync response status:', response.status, response.statusText);
+        if (!response.ok) {
+            return response.text().then(function (bodyText) {
+                console.error('Sync error response:', bodyText);
+                throw new Error('Failed to update holidays (' + response.status + '): ' + (bodyText || 'Unknown error'));
+            });
+        }
+        return response.json();
+    }).then(function (data) {
+        console.log('Sync success response:', data);
+        if (data && typeof data.holidays === 'string') {
+            ownerWorkingDaysCache = data.holidays;
+            console.log('Updated holidays cache:', ownerWorkingDaysCache);
+        }
+        return data;
+    }).catch(function (error) {
+        console.error('Sync request failed:', error.message || error);
+        throw error;
+    });
+}
+
 // Calendar part
 function CalenderBuild() {
     const firstDayIndex = new Date(currentYear, currentMonth, 1).getDay();
     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const todayRef = new Date(realYear, realMonth, realToday);
     const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     
     const monthDisplay = document.getElementById('monthDisplay');
@@ -28,7 +156,6 @@ function CalenderBuild() {
 
         slot.innerHTML = "";
         slot.className = "day-box";
-        slot.style.border = ""; 
         slot.onclick = null; 
 
         if (i < firstDayIndex || i >= (firstDayIndex + daysInMonth)) {
@@ -36,22 +163,29 @@ function CalenderBuild() {
             slot.classList.add('slot-empty');
         } else {
             const dateNum = i - firstDayIndex + 1;
-            slot.innerText = dateNum;
+            const slotDate = new Date(currentYear, currentMonth, dateNum);
+            const isPastDate = slotDate < todayRef;
+            slot.innerHTML = '<span class="date-num">' + dateNum + '</span>';
 
-            if (holidays.includes(dateNum)) {
+            if (isHolidayForDate(dateNum, currentMonth, currentYear)) {
                 slot.classList.add('is-holiday');
             } else {
                 slot.classList.add('slot-free'); 
             }
 
-            if (dateNum === currentSelectedDay) {
-                slot.style.border = "1.5px solid #4e3505";
-            } 
-            else if (dateNum === realToday && currentMonth === realMonth && currentYear === realYear) {
-                slot.style.border = "2px dashed #f0c312"; 
+            if (dateNum === realToday && currentMonth === realMonth && currentYear === realYear) {
+                slot.classList.add('is-today');
             }
 
-            slot.onclick = () => selectDate(dateNum);
+            if (currentSelectedDay !== null && dateNum === currentSelectedDay) {
+                slot.classList.add('is-selected');
+            }
+
+            if (isPastDate) {
+                slot.classList.add('is-past');
+            } else {
+                slot.onclick = () => selectDate(dateNum);
+            }
         }
     } 
 }
@@ -87,7 +221,7 @@ function selectDate(day) {
 
     const holidayLabel = document.getElementById('holiday-label');
     if (holidayLabel) {
-        if(holidays.includes(day)) {
+        if (isHolidayForDate(day, currentMonth, currentYear)) {
             holidayLabel.innerText = "HOLIDAY";
             holidayLabel.style.display = "block";
             holidayLabel.style.color = "#a47109"
@@ -101,10 +235,24 @@ function selectDate(day) {
     
 
     const holidayBtn = document.querySelector('.btn-holiday');
+    const selectedDateObj = getSelectedDateObject();
+    const canToggleHoliday = isInBookingWindow(selectedDateObj);
     // Update the button text according to the current day type.
     if (holidayBtn) {
-        holidayBtn.innerText = holidays.includes(currentSelectedDay) ? "Remove Holiday" : "Set Holiday";
-        holidayBtn.style.backgroundColor = holidays.includes(day) ? "#1b7450" : "#a47109";
+        holidayBtn.classList.remove('is-selected', 'is-disabled');
+
+        if (!canToggleHoliday) {
+            holidayBtn.innerText = "Set Holiday (next 7 days only)";
+            holidayBtn.disabled = true;
+            holidayBtn.classList.add('is-disabled');
+        } else {
+            const isHoliday = isHolidayForDate(day, currentMonth, currentYear);
+            holidayBtn.disabled = false;
+            holidayBtn.innerText = isHoliday ? "Remove Holiday" : "Set Holiday";
+            if (isHoliday) {
+                holidayBtn.classList.add('is-selected');
+            }
+        }
     }
     
 
@@ -139,7 +287,14 @@ function showToast(message, type = 'working day') {
 
 // set the current day as holiday
 function setAsHoliday() {
-    const index = holidays.indexOf(currentSelectedDay);
+    const selectedDateObj = getSelectedDateObject();
+    if (!isInBookingWindow(selectedDateObj)) {
+        showToast('You can set holidays only within next 7 days from tomorrow.', 'holiday');
+        return;
+    }
+
+    const dateKey = formatDateKey(selectedDateObj);
+    const index = holidays.indexOf(dateKey);
     
 
     const monthNames = ["January", "February", "March", "April", "May", "June", 
@@ -149,16 +304,37 @@ function setAsHoliday() {
 
     if (index === -1) {
         // normal day ---> holiday
-        holidays.push(currentSelectedDay);
-        showToast(`${dateString} marked as Holiday!`, 'holiday');
+        holidays.push(dateKey);
     } else {
         // holiday ---> normal day
         holidays.splice(index, 1);
-        showToast(`${dateString} is now a normal working day.`, 'working day');
     }
 
-    // Refresh the calendar colors
     selectDate(currentSelectedDay);
+
+    syncWorkingDaysToServer()
+        .then(function () {
+            if (index === -1) {
+                showToast(`${dateString} marked as Holiday!`, 'holiday');
+            } else {
+                showToast(`${dateString} is now a normal working day.`, 'working day');
+            }
+        })
+        .catch(function (error) {
+            // Revert local toggle when DB update fails.
+            if (index === -1) {
+                const rollbackIndex = holidays.indexOf(dateKey);
+                if (rollbackIndex !== -1) {
+                    holidays.splice(rollbackIndex, 1);
+                }
+            } else {
+                holidays.push(dateKey);
+            }
+
+            selectDate(currentSelectedDay);
+            showToast('Could not update holiday in database. Please try again.', 'holiday');
+            console.warn('Holiday sync failed:', error && error.message ? error.message : error);
+        });
 }
 
 
@@ -226,8 +402,29 @@ function changeMonth(dir) {
         currentMonth = 0; 
         currentYear++; 
     }
-    currentSelectedDay = (currentMonth === realMonth && currentYear === realYear) ? realToday : 1;
-    CalenderBuild();
+    if (currentMonth === realMonth && currentYear === realYear) {
+        selectDate(realToday);
+    } else {
+        currentSelectedDay = null;
+        const selectedDateEl = document.getElementById('selected-date');
+        if (selectedDateEl) selectedDateEl.innerText = '--';
+
+        const dayNameEl = document.getElementById('selected-day-name');
+        if (dayNameEl) dayNameEl.innerText = 'Select a date';
+
+        const holidayLabel = document.getElementById('holiday-label');
+        if (holidayLabel) holidayLabel.style.display = 'none';
+
+        const holidayBtn = document.querySelector('.btn-holiday');
+        if (holidayBtn) {
+            holidayBtn.innerText = 'Set Holiday';
+            holidayBtn.disabled = true;
+            holidayBtn.classList.remove('is-selected');
+            holidayBtn.classList.add('is-disabled');
+        }
+
+        CalenderBuild();
+    }
 }
 
 function returnToToday() {
@@ -236,8 +433,462 @@ function returnToToday() {
     selectDate(realToday);
 }
 
+function normalizeDisplayName(value) {
+    if (!value) {
+        return "";
+    }
+
+    return String(value).trim();
+}
+
+function applyOwnerBranding() {
+    const brandEl = document.getElementById('ownerBrandName');
+    const salonNameInput = document.getElementById('salonName');
+    const storedSalonName = normalizeDisplayName(localStorage.getItem(OWNER_SALON_NAME_KEY));
+    const storedOwnerName = normalizeDisplayName(localStorage.getItem(OWNER_NAME_KEY));
+    const brandName = storedSalonName || storedOwnerName || 'Snip Me';
+
+    if (brandEl) {
+        brandEl.textContent = brandName;
+    }
+
+    document.title = brandName + ' - Owner Dashboard';
+
+    if (salonNameInput && !salonNameInput.value && storedSalonName) {
+        salonNameInput.value = storedSalonName;
+    }
+}
+
+function refreshOwnerBrandingFromServer() {
+    const ownerEmail = localStorage.getItem(OWNER_EMAIL_KEY);
+    if (!ownerEmail || typeof API_BASE_URL === 'undefined') {
+        return;
+    }
+
+    const endpoint = API_BASE_URL + '/auth/owner-salon?email=' + encodeURIComponent(ownerEmail);
+    fetch(endpoint)
+        .then(function (response) {
+            if (!response.ok) {
+                throw new Error('Owner salon lookup failed with status ' + response.status);
+            }
+            return response.json();
+        })
+        .then(function (data) {
+            if (!data) {
+                return;
+            }
+
+            const salonName = typeof data.salonName === 'string' ? data.salonName.trim() : '';
+            const ownerName = typeof data.ownerName === 'string' ? data.ownerName.trim() : '';
+
+            if (salonName) {
+                localStorage.setItem(OWNER_SALON_NAME_KEY, salonName);
+            }
+            if (ownerName) {
+                localStorage.setItem(OWNER_NAME_KEY, ownerName);
+            }
+
+            applyOwnerBranding();
+        })
+        .catch(function (error) {
+            console.warn('Failed to refresh owner branding from server:', error.message || error);
+        });
+}
+
+function setProfilePreview(photoDataUrl) {
+    const preview = document.getElementById('profilePreview');
+    if (!preview) {
+        return;
+    }
+
+    const hasPhoto = typeof photoDataUrl === 'string' && photoDataUrl.trim().length > 0;
+    if (hasPhoto) {
+        preview.style.backgroundImage = "url('" + photoDataUrl + "')";
+        preview.classList.add('has-image');
+        return;
+    }
+
+    preview.style.backgroundImage = '';
+    preview.classList.remove('has-image');
+}
+
+function parseLatLngFromText(text) {
+    if (!text || typeof text !== 'string') {
+        return null;
+    }
+
+    const match = text.trim().match(/^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/);
+    if (!match) {
+        return null;
+    }
+
+    const lat = parseFloat(match[1]);
+    const lng = parseFloat(match[2]);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+        return null;
+    }
+
+    return { lat: lat, lng: lng };
+}
+
+function isInsideSriLanka(lat, lng) {
+    if (!sriLankaBounds || typeof L === 'undefined') {
+        return true;
+    }
+    return sriLankaBounds.contains(L.latLng(lat, lng));
+}
+
+function normalizeToSriLanka(lat, lng) {
+    if (isInsideSriLanka(lat, lng)) {
+        return { lat: lat, lng: lng };
+    }
+    return { lat: sriLankaCenter.lat, lng: sriLankaCenter.lng };
+}
+
+function setOwnerSelectedLocation(lat, lng, shouldCenterMap) {
+    if (typeof L === 'undefined' || !ownerLocationMapInstance) {
+        return;
+    }
+
+    const safePoint = normalizeToSriLanka(lat, lng);
+    ownerSelectedLatLng = { lat: safePoint.lat, lng: safePoint.lng };
+
+    if (ownerLocationMarker) {
+        ownerLocationMarker.setLatLng([ownerSelectedLatLng.lat, ownerSelectedLatLng.lng]);
+    } else {
+        ownerLocationMarker = L.marker([ownerSelectedLatLng.lat, ownerSelectedLatLng.lng], { draggable: true }).addTo(ownerLocationMapInstance);
+        ownerLocationMarker.on('dragend', function () {
+            const markerPos = ownerLocationMarker.getLatLng();
+            setOwnerSelectedLocation(markerPos.lat, markerPos.lng, false);
+        });
+    }
+
+    if (shouldCenterMap) {
+        ownerLocationMapInstance.setView([ownerSelectedLatLng.lat, ownerSelectedLatLng.lng], 14);
+    }
+}
+
+function ensureOwnerLocationMap() {
+    if (typeof L === 'undefined') {
+        return;
+    }
+
+    if (ownerLocationMapInstance) {
+        return;
+    }
+
+    ownerLocationMapInstance = L.map('ownerLocationMap', {
+        zoomControl: true,
+        maxBounds: sriLankaBounds,
+        maxBoundsViscosity: 1.0,
+        minZoom: 8
+    });
+
+    ownerLocationMapInstance.fitBounds(sriLankaBounds);
+
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 19,
+        attribution: 'Tiles © Esri'
+    }).addTo(ownerLocationMapInstance);
+
+    ownerLocationMapInstance.on('click', function (e) {
+        setOwnerSelectedLocation(e.latlng.lat, e.latlng.lng, false);
+    });
+}
+
+function setupOwnerLocationPicker() {
+    const locationInput = document.getElementById('salonLocation');
+    const ownerLocBtn = document.getElementById('ownerLocBtn');
+    const ownerLocationModal = document.getElementById('ownerLocationModal');
+    const closeOwnerLocationModal = document.getElementById('closeOwnerLocationModal');
+    const cancelOwnerLocationModal = document.getElementById('cancelOwnerLocationModal');
+    const confirmOwnerLocationBtn = document.getElementById('confirmOwnerLocationBtn');
+
+    if (!locationInput || !ownerLocBtn || !ownerLocationModal) {
+        return;
+    }
+
+    function closeOwnerModal() {
+        ownerLocationModal.classList.remove('open');
+        ownerLocationModal.setAttribute('aria-hidden', 'true');
+    }
+
+    function openOwnerModal() {
+        if (typeof L === 'undefined') {
+            showToast('Map is not available right now.', 'holiday');
+            return;
+        }
+
+        ensureOwnerLocationMap();
+        ownerLocationModal.classList.add('open');
+        ownerLocationModal.setAttribute('aria-hidden', 'false');
+
+        const parsed = parseLatLngFromText(locationInput.value);
+        if (parsed) {
+            setOwnerSelectedLocation(parsed.lat, parsed.lng, true);
+        } else if (!ownerSelectedLatLng) {
+            setOwnerSelectedLocation(sriLankaCenter.lat, sriLankaCenter.lng, true);
+        }
+
+        setTimeout(function () {
+            if (ownerLocationMapInstance) {
+                ownerLocationMapInstance.invalidateSize();
+            }
+        }, 120);
+    }
+
+    ownerLocBtn.addEventListener('click', openOwnerModal);
+
+    if (confirmOwnerLocationBtn) {
+        confirmOwnerLocationBtn.addEventListener('click', function () {
+            if (ownerSelectedLatLng) {
+                locationInput.value = ownerSelectedLatLng.lat.toFixed(5) + ', ' + ownerSelectedLatLng.lng.toFixed(5);
+            }
+            closeOwnerModal();
+        });
+    }
+
+    if (closeOwnerLocationModal) {
+        closeOwnerLocationModal.addEventListener('click', closeOwnerModal);
+    }
+
+    if (cancelOwnerLocationModal) {
+        cancelOwnerLocationModal.addEventListener('click', closeOwnerModal);
+    }
+
+    ownerLocationModal.addEventListener('click', function (event) {
+        if (event.target === ownerLocationModal) {
+            closeOwnerModal();
+        }
+    });
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && ownerLocationModal.classList.contains('open')) {
+            closeOwnerModal();
+        }
+    });
+}
+
+function readImageAsDataUrl(file) {
+    return new Promise(function (resolve, reject) {
+        const reader = new FileReader();
+        reader.onload = function () { resolve(reader.result); };
+        reader.onerror = function () { reject(new Error('Could not read image file.')); };
+        reader.readAsDataURL(file);
+    });
+}
+
+function compressImageLowQuality(file) {
+    return readImageAsDataUrl(file).then(function (dataUrl) {
+        return new Promise(function (resolve, reject) {
+            const img = new Image();
+            img.onload = function () {
+                const maxSize = 220;
+                const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+                const width = Math.max(1, Math.round(img.width * scale));
+                const height = Math.max(1, Math.round(img.height * scale));
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+
+                const context = canvas.getContext('2d');
+                if (!context) {
+                    reject(new Error('Could not initialize image canvas.'));
+                    return;
+                }
+
+                context.drawImage(img, 0, 0, width, height);
+                resolve(canvas.toDataURL('image/jpeg', 0.18));
+            };
+            img.onerror = function () { reject(new Error('Invalid image file.')); };
+            img.src = dataUrl;
+        });
+    });
+}
+
+function populateOwnerProfile(profile) {
+    const salonNameInput = document.getElementById('salonName');
+    const salonAddressInput = document.getElementById('salonAddress');
+    const salonLocationInput = document.getElementById('salonLocation');
+    const salonNearestCityInput = document.getElementById('salonNearestCity');
+    const salonStartTimeInput = document.getElementById('salonStartTime');
+    const salonEndTimeInput = document.getElementById('salonEndTime');
+    const salonContactInput = document.getElementById('salonContact');
+
+    const salonName = normalizeDisplayName(profile && profile.salonName);
+    const address = normalizeDisplayName(profile && profile.address);
+    const nearestCity = normalizeDisplayName(profile && (profile.nearestCity || profile.city));
+    const latitude = normalizeDisplayName(profile && profile.latitude);
+    const longitude = normalizeDisplayName(profile && profile.longitude);
+    const location = latitude && longitude ? (latitude + ', ' + longitude) : normalizeDisplayName(profile && profile.location);
+    const startTime = normalizeDisplayName(profile && profile.startTime);
+    const endTime = normalizeDisplayName(profile && profile.endTime);
+    const contact = normalizeDisplayName(profile && profile.contact);
+    const photoLowQuality = normalizeDisplayName(profile && profile.photoLowQuality);
+    const holidaysString = normalizeDisplayName(profile && profile.holidays);
+
+    if (salonNameInput) salonNameInput.value = salonName;
+    if (salonAddressInput) salonAddressInput.value = address;
+    if (salonLocationInput) salonLocationInput.value = location;
+    if (salonNearestCityInput) salonNearestCityInput.value = nearestCity;
+    if (salonStartTimeInput) salonStartTimeInput.value = startTime;
+    if (salonEndTimeInput) salonEndTimeInput.value = endTime;
+    if (salonContactInput) salonContactInput.value = contact;
+
+    const parsedCoords = parseLatLngFromText(location);
+    if (parsedCoords) {
+        ownerSelectedLatLng = { lat: parsedCoords.lat, lng: parsedCoords.lng };
+    }
+
+    ownerProfilePhotoLowQuality = photoLowQuality;
+    setProfilePreview(ownerProfilePhotoLowQuality);
+
+    ownerWorkingDaysCache = holidaysString;
+    if (holidaysString) {
+        holidays = holidaysString.split(',').map(function (item) { return item.trim(); }).filter(Boolean);
+        removePastHolidays(); // Clean up any past holidays from loaded data
+    }
+
+    if (salonName) {
+        localStorage.setItem(OWNER_SALON_NAME_KEY, salonName);
+        applyOwnerBranding();
+    }
+}
+
+function loadOwnerProfile() {
+    const ownerEmail = localStorage.getItem(OWNER_EMAIL_KEY);
+    if (!ownerEmail || typeof AUTH_BASE_URL === 'undefined') {
+        return;
+    }
+
+    const endpoint = AUTH_BASE_URL + '/owner-profile?email=' + encodeURIComponent(ownerEmail);
+    fetch(endpoint)
+        .then(function (response) {
+            if (!response.ok) {
+                throw new Error('Owner profile lookup failed with status ' + response.status);
+            }
+            return response.json();
+        })
+        .then(function (data) {
+            populateOwnerProfile(data || {});
+        })
+        .catch(function (error) {
+            console.warn('Failed to load owner profile:', error.message || error);
+        });
+}
+
+function saveOwnerProfile(event) {
+    event.preventDefault();
+
+    const ownerEmail = localStorage.getItem(OWNER_EMAIL_KEY);
+    if (!ownerEmail || typeof AUTH_BASE_URL === 'undefined') {
+        showToast('Unable to save. Owner session missing.', 'holiday');
+        return;
+    }
+
+    const salonNameInput = document.getElementById('salonName');
+    const salonAddressInput = document.getElementById('salonAddress');
+    const salonLocationInput = document.getElementById('salonLocation');
+    const salonNearestCityInput = document.getElementById('salonNearestCity');
+    const salonStartTimeInput = document.getElementById('salonStartTime');
+    const salonEndTimeInput = document.getElementById('salonEndTime');
+    const salonContactInput = document.getElementById('salonContact');
+
+    const salonName = salonNameInput ? salonNameInput.value.trim() : '';
+    const address = salonAddressInput ? salonAddressInput.value.trim() : '';
+    const location = salonLocationInput ? salonLocationInput.value.trim() : '';
+    const nearestCity = salonNearestCityInput ? salonNearestCityInput.value.trim() : '';
+    const startTime = salonStartTimeInput ? salonStartTimeInput.value.trim() : '';
+    const endTime = salonEndTimeInput ? salonEndTimeInput.value.trim() : '';
+    const contact = salonContactInput ? salonContactInput.value.trim() : '';
+    const parsedCoords = parseLatLngFromText(location);
+    const latitude = parsedCoords ? String(parsedCoords.lat) : '';
+    const longitude = parsedCoords ? String(parsedCoords.lng) : '';
+
+    if (!salonName) {
+        showToast('Salon name is required.', 'holiday');
+        return;
+    }
+
+    if (typeof showLoader === 'function') {
+        showLoader();
+    }
+
+    fetch(AUTH_BASE_URL + '/owner-profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            email: ownerEmail,
+            salonName: salonName,
+            address: address,
+            location: location,
+            nearestCity: nearestCity,
+            startTime: startTime,
+            endTime: endTime,
+            latitude: latitude,
+            longitude: longitude,
+            workingDays: ownerWorkingDaysCache,
+            contact: contact,
+            photoLowQuality: ownerProfilePhotoLowQuality
+        })
+    })
+        .then(function (response) {
+            if (!response.ok) {
+                throw new Error('Save failed with status ' + response.status);
+            }
+            return response.json();
+        })
+        .then(function (data) {
+            populateOwnerProfile(data || {});
+            showToast('Details updated successfully!', 'working day');
+        })
+        .catch(function (error) {
+            console.error('Failed to save owner profile:', error);
+            showToast('Failed to save details.', 'holiday');
+        })
+        .finally(function () {
+            if (typeof hideLoader === 'function') {
+                hideLoader();
+            }
+        });
+}
+
+function setupOwnerProfilePanel() {
+    const detailsForm = document.getElementById('salon-details-form');
+    const imageUpload = document.getElementById('imageUpload');
+
+    if (detailsForm) {
+        detailsForm.addEventListener('submit', saveOwnerProfile);
+    }
+
+    if (imageUpload) {
+        imageUpload.addEventListener('change', function () {
+            const file = imageUpload.files && imageUpload.files[0];
+            if (!file) {
+                return;
+            }
+
+            compressImageLowQuality(file)
+                .then(function (compressedDataUrl) {
+                    ownerProfilePhotoLowQuality = compressedDataUrl;
+                    setProfilePreview(ownerProfilePhotoLowQuality);
+                    showToast('Photo ready. Save changes to apply.', 'working day');
+                })
+                .catch(function (error) {
+                    console.error('Failed to process profile photo:', error);
+                    showToast('Could not process image.', 'holiday');
+                });
+        });
+    }
+}
+
 // Initializing on load
 document.addEventListener('DOMContentLoaded', () => {
+    setupOwnerLocationPicker();
+    setupOwnerProfilePanel();
+    applyOwnerBranding();
+    loadOwnerProfile();
+    refreshOwnerBrandingFromServer();
     CalenderBuild(); 
     selectDate(realToday); 
     startLiveClock();

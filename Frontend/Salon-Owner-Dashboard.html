@@ -5,24 +5,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Snip Me - Owner Dashboard</title>
     <link rel="stylesheet" href="../Frontend/css/Salon-Owner-Styles.css">
+    <link rel="stylesheet" href="css/loader.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
+
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="glass-card">
+            <svg class="scissor-loader" viewBox="0 0 100 50" xmlns="http://www.w3.org/2000/svg">
+                <g fill="none" stroke="rgba(255, 255, 255, 0.85)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M 28 15 C 28 5 12 5 12 15 C 12 25 25 24 40 25" class="wave-line delay-1" />
+                    <path d="M 28 35 C 28 45 12 45 12 35 C 12 25 25 26 40 25" class="wave-line delay-1" />
+                    <circle cx="20" cy="15" r="4.5" class="wave-line delay-2" />
+                    <circle cx="20" cy="35" r="4.5" class="wave-line delay-2" />
+                    <path d="M 40 25 L 85 31 L 45 25" class="wave-line delay-3" />
+                    <path d="M 40 25 L 85 19 L 45 25" class="wave-line delay-3" />
+                    <circle cx="43" cy="25" r="1.5" class="wave-line delay-4" />
+                </g>
+            </svg>
+            <div class="loader-text">
+                <span>.</span><span>.</span><span>.</span>
+            </div>
+        </div>
+    </div>
     
     <div class="bg-animation">
         <div class="bubble"></div><div class="bubble"></div><div class="bubble"></div>
-        </div><div class="bubble"></div>
         <div class="bubble"></div><div class="bubble"></div><div class="bubble"></div>
         <div class="bubble"></div><div class="bubble"></div><div class="bubble"></div>
     </div>
 
     <div class="dashboard-container">
         <nav class="sidebar">
-            <div class="logo"><h2>Snip Me</h2></div>
+            <div class="logo"><h2 id="ownerBrandName">Snip Me</h2></div>
             <ul>
                 <li class="nav-link active" data-target="calendar-section"><i class="fas fa-calendar-alt"></i> Calendar</li>
-                <li class="nav-link active" data-target="details-section"><i class="fas fa-info-circle"></i> Details</li>
-                 <li class="nav-link active" data-target="services-section"><i class="fas fa-info-circle"></i> Services</li>
+                <li class="nav-link" data-target="details-section"><i class="fas fa-info-circle"></i> Details</li>
+                 <li class="nav-link" data-target="services-section"><i class="fas fa-info-circle"></i> Services</li>
             </ul>
         </nav>
 
@@ -107,11 +127,36 @@
                             </div>
                             <br>
                             <div class="form-group">
+                                <label>Map Location</label>
+                                <div class="location-wrapper">
+                                    <input type="text" id="salonLocation" placeholder="Pick map coordinates">
+                                    <button type="button" id="ownerLocBtn" class="owner-loc-btn" title="Pick location on map" aria-label="Pick location on map">
+                                        <i class="fas fa-map-marker-alt" aria-hidden="true"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <br>
+                            <div class="form-group">
+                                <label>Nearest City</label>
+                                <input type="text" id="salonNearestCity" placeholder="Enter nearest city">
+                            </div>
+                            <br>
+                            <div class="form-group">
+                                <label>Start Time</label>
+                                <input type="time" id="salonStartTime" placeholder="Select start time">
+                            </div>
+                            <br>
+                            <div class="form-group">
+                                <label>End Time</label>
+                                <input type="time" id="salonEndTime" placeholder="Select end time">
+                            </div>
+                            <br>
+                            <div class="form-group">
                                 <label>Contact Number</label>
                                 <input type="text" id="salonContact" placeholder="+94 00 000 000">
                             </div>
                             <br>
-                            <button type="button" class="btn btn-save-details" onclick="showToast('Details updated successfully!', 'working day')">
+                            <button type="submit" class="btn btn-save-details">
                                 Save Changes
                             </button>
                         </form>
@@ -258,6 +303,23 @@
         </div>
     </div>
 
+    <div id="ownerLocationModal" class="location-modal-overlay" aria-hidden="true">
+        <div class="location-modal" role="dialog" aria-modal="true" aria-labelledby="ownerLocationModalTitle">
+            <div class="location-modal-header">
+                <h4 id="ownerLocationModalTitle">Select Location</h4>
+                <button type="button" id="closeOwnerLocationModal" class="location-modal-close" aria-label="Close location picker">&times;</button>
+            </div>
+            <div id="ownerLocationMap" class="location-map" aria-label="Location map"></div>
+            <div class="location-modal-actions">
+                <button type="button" id="cancelOwnerLocationModal" class="btn-location-secondary">Close</button>
+                <button type="button" id="confirmOwnerLocationBtn" class="btn-location-primary">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api-config.js"></script>
+    <script src="js/loader.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="../Frontend/js/Salon-Owner-Script.js"></script>
     <script src="js/devtools-warning.js"></script>
     <div id="toast">Notification Message Here</div>

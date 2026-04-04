@@ -38,6 +38,22 @@ body::after {
     z-index: 1;
 }
 
+.auth-page-back {
+    position: absolute;
+    top: 30px;
+    left: 30px;
+    color: #ffffff;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 16px;
+    letter-spacing: 0.02em;
+    z-index: 3;
+}
+
+.auth-page-back:hover {
+    text-decoration: underline;
+}
+
 /* Wrapper */
 .login-wrapper {
     width: 100%;
@@ -257,6 +273,12 @@ footer a {
         padding-left: 16px;
         padding-right: 16px;
         padding-bottom: 90px;
+    }
+
+    .auth-page-back {
+        top: 14px;
+        left: 16px;
+        font-size: 15px;
     }
 
     .login-box {

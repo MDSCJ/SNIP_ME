@@ -37,16 +37,21 @@
 
     <!-- Center Content -->
     <div class="center-container">
+        <div class="role-group" id="customerRoleGroup">
+            <button class="btn-outline role-main-btn" type="button">Log in as Customer</button>
+            <div class="role-options">
+                <button class="btn-outline role-option-btn" type="button" data-target="customer_login.html?mode=signin">Sign In</button>
+                <button class="btn-outline role-option-btn" type="button" data-target="customer_login.html?mode=signup">Sign Up</button>
+            </div>
+        </div>
 
-        <button class="btn-outline"
-            onclick="window.location.href='customer_login.html'">
-            Log in as Customer
-        </button>
-
-        <button class="btn-outline"
-            onclick="window.location.href='salon-owner-login.html'">
-            Log in as Salon Owner
-        </button>
+        <div class="role-group" id="ownerRoleGroup">
+            <button class="btn-outline role-main-btn" type="button">Log in as Salon Owner</button>
+            <div class="role-options">
+                <button class="btn-outline role-option-btn" type="button" data-target="salon-owner-login.html?mode=signin">Sign In</button>
+                <button class="btn-outline role-option-btn" type="button" data-target="salon-owner-login.html?mode=signup">Sign Up</button>
+            </div>
+        </div>
 
         <button class="btn-outline"
             onclick="window.location.href='admin-login.html'">
@@ -68,6 +73,7 @@
     document.addEventListener('DOMContentLoaded', function () {
     var goToOwnerDashboardBtn = document.getElementById('goToOwnerDashboardBtn');
     var goToAdminDashboardBtn = document.getElementById('goToAdminDashboardBtn');
+    var roleGroups = document.querySelectorAll('.role-group');
 
     function isValidJwt(token) {
         if (!token || token.split('.').length !== 3) {
@@ -97,6 +103,8 @@
         localStorage.removeItem('snipmeOwnerToken');
         localStorage.removeItem('snipmeOwnerEmail');
         localStorage.removeItem('snipmeOwnerName');
+        localStorage.removeItem('snipmeOwnerSalonName');
+        localStorage.removeItem('snipmeOwnerUserId');
         localStorage.removeItem('snipmeOwnerPhone');
     }
 
@@ -115,6 +123,30 @@
     if (goToAdminDashboardBtn && adminSessionValid) {
         goToAdminDashboardBtn.style.display = 'block';
     }
+
+    roleGroups.forEach(function (group) {
+        var mainBtn = group.querySelector('.role-main-btn');
+        var optionBtns = group.querySelectorAll('.role-option-btn');
+
+        if (mainBtn) {
+            mainBtn.addEventListener('click', function () {
+                var alreadyActive = group.classList.contains('active');
+                roleGroups.forEach(function (g) { g.classList.remove('active'); });
+                if (!alreadyActive) {
+                    group.classList.add('active');
+                }
+            });
+        }
+
+        optionBtns.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var target = btn.getAttribute('data-target');
+                if (target) {
+                    window.location.href = target;
+                }
+            });
+        });
+    });
 
 });
 </script>

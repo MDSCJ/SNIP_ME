@@ -38,6 +38,36 @@ body::after {
     z-index: 2;
 }
 
+.role-group {
+    margin: 16px auto;
+    width: 340px;
+}
+
+.role-group .role-main-btn,
+.role-group .role-option-btn,
+.role-group .role-back-btn {
+    width: 100%;
+}
+
+.role-options {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transform: translateY(-6px);
+    transition: max-height 0.35s ease, opacity 0.28s ease, transform 0.28s ease;
+}
+
+.role-group.active .role-options {
+    max-height: 280px;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.role-option-btn,
+.role-back-btn {
+    margin-top: 10px;
+}
+
 /* Button spacing */
 .center-container button {
     margin: 18px 0;
