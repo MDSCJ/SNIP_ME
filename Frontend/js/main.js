@@ -13,23 +13,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- 2. Hamburger Menu Toggle ---
-    const hamburger = document.querySelector(".hamburger") || document.querySelector(".nav-toggle");
-    const navMenu = document.querySelector(".nav-links") || document.querySelector(".nav-bar ul");
+    const navToggle = document.querySelector('.nav-toggle');
+    const navMenu = document.querySelector('.nav-bar ul');
 
-    if (hamburger && navMenu) {
-        hamburger.addEventListener("click", () => {
-            hamburger.classList.toggle("active");
-            navMenu.classList.toggle("active");
-            navMenu.classList.toggle("open");
+    if (navToggle && navMenu) {
+        navToggle.addEventListener('click', () => {
+            navMenu.classList.toggle('open');
         });
 
-        // Close menu when a link is clicked
-        document.querySelectorAll(".nav-bar ul a, .nav-links a").forEach(n => n.addEventListener("click", () => {
-            hamburger.classList.remove("active");
-            navMenu.classList.remove("active");
-            navMenu.classList.remove("open");
-        }));
+        // Optional: Close menu when a link is clicked
+        document.querySelectorAll('.nav-bar ul li a').forEach(link => {
+            link.addEventListener('click', () => {
+                navMenu.classList.remove('open');
+            });
+        });
     }
 });
 

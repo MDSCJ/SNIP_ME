@@ -4,7 +4,7 @@ const isLocalFrontend =
 	window.location.hostname === "localhost" ||
 	window.location.hostname === "127.0.0.1";
 
-const localApiRoot = localStorage.getItem("snipmeApiRoot") || "http://localhost:8081/api";
+const localApiRoot = localStorage.getItem("snipmeApiRoot") || "http://localhost:8080/api";
 const productionApiRoot = "https://snip-me.onrender.com/api";
 
 const API_BASE_URL = isLocalFrontend ? localApiRoot : productionApiRoot;

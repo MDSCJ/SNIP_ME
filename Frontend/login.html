@@ -21,7 +21,7 @@
     </header>
 
     <nav class="nav-bar">
-        <div class="nav-toggle">&#9776;</div>
+        <button class="nav-toggle" aria-label="open menu">☰</button>
         <ul>
             <li><a href="../index.html" >Home</a></li>
             <li><a href="about.html">About Us</a></li>
@@ -66,15 +66,6 @@
     </div>
     <script>
     document.addEventListener('DOMContentLoaded', function () {
-    var toggle = document.querySelector('.nav-toggle');
-    var navList = document.querySelector('.nav-bar ul');
-
-    if (toggle && navList) {
-        toggle.addEventListener('click', function () {
-            navList.classList.toggle('open');
-        });
-    }
-
     var goToOwnerDashboardBtn = document.getElementById('goToOwnerDashboardBtn');
     var goToAdminDashboardBtn = document.getElementById('goToAdminDashboardBtn');
 
@@ -125,12 +116,6 @@
         goToAdminDashboardBtn.style.display = 'block';
     }
 
-    var navLinks = document.querySelectorAll('.nav-bar ul li a');
-    navLinks.forEach(function(link) {
-        link.addEventListener('click', function() {
-            navList.classList.remove('open');
-        });
-    });
 });
 </script>
     <footer>
