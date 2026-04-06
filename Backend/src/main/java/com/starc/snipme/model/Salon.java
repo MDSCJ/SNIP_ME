@@ -40,6 +40,14 @@ public class Salon {
     @Column(name = "owner_user_id", unique = true)
     private Long ownerUserId;
 
+    @Lob
+    @Column(name = "photo_low_quality", columnDefinition = "LONGTEXT")
+    private String photoLowQuality;
+
+    @Lob
+    @Column(name = "holidays", columnDefinition = "LONGTEXT")
+    private String holidays;
+
     // Default constructor
     public Salon() {}
 
@@ -70,6 +78,12 @@ public class Salon {
 
     public Long getOwnerUserId() { return ownerUserId; }
     public void setOwnerUserId(Long ownerUserId) { this.ownerUserId = ownerUserId; }
+
+    public String getPhotoLowQuality() { return photoLowQuality; }
+    public void setPhotoLowQuality(String photoLowQuality) { this.photoLowQuality = photoLowQuality; }
+
+    public String getHolidays() { return holidays; }
+    public void setHolidays(String holidays) { this.holidays = holidays; }
 
     public int getNOfRatings() { return nOfRatings; }
     public void setNOfRatings(int nOfRatings) { this.nOfRatings = nOfRatings; }

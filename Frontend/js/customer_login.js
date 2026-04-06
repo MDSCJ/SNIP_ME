@@ -39,6 +39,21 @@ document.addEventListener("DOMContentLoaded", function () {
         if (show) show.classList.remove("hidden-view");
     }
 
+    function applyInitialModeFromQuery() {
+        const mode = (new URLSearchParams(window.location.search).get("mode") || "").toLowerCase();
+        if (mode === "signin") {
+            switchView(loginView);
+            return;
+        }
+        if (mode === "signup") {
+            switchView(signupView);
+            return;
+        }
+        if (mode === "forgot") {
+            switchView(forgotView);
+        }
+    }
+
     function setupPasswordToggle(toggleId, inputId, eyeOpenId, eyeClosedId) {
         const toggleBtn = document.getElementById(toggleId);
         const input = document.getElementById(inputId);
@@ -174,6 +189,7 @@ document.addEventListener("DOMContentLoaded", function () {
     setupPasswordToggle("toggleLoginPassword", "loginPassword", "loginEyeOpen", "loginEyeClosed");
     setupPasswordToggle("toggleSignupPassword", "signupPassword", "signupEyeOpen", "signupEyeClosed");
     setupPasswordToggle("toggleConfirmPassword", "signupConfirmPassword", "confirmEyeOpen", "confirmEyeClosed");
+    applyInitialModeFromQuery();
 
     if (showSignup) {
         showSignup.addEventListener("click", function (e) {

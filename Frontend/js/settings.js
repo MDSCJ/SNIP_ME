@@ -151,7 +151,12 @@ document.addEventListener("DOMContentLoaded", function () {
         var bookings = JSON.parse(localStorage.getItem('userBookings') || '[]');
         
         if (!bookings || bookings.length === 0) {
-            bookingsContainer.innerHTML = '<p class="no-bookings">No bookings yet. <a href="booking.html">Book an appointment now!</a></p>';
+            bookingsContainer.innerHTML = `
+                <div class="no-bookings-wrap">
+                    <p class="no-bookings">No bookings yet.</p>
+                    <a href="booking.html" class="continue-search-btn">Continue Searching</a>
+                </div>
+            `;
             return;
         }
         

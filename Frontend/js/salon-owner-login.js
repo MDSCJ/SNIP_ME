@@ -2,6 +2,8 @@ document.addEventListener("DOMContentLoaded", function () {
     // AUTH_BASE_URL is defined globally in api-config.js
     const OWNER_LOGIN_FLAG_KEY = "snipmeOwnerLoggedIn";
     const OWNER_NAME_KEY = "snipmeOwnerName";
+    const OWNER_SALON_NAME_KEY = "snipmeOwnerSalonName";
+    const OWNER_USER_ID_KEY = "snipmeOwnerUserId";
     const OWNER_EMAIL_KEY = "snipmeOwnerEmail";
     const OWNER_PHONE_KEY = "snipmeOwnerPhone";
     const OWNER_TOKEN_KEY = "snipmeOwnerToken";
@@ -18,6 +20,28 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const loginForm = document.getElementById("ownerLoginForm");
     const signupForm = document.getElementById("ownerSignupForm");
+
+    function switchOwnerView(showLoginView) {
+        if (showLoginView) {
+            signupView.classList.add("hidden-view");
+            loginView.classList.remove("hidden-view");
+            return;
+        }
+
+        loginView.classList.add("hidden-view");
+        signupView.classList.remove("hidden-view");
+    }
+
+    function applyInitialModeFromQuery() {
+        const mode = (new URLSearchParams(window.location.search).get("mode") || "").toLowerCase();
+        if (mode === "signin") {
+            switchOwnerView(true);
+            return;
+        }
+        if (mode === "signup") {
+            switchOwnerView(false);
+        }
+    }
 
     function setupPasswordToggle(toggleId, inputId, eyeOpenId, eyeClosedId) {
         const toggleBtn = document.getElementById(toggleId);
@@ -86,6 +110,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
             localStorage.setItem(OWNER_LOGIN_FLAG_KEY, "true");
             localStorage.setItem(OWNER_NAME_KEY, ownerName);
+            localStorage.removeItem(OWNER_SALON_NAME_KEY);
+            localStorage.removeItem(OWNER_USER_ID_KEY);
             if (payload.email) {
                 localStorage.setItem(OWNER_EMAIL_KEY, payload.email);
             }
@@ -145,20 +171,19 @@ document.addEventListener("DOMContentLoaded", function () {
     setupPasswordToggle("toggleOwnerLoginPassword", "ownerLoginPassword", "ownerLoginEyeOpen", "ownerLoginEyeClosed");
     setupPasswordToggle("toggleOwnerSignupPassword", "ownerSignupPassword", "ownerSignupEyeOpen", "ownerSignupEyeClosed");
     setupPasswordToggle("toggleOwnerConfirmPassword", "ownerConfirmPassword", "ownerConfirmEyeOpen", "ownerConfirmEyeClosed");
+    applyInitialModeFromQuery();
 
     if (showSignup) {
         showSignup.addEventListener("click", function (e) {
             e.preventDefault();
-            loginView.classList.add("hidden-view");
-            signupView.classList.remove("hidden-view");
+            switchOwnerView(false);
         });
     }
 
     if (showLogin) {
         showLogin.addEventListener("click", function (e) {
             e.preventDefault();
-            signupView.classList.add("hidden-view");
-            loginView.classList.remove("hidden-view");
+            switchOwnerView(true);
         });
     }
 
@@ -212,10 +237,18 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
 
                     const serverName = typeof result.data.name === "string" ? result.data.name.trim() : "";
+                    const serverSalonName = typeof result.data.salonName === "string" ? result.data.salonName.trim() : "";
+                    const serverOwnerUserId = result.data.userId != null ? String(result.data.userId) : "";
                     const serverPhone = typeof result.data.phoneNumber === "string" ? result.data.phoneNumber.trim() : "";
                     const ownerName = serverName || email.split("@")[0] || "Salon Owner";
                     localStorage.setItem(OWNER_LOGIN_FLAG_KEY, "true");
                     localStorage.setItem(OWNER_NAME_KEY, ownerName);
+                    if (serverSalonName) {
+                        localStorage.setItem(OWNER_SALON_NAME_KEY, serverSalonName);
+                    }
+                    if (serverOwnerUserId) {
+                        localStorage.setItem(OWNER_USER_ID_KEY, serverOwnerUserId);
+                    }
                     localStorage.setItem(OWNER_EMAIL_KEY, email);
                     if (serverPhone) {
                         localStorage.setItem(OWNER_PHONE_KEY, serverPhone);
@@ -299,6 +332,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
 
                     alert("Salon owner signup successful. Please sign in.");
+                    localStorage.setItem(OWNER_SALON_NAME_KEY, salonName);
                     signupView.classList.add("hidden-view");
                     loginView.classList.remove("hidden-view");
                     document.getElementById("ownerLoginEmail").value = email;
