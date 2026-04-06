@@ -4,11 +4,22 @@ let currentYear = new Date().getFullYear();
 const OWNER_NAME_KEY = "snipmeOwnerName";
 const OWNER_SALON_NAME_KEY = "snipmeOwnerSalonName";
 const OWNER_EMAIL_KEY = "snipmeOwnerEmail";
+const OWNER_TOKEN_KEY = "snipmeOwnerToken";
 let ownerProfilePhotoLowQuality = "";
 let ownerWorkingDaysCache = "";
 let ownerLocationMapInstance = null;
 let ownerLocationMarker = null;
 let ownerSelectedLatLng = null;
+
+// Helper function to get authorization headers
+function getAuthHeaders() {
+    const token = localStorage.getItem(OWNER_TOKEN_KEY);
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) {
+        headers['Authorization'] = 'Bearer ' + token;
+    }
+    return headers;
+}
 
 const sriLankaBounds = (typeof L !== 'undefined')
     ? L.latLngBounds(L.latLng(5.85, 79.45), L.latLng(10.05, 81.98))
@@ -963,7 +974,9 @@ function loadOwnerServices() {
 function loadAvailableServices() {
     const apiUrl = API_BASE_URL + '/salon-owner/services/available';
     
-    fetch(apiUrl)
+    fetch(apiUrl, {
+        headers: getAuthHeaders()
+    })
         .then(response => {
             if (!response.ok) throw new Error('Failed to load available services');
             return response.json();
@@ -982,19 +995,23 @@ function loadAvailableServices() {
 }
 
 function fetchServicesForSalon(salonId) {
-    const apiUrl = API_BASE_URL + '/salon-owner/services/by-salon/' + salonId;
+    // Fetch services with pricing (these are services the salon owner has added)
+    const apiUrl = API_BASE_URL + '/salon-owner/services/with-prices/' + salonId;
     
-    return fetch(apiUrl)
+    return fetch(apiUrl, {
+        headers: getAuthHeaders()
+    })
         .then(response => {
             if (!response.ok) {
-                console.warn('Could not fetch salon-specific services, loading available services');
+                console.warn('Could not fetch salon services with pricing');
                 return null;
             }
             return response.json();
         })
         .then(data => {
             if (!data) {
-                loadAvailableServices();
+                displayNoServices();
+                loadServiceRequests(salonId);
                 return;
             }
             
@@ -1005,12 +1022,21 @@ function fetchServicesForSalon(salonId) {
                 return;
             }
 
-            displayServices(data.services);
+            // Convert the pricing data format to match displayServices expectations
+            const servicesForDisplay = data.services.map(service => ({
+                id: service.serviceId,
+                name: service.serviceName,
+                price: service.price,
+                pricingId: service.pricingId
+            }));
+
+            displayServices(servicesForDisplay);
             loadServiceRequests(salonId);
         })
         .catch(error => {
             console.error('Error fetching services:', error);
-            loadAvailableServices();
+            displayNoServices();
+            loadServiceRequests(salonId);
         });
 }
 
@@ -1031,11 +1057,12 @@ function displayServices(services) {
     
     services.forEach(service => {
         const createdDate = service.createdAt ? new Date(service.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+        const priceDisplay = service.price ? `₨${parseFloat(service.price).toFixed(2)}` : 'N/A';
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${service.name || 'Unknown'}</td>
             <td><span class="status-tag active">Available</span></td>
-            <td>${createdDate}</td>
+            <td>${priceDisplay}</td>
         `;
         tableBody.appendChild(row);
     });
@@ -1052,7 +1079,9 @@ function displayNoServices() {
 function loadServiceRequests(salonId) {
     const apiUrl = API_BASE_URL + '/salon-owner/services/requests/' + salonId;
     
-    fetch(apiUrl)
+    fetch(apiUrl, {
+        headers: getAuthHeaders()
+    })
         .then(response => response.ok ? response.json() : Promise.reject('Failed to load requests'))
         .then(data => {
             displayServiceRequests(data.requests || []);
@@ -1127,7 +1156,7 @@ function submitCustomService() {
             // Submit the service request
             return fetch(API_BASE_URL + '/salon-owner/services/request-custom', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getAuthHeaders(),
                 body: JSON.stringify({
                     salonId: profile.salonId,
                     serviceName: serviceName.trim(),
@@ -1242,7 +1271,9 @@ function loadAvailableServicesForPricing() {
             console.log('loadAvailableServicesForPricing: Got salon ID:', profile.salonId);
 
             // Load all available services
-            return fetch(API_BASE_URL + '/salon-owner/services/available')
+            return fetch(API_BASE_URL + '/salon-owner/services/available', {
+                headers: getAuthHeaders()
+            })
                 .then(response => {
                     console.log('Available services response status:', response.status);
                     if (!response.ok) {
@@ -1262,7 +1293,9 @@ function loadAvailableServicesForPricing() {
                     console.log('loadAvailableServicesForPricing: Found', data.services.length, 'services');
 
                     // Get services already added for this salon
-                    return fetch(API_BASE_URL + '/salon-owner/services/with-prices/' + profile.salonId)
+                    return fetch(API_BASE_URL + '/salon-owner/services/with-prices/' + profile.salonId, {
+                        headers: getAuthHeaders()
+                    })
                         .then(response => {
                             console.log('With-prices response status:', response.status);
                             if (!response.ok) {
@@ -1412,7 +1445,7 @@ function submitServicePricing() {
 
     fetch(API_BASE_URL + '/salon-owner/services/add-available-service', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(payload)
     })
         .then(response => {
