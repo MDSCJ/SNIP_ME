@@ -1,8 +1,10 @@
 package com.starc.snipme.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import com.starc.snipme.model.Salon;
@@ -11,4 +13,7 @@ import com.starc.snipme.model.Salon;
 public interface SalonRepository extends JpaRepository<Salon, Long> {
 	Optional<Salon> findByOwnerUserId(Long ownerUserId);
 	Optional<Salon> findByEmailIgnoreCase(String email);
+	
+	@Query("SELECT s FROM Salon s WHERE s.isActive = true ORDER BY s.rate DESC LIMIT 10")
+	List<Salon> findTrendingSalons();
 }

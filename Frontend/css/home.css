@@ -453,6 +453,103 @@ body.modal-open {
     border: 1px solid #2f2f2f;
     position: relative;
     overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.salon-img.no-image {
+    background: linear-gradient(135deg, rgba(50, 50, 50, 0.9), rgba(40, 40, 40, 0.9));
+}
+
+.salon-img.no-image i {
+    font-size: 4rem;
+    color: rgba(244, 196, 0, 0.4);
+    opacity: 0.5;
+}
+
+/* Skeleton Loading Styles */
+.salon-card.skeleton-loader {
+    pointer-events: none;
+    background: linear-gradient(145deg, rgba(20, 20, 22, 0.8), rgba(25, 25, 28, 0.9));
+}
+
+.skeleton-loader .salon-title,
+.skeleton-loader .salon-services,
+.skeleton-loader .salon-rating,
+.skeleton-loader .salon-details {
+    display: none;
+}
+
+.skeleton-loader .salon-img,
+.skeleton-loader .salon-actions {
+    display: none;
+}
+
+.skeleton-title {
+    height: 24px;
+    background: linear-gradient(90deg, rgba(244, 196, 0, 0.2) 25%, rgba(244, 196, 0, 0.1) 50%, rgba(244, 196, 0, 0.2) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+    border-radius: 8px;
+    margin: 0 18px 12px;
+    width: 70%;
+}
+
+.skeleton-img {
+    height: 180px;
+    margin: 0 18px;
+    border-radius: 18px;
+    background: linear-gradient(90deg, rgba(244, 196, 0, 0.15) 25%, rgba(244, 196, 0, 0.08) 50%, rgba(244, 196, 0, 0.15) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+    border: 1px solid #2f2f2f;
+}
+
+.skeleton-services {
+    height: 60px;
+    background: linear-gradient(90deg, rgba(244, 196, 0, 0.2) 25%, rgba(244, 196, 0, 0.1) 50%, rgba(244, 196, 0, 0.2) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+    border-radius: 8px;
+    margin: 12px 18px;
+}
+
+.skeleton-rating {
+    height: 20px;
+    background: linear-gradient(90deg, rgba(244, 196, 0, 0.2) 25%, rgba(244, 196, 0, 0.1) 50%, rgba(244, 196, 0, 0.2) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+    border-radius: 8px;
+    margin: 8px 18px;
+    width: 40%;
+}
+
+.skeleton-buttons {
+    display: flex;
+    gap: 10px;
+    margin: 12px 18px;
+    padding-top: 8px;
+}
+
+.skeleton-buttons::before,
+.skeleton-buttons::after {
+    content: '';
+    flex: 1;
+    height: 36px;
+    background: linear-gradient(90deg, rgba(244, 196, 0, 0.2) 25%, rgba(244, 196, 0, 0.1) 50%, rgba(244, 196, 0, 0.2) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+    border-radius: 6px;
+}
+
+@keyframes skeleton-loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
 }
 
 .salon-img::after {
