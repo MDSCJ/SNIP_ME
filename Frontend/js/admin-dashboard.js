@@ -388,6 +388,122 @@
         refreshSalonsBtn.addEventListener("click", fetchSalons);
     }
 
+    // Notification System
+    const notificationBellBtn = document.getElementById("notificationBellBtn");
+    const notificationBadge = document.getElementById("notificationBadge");
+    const notificationsModal = document.getElementById("notificationsModal");
+    const notificationsList = document.getElementById("notificationsList");
+
+    if (notificationBellBtn) {
+        notificationBellBtn.addEventListener("click", function () {
+            loadAndDisplayNotifications();
+        });
+    }
+
+    function loadAndDisplayNotifications() {
+        const url = apiRoot + "/admin/notifications";
+        
+        fetch(url, {
+            method: "GET",
+            headers: headers
+        })
+        .then(response => {
+            if (!response.ok) throw new Error("Failed to load notifications");
+            return response.json();
+        })
+        .then(data => {
+            displayNotifications(data.notifications || []);
+            if (notificationsModal) {
+                notificationsModal.style.display = "flex";
+            }
+        })
+        .catch(error => {
+            console.error("Error loading notifications:", error);
+            if (notificationsList) {
+                notificationsList.innerHTML = '<p style="color: red; padding: 20px;">Failed to load notifications</p>';
+            }
+        });
+    }
+
+    function displayNotifications(notifications) {
+        if (!notificationsList) return;
+
+        if (!notifications || notifications.length === 0) {
+            notificationsList.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No notifications</p>';
+            return;
+        }
+
+        let html = '';
+        notifications.forEach(notif => {
+            const date = new Date(notif.createdAt).toLocaleString();
+            const readClass = notif.isRead ? 'read' : 'unread';
+            html += `
+                <div class="notification-item ${readClass}">
+                    <div class="notification-content">
+                        <h4>${notif.message}</h4>
+                        <p class="notification-date">${date}</p>
+                    </div>
+                    ${!notif.isRead ? `<button class="mark-read-btn" onclick="markNotificationAsRead(${notif.id})" type="button">Mark as Read</button>` : ''}
+                </div>
+            `;
+        });
+
+        notificationsList.innerHTML = html;
+    }
+
+    window.markNotificationAsRead = function(notificationId) {
+        const url = apiRoot + "/admin/notifications/" + notificationId + "/read";
+        
+        fetch(url, {
+            method: "PUT",
+            headers: headers
+        })
+        .then(response => {
+            if (!response.ok) throw new Error("Failed to mark notification as read");
+            return response.json();
+        })
+        .then(() => {
+            loadAndDisplayNotifications();
+            updateNotificationBadge();
+        })
+        .catch(error => console.error("Error marking notification as read:", error));
+    };
+
+    function updateNotificationBadge() {
+        const url = apiRoot + "/admin/notifications/unread-count";
+        
+        fetch(url, {
+            method: "GET",
+            headers: headers
+        })
+        .then(response => {
+            if (!response.ok) throw new Error("Failed to get notification count");
+            return response.json();
+        })
+        .then(data => {
+            const count = data.unreadCount || 0;
+            if (notificationBadge) {
+                if (count > 0) {
+                    notificationBadge.textContent = count;
+                    notificationBadge.style.display = "block";
+                } else {
+                    notificationBadge.style.display = "none";
+                }
+            }
+        })
+        .catch(error => console.error("Error updating notification badge:", error));
+    }
+
+    window.closeNotificationsModal = function() {
+        if (notificationsModal) {
+            notificationsModal.style.display = "none";
+        }
+    };
+
+    // Update notification badge on page load and every 30 seconds
+    updateNotificationBadge();
+    setInterval(updateNotificationBadge, 30000);
+
     if (userSearch) {
         userSearch.addEventListener("input", fetchUsers);
     }

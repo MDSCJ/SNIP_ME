@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/admin-dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body class="dark-theme">
     <div class="matrix-overlay" aria-hidden="true"></div>
@@ -15,6 +16,12 @@
             <p id="adminIdentity">Signed in as admin</p>
         </div>
         <div class="actions-wrap">
+            <div class="notification-bell-wrapper" style="position: relative;">
+                <button id="notificationBellBtn" class="notification-bell" type="button" title="View notifications">
+                    <i class="fas fa-bell"></i>
+                    <span id="notificationBadge" class="notification-badge" style="display: none;">0</span>
+                </button>
+            </div>
             <a class="ghost-btn" href="../index.html">Back to Site</a>
             <button id="adminLogoutBtn" class="danger-btn" type="button">Logout</button>
         </div>
@@ -100,6 +107,19 @@
                 </div>
             </article>
         </section>
+
+        <!-- Notifications Modal -->
+        <div id="notificationsModal" class="modal" style="display: none;">
+            <div class="modal-content notifications-modal">
+                <div class="modal-header">
+                    <h2>Service Request Notifications</h2>
+                    <button class="modal-close" onclick="closeNotificationsModal()" type="button">&times;</button>
+                </div>
+                <div class="notifications-list" id="notificationsList">
+                    <p style="text-align: center; color: #999; padding: 20px;">No notifications</p>
+                </div>
+            </div>
+        </div>
     </main>
 
     <script src="js/api-config.js"></script>

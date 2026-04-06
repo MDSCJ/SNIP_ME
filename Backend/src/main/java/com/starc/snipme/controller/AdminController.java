@@ -19,11 +19,15 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.DeleteMapping;
 
+import com.starc.snipme.model.AdminNotification;
 import com.starc.snipme.model.Salon;
 import com.starc.snipme.model.ServiceItem;
+import com.starc.snipme.model.ServiceRequest;
 import com.starc.snipme.model.User;
+import com.starc.snipme.repository.AdminNotificationRepository;
 import com.starc.snipme.repository.SalonRepository;
 import com.starc.snipme.repository.ServiceItemRepository;
+import com.starc.snipme.repository.ServiceRequestRepository;
 import com.starc.snipme.repository.UserRepository;
 import com.starc.snipme.service.LoginSessionTracker;
 
@@ -34,15 +38,21 @@ public class AdminController {
     private final UserRepository userRepository;
     private final SalonRepository salonRepository;
     private final ServiceItemRepository serviceItemRepository;
+    private final ServiceRequestRepository serviceRequestRepository;
+    private final AdminNotificationRepository adminNotificationRepository;
     private final LoginSessionTracker loginSessionTracker;
 
     public AdminController(UserRepository userRepository,
                            SalonRepository salonRepository,
                            ServiceItemRepository serviceItemRepository,
+                           ServiceRequestRepository serviceRequestRepository,
+                           AdminNotificationRepository adminNotificationRepository,
                            LoginSessionTracker loginSessionTracker) {
         this.userRepository = userRepository;
         this.salonRepository = salonRepository;
         this.serviceItemRepository = serviceItemRepository;
+        this.serviceRequestRepository = serviceRequestRepository;
+        this.adminNotificationRepository = adminNotificationRepository;
         this.loginSessionTracker = loginSessionTracker;
     }
 
@@ -226,6 +236,73 @@ public class AdminController {
         return ResponseEntity.ok(Map.of("message", "Service deleted successfully."));
     }
 
+    @GetMapping("/service-requests")
+    public ResponseEntity<?> getServiceRequests(Authentication authentication) {
+        if (!isAdmin(authentication)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Admin access required."));
+        }
+
+        List<ServiceRequest> requests = serviceRequestRepository.findByStatusOrderByRequestedAtDesc("PENDING");
+        return ResponseEntity.ok(Map.of("requests", requests));
+    }
+
+    @PutMapping("/service-requests/{id}/approve")
+    public ResponseEntity<?> approveServiceRequest(@PathVariable("id") Long id,
+                                                    @RequestBody(required = false) Map<String, String> payload,
+                                                    Authentication authentication) {
+        if (!isAdmin(authentication)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Admin access required."));
+        }
+
+        return serviceRequestRepository.findById(id)
+                .map(request -> {
+                    // Create and add the service
+                    ServiceItem newService = new ServiceItem();
+                    newService.setName(request.getServiceName());
+                    newService.setSalonId(request.getSalonId());
+                    newService.setIncludeInSearch(true);
+                    serviceItemRepository.save(newService);
+
+                    // Update request status
+                    request.setStatus("APPROVED");
+                    request.setRespondedAt(java.time.LocalDateTime.now());
+                    String adminNotes = (payload != null) ? payload.get("notes") : null;
+                    if (adminNotes != null && !adminNotes.isBlank()) {
+                        request.setAdminNotes(adminNotes);
+                    }
+                    serviceRequestRepository.save(request);
+
+                    return ResponseEntity.ok(Map.of(
+                            "message", "Service approved and added successfully.",
+                            "serviceId", newService.getId()
+                    ));
+                })
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Request not found.")));
+    }
+
+    @PutMapping("/service-requests/{id}/reject")
+    public ResponseEntity<?> rejectServiceRequest(@PathVariable("id") Long id,
+                                                   @RequestBody(required = false) Map<String, String> payload,
+                                                   Authentication authentication) {
+        if (!isAdmin(authentication)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Admin access required."));
+        }
+
+        return serviceRequestRepository.findById(id)
+                .map(request -> {
+                    request.setStatus("REJECTED");
+                    request.setRespondedAt(java.time.LocalDateTime.now());
+                    String adminNotes = (payload != null) ? payload.get("notes") : null;
+                    if (adminNotes != null && !adminNotes.isBlank()) {
+                        request.setAdminNotes(adminNotes);
+                    }
+                    serviceRequestRepository.save(request);
+
+                    return ResponseEntity.ok(Map.of("message", "Service request rejected."));
+                })
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Request not found.")));
+    }
+
     private boolean containsUser(User user, String q) {
         return contains(user.getEmail(), q)
                 || contains(user.getName(), q)
@@ -279,6 +356,75 @@ public class AdminController {
         dto.put("salonId", item.getSalonId());
         dto.put("includeInSearch", item.isIncludeInSearch());
         return dto;
+    }
+
+    @GetMapping("/notifications")
+    public ResponseEntity<?> getNotifications(Authentication authentication) {
+        if (!isAdmin(authentication)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Admin access required."));
+        }
+
+        try {
+            // Clean up old notifications (older than 30 days)
+            java.time.LocalDateTime cutoffDate = java.time.LocalDateTime.now().minusDays(30);
+            adminNotificationRepository.deleteOlderThan(cutoffDate);
+
+            // Get all notifications
+            List<AdminNotification> notifications = adminNotificationRepository.findAllByOrderByCreatedAtDesc();
+            
+            List<Map<String, Object>> notificationDtos = notifications.stream().map(notif -> {
+                Map<String, Object> dto = new LinkedHashMap<>();
+                dto.put("id", notif.getId());
+                dto.put("salonId", notif.getSalonId());
+                dto.put("message", notif.getMessage());
+                dto.put("type", notif.getType());
+                dto.put("isRead", notif.getIsRead());
+                dto.put("createdAt", notif.getCreatedAt());
+                dto.put("relatedId", notif.getRelatedId());
+                return dto;
+            }).collect(java.util.stream.Collectors.toList());
+
+            long unreadCount = adminNotificationRepository.countByIsReadFalse();
+            
+            return ResponseEntity.ok(Map.of(
+                "notifications", notificationDtos,
+                "unreadCount", unreadCount
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Failed to fetch notifications: " + e.getMessage()));
+        }
+    }
+
+    @PutMapping("/notifications/{id}/read")
+    public ResponseEntity<?> markNotificationAsRead(@PathVariable Long id, Authentication authentication) {
+        if (!isAdmin(authentication)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Admin access required."));
+        }
+
+        try {
+            return adminNotificationRepository.findById(id)
+                .map(notif -> {
+                    notif.setIsRead(true);
+                    adminNotificationRepository.save(notif);
+                    return ResponseEntity.ok(Map.of("message", "Notification marked as read"));
+                })
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "Notification not found")));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Failed to update notification: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/notifications/unread-count")
+    public ResponseEntity<?> getUnreadNotificationCount(Authentication authentication) {
+        if (!isAdmin(authentication)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Admin access required."));
+        }
+
+        long unreadCount = adminNotificationRepository.countByIsReadFalse();
+        return ResponseEntity.ok(Map.of("unreadCount", unreadCount));
     }
 
     private boolean isAdmin(Authentication authentication) {

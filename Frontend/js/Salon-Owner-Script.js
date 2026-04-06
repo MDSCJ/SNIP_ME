@@ -886,6 +886,7 @@ function setupOwnerProfilePanel() {
 document.addEventListener('DOMContentLoaded', () => {
     setupOwnerLocationPicker();
     setupOwnerProfilePanel();
+    setupServicesSection();
     applyOwnerBranding();
     loadOwnerProfile();
     refreshOwnerBrandingFromServer();
@@ -923,5 +924,523 @@ function addServiceToTable(name, price) {
     tableBody.innerHTML += newRow;
     showToast(`${name} added!`, 'working day');
 }
+
+// Load services for the salon from the database
+function loadOwnerServices() {
+    const ownerEmail = localStorage.getItem(OWNER_EMAIL_KEY);
+    if (!ownerEmail || typeof API_BASE_URL === 'undefined') {
+        console.error('Missing owner email or API URL for services');
+        // Still try to load available services even without email
+        loadAvailableServices();
+        return;
+    }
+
+    // First, get the salon ID from the owner's profile
+    fetch(AUTH_BASE_URL + '/owner-profile?email=' + encodeURIComponent(ownerEmail))
+        .then(response => {
+            if (!response.ok) {
+                console.warn('Could not load profile, fetching available services instead');
+                return null;
+            }
+            return response.json();
+        })
+        .then(profile => {
+            if (!profile || !profile.salonId) {
+                console.warn('No salon ID found for owner, loading available services');
+                loadAvailableServices();
+                return;
+            }
+
+            // Now fetch services for this salon
+            return fetchServicesForSalon(profile.salonId);
+        })
+        .catch(error => {
+            console.error('Failed to load owner services:', error);
+            loadAvailableServices();
+        });
+}
+
+function loadAvailableServices() {
+    const apiUrl = API_BASE_URL + '/salon-owner/services/available';
+    
+    fetch(apiUrl)
+        .then(response => {
+            if (!response.ok) throw new Error('Failed to load available services');
+            return response.json();
+        })
+        .then(data => {
+            if (!data.services || data.services.length === 0) {
+                displayNoServices();
+                return;
+            }
+            displayServices(data.services);
+        })
+        .catch(error => {
+            console.error('Error fetching available services:', error);
+            displayNoServices();
+        });
+}
+
+function fetchServicesForSalon(salonId) {
+    const apiUrl = API_BASE_URL + '/salon-owner/services/by-salon/' + salonId;
+    
+    return fetch(apiUrl)
+        .then(response => {
+            if (!response.ok) {
+                console.warn('Could not fetch salon-specific services, loading available services');
+                return null;
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data) {
+                loadAvailableServices();
+                return;
+            }
+            
+            if (!data.services || data.services.length === 0) {
+                displayNoServices();
+                // Still try to load requests
+                loadServiceRequests(salonId);
+                return;
+            }
+
+            displayServices(data.services);
+            loadServiceRequests(salonId);
+        })
+        .catch(error => {
+            console.error('Error fetching services:', error);
+            loadAvailableServices();
+        });
+}
+
+function displayServices(services) {
+    const tableBody = document.getElementById('active-services-list');
+    const emptyState = document.getElementById('services-empty-state');
+    
+    if (!tableBody) return;
+
+    tableBody.innerHTML = '';
+    
+    if (!services || services.length === 0) {
+        displayNoServices();
+        return;
+    }
+
+    emptyState.style.display = 'none';
+    
+    services.forEach(service => {
+        const createdDate = service.createdAt ? new Date(service.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${service.name || 'Unknown'}</td>
+            <td><span class="status-tag active">Available</span></td>
+            <td>${createdDate}</td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
+
+function displayNoServices() {
+    const emptyState = document.getElementById('services-empty-state');
+    const tableBody = document.getElementById('active-services-list');
+    
+    if (tableBody) tableBody.innerHTML = '';
+    if (emptyState) emptyState.style.display = 'block';
+}
+
+function loadServiceRequests(salonId) {
+    const apiUrl = API_BASE_URL + '/salon-owner/services/requests/' + salonId;
+    
+    fetch(apiUrl)
+        .then(response => response.ok ? response.json() : Promise.reject('Failed to load requests'))
+        .then(data => {
+            displayServiceRequests(data.requests || []);
+        })
+        .catch(error => {
+            console.error('Error loading service requests:', error);
+            const emptyMsg = document.getElementById('service-requests-empty');
+            if (emptyMsg) emptyMsg.style.display = 'block';
+        });
+}
+
+function displayServiceRequests(requests) {
+    const tableBody = document.getElementById('service-requests-list');
+    const emptyMsg = document.getElementById('service-requests-empty');
+    
+    if (!tableBody) return;
+
+    tableBody.innerHTML = '';
+    
+    if (!requests || requests.length === 0) {
+        if (emptyMsg) emptyMsg.style.display = 'block';
+        return;
+    }
+
+    if (emptyMsg) emptyMsg.style.display = 'none';
+    
+    requests.forEach(request => {
+        const requestDate = request.requestedAt ? new Date(request.requestedAt).toISOString().split('T')[0] : 'N/A';
+        const statusClass = request.status === 'APPROVED' ? 'active' : request.status === 'REJECTED' ? 'rejected' : 'pending';
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${request.serviceName || 'Unnamed Request'}</td>
+            <td><span class="status-tag ${statusClass}">${request.status}</span></td>
+            <td>${requestDate}</td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
+
+function submitCustomService() {
+    const serviceName = document.getElementById('service-name').value;
+    const description = document.getElementById('service-description').value;
+    const ownerEmail = localStorage.getItem(OWNER_EMAIL_KEY);
+
+    if (!serviceName || !serviceName.trim()) {
+        showToast('Please enter a service name', 'holiday');
+        return;
+    }
+
+    if (!ownerEmail || typeof API_BASE_URL === 'undefined') {
+        showToast('Unable to submit request. Owner session missing.', 'holiday');
+        return;
+    }
+
+    // Show loading state
+    const submitBtn = document.getElementById('submit-service-btn');
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting...';
+
+    // Get salon ID first
+    fetch(AUTH_BASE_URL + '/owner-profile?email=' + encodeURIComponent(ownerEmail))
+        .then(response => {
+            if (!response.ok) throw new Error('Cannot load profile');
+            return response.json();
+        })
+        .then(profile => {
+            if (!profile || !profile.salonId) {
+                throw new Error('Unable to identify your salon');
+            }
+
+            // Submit the service request
+            return fetch(API_BASE_URL + '/salon-owner/services/request-custom', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    salonId: profile.salonId,
+                    serviceName: serviceName.trim(),
+                    description: description.trim()
+                })
+            });
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Request failed');
+            return response.json();
+        })
+        .then(data => {
+            showToast(data.message || 'Service request submitted successfully!', 'working day');
+            document.getElementById('custom-service-form').reset();
+            toggleModal('custom-service-modal', false);
+            
+            // Reload services to show the new request
+            setTimeout(() => {
+                loadOwnerServices();
+            }, 500);
+        })
+        .catch(error => {
+            console.error('Error submitting service request:', error);
+            showToast('Failed to submit service request. Please try again.', 'holiday');
+        })
+        .finally(() => {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        });
+}
+
+// Setup event listeners for services section
+function setupServicesSection() {
+    const customServiceBtn = document.getElementById('custom-service-btn');
+    if (customServiceBtn) {
+        customServiceBtn.addEventListener('click', () => {
+            toggleModal('custom-service-modal', true);
+        });
+    }
+
+    // Load services on page load
+    loadOwnerServices();
+    
+    // Load available services grid for pricing
+    loadAvailableServicesForPricing();
+}
+
+// Service icon mapping based on service name
+function getServiceIcon(serviceName) {
+    const name = (serviceName || '').toLowerCase();
+    
+    const iconMap = {
+        'haircut': 'fas fa-cut',
+        'hair': 'fas fa-cut',
+        'shampoo': 'fas fa-shower',
+        'coloring': 'fas fa-palette',
+        'color': 'fas fa-palette',
+        'straightening': 'fas fa-wand-magic-sparkles',
+        'perming': 'fas fa-wand-magic-sparkles',
+        'treatment': 'fas fa-flask',
+        'manicure': 'fas fa-hand-fist',
+        'pedicure': 'fas fa-foot',
+        'massage': 'fas fa-hand',
+        'facial': 'fas fa-face-smile',
+        'threading': 'fas fa-needle',
+        'waxing': 'fas fa-leaf',
+        'beard': 'fas fa-beard',
+        'trimming': 'fas fa-cut',
+        'styling': 'fas fa-wand-magic-sparkles',
+        'extension': 'fas fa-arrows-alt-h',
+        'blowdry': 'fas fa-fan',
+        'dryer': 'fas fa-fan'
+    };
+    
+    // Check for exact or partial matches
+    for (const [key, icon] of Object.entries(iconMap)) {
+        if (name.includes(key)) {
+            return icon;
+        }
+    }
+    
+    // Default icon
+    return 'fas fa-spa';
+}
+
+// Load available services for the pricing section
+function loadAvailableServicesForPricing() {
+    const ownerEmail = localStorage.getItem(OWNER_EMAIL_KEY);
+    
+    // First get salon ID
+    if (!ownerEmail || typeof API_BASE_URL === 'undefined') {
+        console.warn('loadAvailableServicesForPricing: Missing email or API URL');
+        displayNoAvailableServices();
+        return;
+    }
+
+    console.log('loadAvailableServicesForPricing: Starting service load for email:', ownerEmail);
+
+    fetch(AUTH_BASE_URL + '/owner-profile?email=' + encodeURIComponent(ownerEmail))
+        .then(response => {
+            console.log('Owner profile response status:', response.status);
+            if (!response.ok) return null;
+            return response.json();
+        })
+        .then(profile => {
+            if (!profile || !profile.salonId) {
+                console.warn('loadAvailableServicesForPricing: No salon ID in profile');
+                displayNoAvailableServices();
+                return;
+            }
+
+            console.log('loadAvailableServicesForPricing: Got salon ID:', profile.salonId);
+
+            // Load all available services
+            return fetch(API_BASE_URL + '/salon-owner/services/available')
+                .then(response => {
+                    console.log('Available services response status:', response.status);
+                    if (!response.ok) {
+                        console.error('Failed to fetch services, status:', response.status);
+                        throw new Error('Failed to load services');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Available services data:', data);
+                    if (!data || !data.services || data.services.length === 0) {
+                        console.warn('loadAvailableServicesForPricing: No services in response');
+                        displayNoAvailableServices();
+                        return;
+                    }
+
+                    console.log('loadAvailableServicesForPricing: Found', data.services.length, 'services');
+
+                    // Get services already added for this salon
+                    return fetch(API_BASE_URL + '/salon-owner/services/with-prices/' + profile.salonId)
+                        .then(response => {
+                            console.log('With-prices response status:', response.status);
+                            if (!response.ok) {
+                                console.warn('Could not fetch priced services, showing all');
+                                return { services: [] };
+                            }
+                            return response.json();
+                        })
+                        .then(pricedData => {
+                            const addedServiceIds = new Set();
+                            if (pricedData.services && pricedData.services.length > 0) {
+                                pricedData.services.forEach(s => addedServiceIds.add(s.serviceId));
+                                console.log('Already added service IDs:', Array.from(addedServiceIds));
+                            }
+
+                            // Filter out already added services
+                            const unavailableServices = data.services.filter(s => !addedServiceIds.has(s.id));
+                            console.log('Unavailable services (to add):', unavailableServices.length);
+                            console.log('Unavailable services list:', unavailableServices);
+                            
+                            if (unavailableServices.length === 0 && data.services.length > 0) {
+                                console.log('All services already added for this salon');
+                            }
+                            
+                            displayAvailableServicesForPricing(unavailableServices, profile.salonId);
+                        });
+                });
+        })
+        .catch(error => {
+            console.error('Error loading available services for pricing:', error);
+            console.error('Error details:', error.message, error.stack);
+            displayNoAvailableServices();
+        });
+}
+
+function displayAvailableServicesForPricing(services, salonId) {
+    const grid = document.getElementById('available-services-grid');
+    const emptyState = document.getElementById('available-services-empty');
+    
+    console.log('displayAvailableServicesForPricing called with:', { servicesCount: services ? services.length : 0, salonId });
+    
+    if (!grid) {
+        console.error('ERROR: Grid element not found (available-services-grid)');
+        return;
+    }
+
+    if (!services || services.length === 0) {
+        console.log('[EMPTY STATE] No available services to display - showing empty message');
+        displayNoAvailableServices();
+        return;
+    }
+
+    console.log('[DISPLAY] Rendering', services.length, 'available services for pricing');
+    console.log('[SERVICE DETAILS]', services.map(s => ({ id: s.id, name: s.name, desc: s.description })));
+    
+    grid.innerHTML = '';
+    if (emptyState) {
+        emptyState.style.display = 'none';
+    }
+    
+    services.forEach((service, idx) => {
+        try {
+            const icon = getServiceIcon(service.name);
+            const card = document.createElement('div');
+            card.className = 'service-add-card';
+            card.style.cursor = 'pointer';
+            card.innerHTML = `
+                <div class="plus-icon"><i class="fas fa-plus"></i></div>
+                <div class="service-icon"><i class="${icon}"></i></div>
+                <h4>${service.name}</h4>
+                <p>Tap to add pricing</p>
+            `;
+            
+            card.addEventListener('click', () => {
+                console.log('[CLICK] Service card clicked:', { id: service.id, name: service.name });
+                openServicePricingModal(service.id, service.name, icon, salonId);
+            });
+            
+            grid.appendChild(card);
+            console.log(`[CARD ${idx + 1}] Created card for: ${service.name}`);
+        } catch (err) {
+            console.error(`[ERROR] Failed to create card for service ${idx}:`, err);
+        }
+    });
+    
+    console.log('[COMPLETE] Finished rendering all service cards. Total count:', grid.children.length);
+}
+
+function displayNoAvailableServices() {
+    const grid = document.getElementById('available-services-grid');
+    const emptyState = document.getElementById('available-services-empty');
+    
+    if (grid) grid.innerHTML = '';
+    if (emptyState) {
+        emptyState.style.display = 'block';
+        console.log('Showing empty state for available services');
+    }
+}
+
+// Modal functions for service pricing
+let selectedServiceData = { id: null, name: null, icon: null, salonId: null };
+
+function openServicePricingModal(serviceId, serviceName, serviceIcon, salonId) {
+    selectedServiceData = { id: serviceId, name: serviceName, icon: serviceIcon, salonId: salonId };
+    
+    const nameEl = document.getElementById('selected-service-name');
+    const iconEl = document.getElementById('selected-service-icon');
+    const priceInput = document.getElementById('service-price-input');
+    
+    if (nameEl) nameEl.textContent = serviceName;
+    if (iconEl) iconEl.innerHTML = `<i class="${serviceIcon}"></i>`;
+    if (priceInput) priceInput.value = '';
+    
+    toggleModal('service-pricing-modal', true);
+    if (priceInput) priceInput.focus();
+}
+
+function closeServicePricingModal() {
+    toggleModal('service-pricing-modal', false);
+    selectedServiceData = { id: null, name: null, icon: null, salonId: null };
+}
+
+function submitServicePricing() {
+    const priceInput = document.getElementById('service-price-input');
+    const price = parseFloat(priceInput.value);
+    
+    if (!selectedServiceData.id) {
+        showToast('No service selected', 'holiday');
+        return;
+    }
+    
+    if (isNaN(price) || price < 0) {
+        showToast('Please enter a valid price', 'holiday');
+        return;
+    }
+
+    const submitBtn = event.target;
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Adding...';
+
+    const payload = {
+        salonId: selectedServiceData.salonId,
+        serviceId: selectedServiceData.id,
+        price: price
+    };
+
+    fetch(API_BASE_URL + '/salon-owner/services/add-available-service', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+        .then(response => {
+            if (!response.ok) throw new Error('Failed to add service');
+            return response.json();
+        })
+        .then(data => {
+            showToast(`${selectedServiceData.name} added at ${price}!`, 'working day');
+            closeServicePricingModal();
+            
+            // Reload available services grid
+            loadAvailableServicesForPricing();
+            
+            // Reload services table after a delay
+            setTimeout(() => {
+                loadOwnerServices();
+            }, 500);
+        })
+        .catch(error => {
+            console.error('Error adding service:', error);
+            showToast('Failed to add service. Please try again.', 'holiday');
+        })
+        .finally(() => {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        });
+}
+
+
 
 

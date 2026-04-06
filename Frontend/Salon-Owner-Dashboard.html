@@ -169,67 +169,121 @@
                <div class="services-container">
                     <header class="calendar-header">
                         <h2>Manage Services</h2>
-                        <p>View active pricing and add new offerings to your salon</p>
+                        <p>View and request new offerings for your salon</p>
                     </header>
 
                     <div class="info-card" style="margin-bottom: 30px;">
-                        <h3 class="label-sub">Active Price List</h3>
-                        <div class="modal-scroll-area" style="max-height: 300px;">
+                        <h3 class="label-sub">Available Services</h3>
+                        <div id="services-empty-state" style="padding: 20px; text-align: center; display: none;">
+                            <i class="fas fa-inbox" style="font-size: 3rem; color: var(--accent-color); margin-bottom: 10px;"></i>
+                            <p style="color: #666; font-size: 0.95rem;">No services available yet. Request a custom service below.</p>
+                        </div>
+                        <div class="modal-scroll-area" style="max-height: 400px;">
                             <table class="schedule-table">
                                 <thead>
                                     <tr>
                                         <th>Service Name</th>
-                                        <th>Price (LKR)</th>
-                                        <th>Last Update</th>
                                         <th>Status</th>
+                                        <th>Added</th>
                                     </tr>
                                 </thead>
                                 <tbody id="active-services-list">
-                                    <tr>
-                                        <td>Classic Haircut</td>
-                                        <td>1500.00</td>
-                                        <td>2026-03-10</td>
-                                        <td><span class="status-tag active">Live</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Beard Grooming</td>
-                                        <td>800.00</td>
-                                        <td>2026-03-12</td>
-                                        <td><span class="status-tag active">Live</span></td>
-                                    </tr>
+                                    <!-- Dynamically loaded from database -->
                                 </tbody>
                             </table>
                         </div>
                     </div>
 
-                    <h3 class="label-sub">Available Add-ons & Extras</h3>
+                    <div class="info-card" style="margin-bottom: 30px;">
+                        <h3 class="label-sub">Service Requests</h3>
+                        <div id="service-requests-empty" style="padding: 20px; text-align: center;">
+                            <p style="color: #999; font-size: 0.95rem;">No pending requests</p>
+                        </div>
+                        <div class="modal-scroll-area" style="max-height: 300px;">
+                            <table class="schedule-table">
+                                <thead>
+                                    <tr>
+                                        <th>Service Name</th>
+                                        <th>Status</th>
+                                        <th>Requested</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="service-requests-list">
+                                    <!-- Dynamically loaded from database -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="info-card" style="margin-bottom: 30px;">
+                        <h3 class="label-sub">Make Services Available</h3>
+                        <p style="color: #e0e0e0; font-size: 0.9rem; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-lightbulb" style="color: #ff8c42;"></i>
+                            <strong>Tap an orange card below to add a service with pricing</strong>
+                        </p>
+                        <div id="available-services-empty" style="padding: 30px 20px; text-align: center; display: none;">
+                            <i class="fas fa-check-circle" style="font-size: 4rem; color: #ff6b35; margin-bottom: 15px;"></i>
+                            <p style="color: #e0e0e0; font-size: 1rem; margin-bottom: 10px;"><strong>All services are set up!</strong></p>
+                            <p style="color: #999; font-size: 0.9rem;">Request new custom services below, or admin may add more services soon.</p>
+                        </div>
+                        <div id="available-services-grid" class="services-grid">
+                            <!-- Dynamically loaded from database -->
+                        </div>
+                    </div>
+
+                    <!-- Service Selection Modal for Pricing -->
+                    <div id="service-pricing-modal" class="modal" style="display: none;">
+                        <div class="modal-content schedule-modal">
+                            <div class="modal-header">
+                                <h3>Add Service with Pricing</h3>
+                                <span class="close-x" onclick="closeServicePricingModal()">&times;</span>
+                            </div>
+                            <div class="modal-body" style="padding: 20px;">
+                                <div style="margin-bottom: 20px;">
+                                    <label style="color: #ffe9c5; font-size: 0.95rem; display: block; margin-bottom: 8px;">
+                                        <strong id="selected-service-name">Service Name</strong>
+                                    </label>
+                                    <div id="selected-service-icon" style="font-size: 3rem; text-align: center; color: var(--accent-color); margin-bottom: 15px;">
+                                        <i class="fas fa-star"></i>
+                                    </div>
+                                </div>
+                                <div style="margin-bottom: 20px;">
+                                    <label for="service-price-input" style="color: #ffe9c5; font-size: 0.95rem; display: block; margin-bottom: 8px;">
+                                        <strong>Price (in your currency)</strong>
+                                    </label>
+                                    <input 
+                                        type="number" 
+                                        id="service-price-input" 
+                                        placeholder="Enter price" 
+                                        min="0" 
+                                        step="0.01"
+                                        style="width: 100%; padding: 10px; border: 1px solid var(--accent-color); border-radius: 5px; background: rgba(15, 15, 18, 0.8); color: #ffe9c5; font-size: 0.95rem;"
+                                    >
+                                </div>
+                                <div style="display: flex; gap: 10px;">
+                                    <button onclick="submitServicePricing()" style="flex: 1; padding: 10px 20px; background: var(--accent-color); color: #0a0a0c; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
+                                        <i class="fas fa-check"></i> Add Service
+                                    </button>
+                                    <button onclick="closeServicePricingModal()" style="flex: 1; padding: 10px 20px; background: rgba(255, 255, 255, 0.1); color: #ffe9c5; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 5px; cursor: pointer;">
+                                        <i class="fas fa-times"></i> Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3 class="label-sub" style="display: flex; align-items: center; gap: 8px; margin-top: 20px;">
+                        <i class="fas fa-star" style="color: #ff6b35;"></i>Request New Custom Service
+                    </h3>
+                    <p style="color: #e0e0e0; font-size: 0.9rem; margin-bottom: 15px; margin-top: 8px;">
+                        Need a service not listed? Request it below and admin will review it!
+                    </p>
                     <div class="services-grid">
-                        <div class="service-add-card" onclick="showToast('Service Added', 'success')">
-                            <div class="plus-icon"><i class="fas fa-plus"></i></div>
-                            <div class="service-icon"><i class="fas fa-magic"></i></div>
-                            <h4>Hair Coloring</h4>
-                            <p>Starting from 4500.00</p>
-                        </div>
-
-                        <div class="service-add-card" onclick="showToast('Service Added', 'success')">
-                            <div class="plus-icon"><i class="fas fa-plus"></i></div>
-                            <div class="service-icon"><i class="fas fa-spa"></i></div>
-                            <h4>Facial Treatment</h4>
-                            <p>2500.00</p>
-                        </div>
-
-                        <div class="service-add-card" onclick="showToast('Service Added', 'success')">
-                            <div class="plus-icon"><i class="fas fa-plus"></i></div>
-                            <div class="service-icon"><i class="fas fa-cut"></i></div>
-                            <h4>Head Massage</h4>
-                            <p>1200.00</p>
-                        </div>
-
-                        <div class="service-add-card add-custom">
+                        <div class="service-add-card" id="custom-service-btn" style="cursor: pointer;">
                             <div class="plus-icon"><i class="fas fa-plus"></i></div>
                             <div class="service-icon"><i class="fas fa-plus-circle"></i></div>
-                            <h4>Custom Service</h4>
-                            <p>Create your own</p>
+                            <h4>Request Custom Service</h4>
+                            <p>Add a service specific to your salon</p>
                         </div>
                     </div>
                 </div>
@@ -294,12 +348,25 @@
 
 
     <div id="event-modal" class="modal">
-        <div class="modal-content">
-            <h3>Add Appointment</h3>
-            <input type="text" id="custName" placeholder="Customer Name">
-            <input type="time" id="startTime" min="07:00" max="20:00">
-            <button class="btn" onclick="saveEvent()">Save</button>
-            <button class="btn btn-outline" onclick="toggleModal('event-modal', false)">Cancel</button>
+        <div class="modal-content appointment-modal-content">
+            <div class="modal-header appointment-modal-header">
+                <h3>📅 Add Appointment</h3>
+                <span class="close-x" onclick="toggleModal('event-modal', false)">&times;</span>
+            </div>
+            <div class="modal-body appointment-modal-body">
+                <div class="form-group appointment-form-group">
+                    <label for="custName">👤 Customer Name</label>
+                    <input type="text" id="custName" placeholder="Enter customer name" autocomplete="off">
+                </div>
+                <div class="form-group appointment-form-group">
+                    <label for="startTime">⏰ Select Time</label>
+                    <input type="time" id="startTime" min="07:00" max="20:00">
+                </div>
+            </div>
+            <div class="modal-footer appointment-modal-footer">
+                <button class="btn btn-appointment-cancel" onclick="toggleModal('event-modal', false)">Cancel</button>
+                <button class="btn btn-appointment-save" onclick="saveEvent()">Save Appointment</button>
+            </div>
         </div>
     </div>
 
@@ -313,6 +380,31 @@
             <div class="location-modal-actions">
                 <button type="button" id="cancelOwnerLocationModal" class="btn-location-secondary">Close</button>
                 <button type="button" id="confirmOwnerLocationBtn" class="btn-location-primary">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="custom-service-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Request Custom Service</h3>
+                <span class="close-x" onclick="toggleModal('custom-service-modal', false)">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="custom-service-form">
+                    <div class="form-group">
+                        <label for="service-name">Service Name *</label>
+                        <input type="text" id="service-name" name="serviceName" placeholder="e.g., Hair Straightening" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="service-description">Description</label>
+                        <textarea id="service-description" name="description" placeholder="Describe the service details..." rows="4"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn view-schedule-menu" onclick="toggleModal('custom-service-modal', false)">Cancel</button>
+                <button class="btn btn-add-event" id="submit-service-btn" onclick="submitCustomService()">Submit Request</button>
             </div>
         </div>
     </div>
