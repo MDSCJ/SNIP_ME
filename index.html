@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="Frontend/css/style.css">
     <link rel="stylesheet" href="Frontend/css/home.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/scrollreveal"></script>
 </head>
 <body class="dark-theme">
@@ -77,6 +78,32 @@
                 </button>
 
             </form>
+        </div>
+    </section>
+
+    <!-- Search Results Section -->
+    <section class="search-results" id="searchResultsSection" style="display:none;">
+        <div class="search-controls">
+            <button class="sort-btn active" id="sortRatingBtn" title="Sort by rating">
+                ⭐ By Rating
+            </button>
+            <button class="sort-btn" id="sortPriceBtn" title="Sort by price">
+                💰 By Price
+            </button>
+            <div class="range-slider-container">
+                <label for="distanceRange">Distance: <span id="distanceValue">5</span> km</label>
+                <input type="range" id="distanceRange" min="1" max="50" value="5" class="range-slider">
+            </div>
+        </div>
+        
+        <div class="search-results-container" id="searchResultsContainer">
+            <!-- Search results will be loaded here -->
+        </div>
+        
+        <div class="pagination-controls">
+            <button class="pagination-btn" id="prevPageBtn" style="display:none;">← Previous</button>
+            <span id="pageInfo"></span>
+            <button class="pagination-btn" id="nextPageBtn" style="display:none;">Next →</button>
         </div>
     </section>
 

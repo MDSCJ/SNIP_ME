@@ -16,4 +16,12 @@ public interface SalonRepository extends JpaRepository<Salon, Long> {
 	
 	@Query("SELECT s FROM Salon s WHERE s.isActive = true ORDER BY s.rate DESC LIMIT 10")
 	List<Salon> findTrendingSalons();
+	
+	// Search salons by location and distance
+	@Query("SELECT s FROM Salon s WHERE s.isActive = true AND s.latitude IS NOT NULL AND s.longitude IS NOT NULL")
+	List<Salon> findAllActiveSalonsWithLocation();
+	
+	// Get all active salons regardless of coordinates
+	@Query("SELECT s FROM Salon s WHERE s.isActive = true ORDER BY s.rate DESC")
+	List<Salon> findByIsActiveTrueOrderByRateDesc();
 }
