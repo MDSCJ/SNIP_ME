@@ -1,4 +1,4 @@
-package com.starc.snipme.services;
+package com.starc.snipme.service;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -9,8 +9,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.starc.snipme.model.Booking;
 import com.starc.snipme.model.TimeSlot;
-import com.starc.snipme.repositories.BookingRepository;
-import com.starc.snipme.repositories.TimeSlotRepository;
+import com.starc.snipme.repository.BookingRepository;
+import com.starc.snipme.repository.TimeSlotRepository;
 
 @Service
 public class BookingService {

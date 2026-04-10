@@ -365,9 +365,13 @@ public class AdminController {
         }
 
         try {
-            // Clean up old notifications (older than 30 days)
-            java.time.LocalDateTime cutoffDate = java.time.LocalDateTime.now().minusDays(30);
-            adminNotificationRepository.deleteOlderThan(cutoffDate);
+            // Best-effort cleanup: do not block notification fetch if cleanup fails.
+            try {
+                java.time.LocalDateTime cutoffDate = java.time.LocalDateTime.now().minusDays(30);
+                adminNotificationRepository.deleteOlderThan(cutoffDate);
+            } catch (Exception cleanupError) {
+                System.err.println("Notification cleanup failed: " + cleanupError.getMessage());
+            }
 
             // Get all notifications
             List<AdminNotification> notifications = adminNotificationRepository.findAllByOrderByCreatedAtDesc();
@@ -379,7 +383,7 @@ public class AdminController {
                 dto.put("message", notif.getMessage());
                 dto.put("type", notif.getType());
                 dto.put("isRead", notif.getIsRead());
-                dto.put("createdAt", notif.getCreatedAt());
+                dto.put("createdAt", notif.getCreatedAt() != null ? notif.getCreatedAt().toString() : null);
                 dto.put("relatedId", notif.getRelatedId());
                 return dto;
             }).collect(java.util.stream.Collectors.toList());
