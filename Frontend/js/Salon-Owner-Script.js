@@ -11,6 +11,146 @@ let ownerLocationMapInstance = null;
 let ownerLocationMarker = null;
 let ownerSelectedLatLng = null;
 
+
+// ─── Notifications ────────────────────────────────────
+const NOTIFICATIONS = [];
+
+function getUnreadCount() {
+    return NOTIFICATIONS.filter(n => n.unread).length;
+}
+
+function updateBadge() {
+    const count = getUnreadCount();
+    const badge = document.getElementById('notifBadge');
+    const siBadge = document.getElementById('sidebarBadge');
+    if (count > 0) {
+        badge.textContent = count;
+        badge.style.display = 'flex';
+        if (siBadge) { siBadge.textContent = count; siBadge.style.display = 'flex'; }
+    } else {
+        badge.style.display = 'none';
+        if (siBadge) siBadge.style.display = 'none';
+    }
+}
+
+function buildNotifItem(n, full = false) {
+    const el = document.createElement('div');
+    el.className = 'notif-item' + (full ? ' notif-center-item' : '') + (n.unread ? ' unread' : '');
+    el.innerHTML = `
+        <div class="notif-avatar ${n.type}">${n.avatar}</div>
+        <div class="notif-content">
+            <div class="notif-title">${n.title}</div>
+            <div class="notif-sub">${n.sub}</div>
+            <div class="notif-time">${n.time}</div>
+        </div>`;
+    el.addEventListener('click', () => {
+        n.unread = false;
+        updateBadge();
+        renderNotifPanel();
+        renderNotifCenter();
+    });
+    return el;
+}
+
+function renderNotifPanel() {
+    const list = document.getElementById('notifList');
+    if (!list) return;
+    list.innerHTML = '';
+    const slice = NOTIFICATIONS.slice(0, 5);
+    if (slice.length === 0) {
+        list.innerHTML = '<div style="padding:24px;text-align:center;color:#555;font-size:13px;">No notifications</div>';
+    } else {
+        slice.forEach(n => list.appendChild(buildNotifItem(n)));
+    }
+}
+
+function renderNotifCenter() {
+    const list = document.getElementById('notif-center-list');
+    if (!list) return;
+    list.innerHTML = '';
+    if (NOTIFICATIONS.length === 0) {
+        list.innerHTML = '<div style="padding:24px;text-align:center;color:#555;font-size:13px;">No notifications yet</div>';
+        return;
+    }
+    NOTIFICATIONS.forEach(n => list.appendChild(buildNotifItem(n, true)));
+}
+
+// Call this from anywhere to push a new notification
+function pushNotification(title, sub, type = 'sys') {
+    const avatarMap = { apt: 'AP', svc: 'SV', sys: 'SY' };
+    NOTIFICATIONS.unshift({
+        id: Date.now(),
+        type,
+        avatar: avatarMap[type] || 'SY',
+        title,
+        sub,
+        time: 'Just now',
+        unread: true
+    });
+    updateBadge();
+    renderNotifPanel();
+}
+
+function setupNotificationBell() {
+    const bellBtn = document.getElementById('bellBtn');
+    const notifPanel = document.getElementById('notifPanel');
+    const bellWrap = document.getElementById('bellWrap');
+    const markAllReadBtn = document.getElementById('markAllReadBtn');
+    const seeAllBtn = document.getElementById('seeAllBtn');
+    const clearAllBtn = document.getElementById('clearAllNotifsBtn');
+
+    if (!bellBtn || !notifPanel) return;
+
+    bellBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        notifPanel.classList.toggle('open');
+    });
+
+    document.addEventListener('click', (e) => {
+        if (bellWrap && !bellWrap.contains(e.target)) {
+            notifPanel.classList.remove('open');
+        }
+    });
+
+    notifPanel.addEventListener('click', e => e.stopPropagation());
+
+    if (markAllReadBtn) {
+        markAllReadBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            NOTIFICATIONS.forEach(n => n.unread = false);
+            updateBadge();
+            renderNotifPanel();
+            renderNotifCenter();
+        });
+    }
+
+    if (seeAllBtn) {
+        seeAllBtn.addEventListener('click', () => {
+            notifPanel.classList.remove('open');
+            document.querySelectorAll('.content-section').forEach(s => s.style.display = 'none');
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            const notifSection = document.getElementById('notifications-section');
+            const notifNavLink = document.querySelector('[data-target="notifications-section"]');
+            if (notifSection) notifSection.style.display = 'block';
+            if (notifNavLink) notifNavLink.classList.add('active');
+            renderNotifCenter();
+        });
+    }
+
+    if (clearAllBtn) {
+        clearAllBtn.addEventListener('click', () => {
+            NOTIFICATIONS.length = 0;
+            updateBadge();
+            renderNotifPanel();
+            renderNotifCenter();
+        });
+    }
+
+    renderNotifPanel();
+    updateBadge();
+}
+// ────────────────────────────────────────────────────── Notifications ────────────────────────────────────────────────────── 
+
 // Helper function to get authorization headers
 function getAuthHeaders() {
     const token = localStorage.getItem(OWNER_TOKEN_KEY);
@@ -327,8 +467,10 @@ function setAsHoliday() {
         .then(function () {
             if (index === -1) {
                 showToast(`${dateString} marked as Holiday!`, 'holiday');
+                pushNotification('Holiday Set', `${dateString} is now a holiday.`, 'sys');
             } else {
                 showToast(`${dateString} is now a normal working day.`, 'working day');
+                pushNotification('Working Day Restored', `${dateString} is back to normal.`, 'sys');
             }
         })
         .catch(function (error) {
@@ -852,6 +994,7 @@ function saveOwnerProfile(event) {
         .then(function (data) {
             populateOwnerProfile(data || {});
             showToast('Details updated successfully!', 'working day');
+            pushNotification('Profile Updated', 'Your salon details were successfully synced.', 'sys');
         })
         .catch(function (error) {
             console.error('Failed to save owner profile:', error);
@@ -898,6 +1041,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupOwnerLocationPicker();
     setupOwnerProfilePanel();
     setupServicesSection();
+    setupNotificationBell();  
     applyOwnerBranding();
     loadOwnerProfile();
     refreshOwnerBrandingFromServer();
