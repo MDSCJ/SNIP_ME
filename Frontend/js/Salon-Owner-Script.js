@@ -467,8 +467,10 @@ function setAsHoliday() {
         .then(function () {
             if (index === -1) {
                 showToast(`${dateString} marked as Holiday!`, 'holiday');
+                pushNotification('Holiday Set', `${dateString} is now a holiday.`, 'sys');
             } else {
                 showToast(`${dateString} is now a normal working day.`, 'working day');
+                pushNotification('Working Day Restored', `${dateString} is back to normal.`, 'sys');
             }
         })
         .catch(function (error) {
@@ -992,6 +994,7 @@ function saveOwnerProfile(event) {
         .then(function (data) {
             populateOwnerProfile(data || {});
             showToast('Details updated successfully!', 'working day');
+            pushNotification('Profile Updated', 'Your salon details were successfully synced.', 'sys');
         })
         .catch(function (error) {
             console.error('Failed to save owner profile:', error);
