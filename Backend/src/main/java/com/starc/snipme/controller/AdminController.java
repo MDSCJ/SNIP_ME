@@ -3,6 +3,7 @@ package com.starc.snipme.controller;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
@@ -115,7 +116,7 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Admin access required."));
         }
 
-        return salonRepository.findById(id)
+        return salonRepository.findById(Objects.requireNonNull(id, "id must not be null"))
                 .map(salon -> {
                     salon.setActive(false);
                     salonRepository.save(salon);
@@ -130,7 +131,7 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Admin access required."));
         }
 
-        return salonRepository.findById(id)
+        return salonRepository.findById(Objects.requireNonNull(id, "id must not be null"))
                 .map(salon -> {
                     salon.setActive(true);
                     salonRepository.save(salon);
@@ -165,7 +166,7 @@ public class AdminController {
                         user.setUserType(userType.trim().toUpperCase());
                     }
 
-                    userRepository.save(user);
+                    userRepository.save(Objects.requireNonNull(user, "user must not be null"));
                     return ResponseEntity.ok(Map.of("message", "User updated successfully."));
                 })
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "User not found.")));
@@ -182,7 +183,7 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "User not found."));
         }
 
-        userRepository.delete(userOpt.get());
+        userRepository.delete(Objects.requireNonNull(userOpt.get(), "user must not be null"));
         return ResponseEntity.ok(Map.of("message", "User deleted successfully."));
     }
 
@@ -228,11 +229,13 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Admin access required."));
         }
 
-        if (!serviceItemRepository.existsById(id)) {
+        Long serviceId = Objects.requireNonNull(id, "id must not be null");
+
+        if (!serviceItemRepository.existsById(serviceId)) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Service not found."));
         }
 
-        serviceItemRepository.deleteById(id);
+        serviceItemRepository.deleteById(serviceId);
         return ResponseEntity.ok(Map.of("message", "Service deleted successfully."));
     }
 
@@ -254,7 +257,7 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Admin access required."));
         }
 
-        return serviceRequestRepository.findById(id)
+        return serviceRequestRepository.findById(Objects.requireNonNull(id, "id must not be null"))
                 .map(request -> {
                     // Create and add the service
                     ServiceItem newService = new ServiceItem();
@@ -288,7 +291,7 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Admin access required."));
         }
 
-        return serviceRequestRepository.findById(id)
+        return serviceRequestRepository.findById(Objects.requireNonNull(id, "id must not be null"))
                 .map(request -> {
                     request.setStatus("REJECTED");
                     request.setRespondedAt(java.time.LocalDateTime.now());
@@ -407,7 +410,7 @@ public class AdminController {
         }
 
         try {
-            return adminNotificationRepository.findById(id)
+            return adminNotificationRepository.findById(Objects.requireNonNull(id, "id must not be null"))
                 .map(notif -> {
                     notif.setIsRead(true);
                     adminNotificationRepository.save(notif);

@@ -1,6 +1,7 @@
 package com.starc.snipme.service;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,7 +51,7 @@ public class BookingService {
     public Booking confirmBooking(Long slotID, Long customerID) {
         
         // 1. Find the specific TimeSlot in the database
-        TimeSlot slot = timeSlotRepository.findById(slotID)
+        TimeSlot slot = timeSlotRepository.findById(Objects.requireNonNull(slotID, "slotID must not be null"))
                 .orElseThrow(() -> new RuntimeException("Time slot not found."));
 
         // 2. Security Check: Ensure the slot is actually locked before confirming
@@ -76,7 +77,7 @@ public class BookingService {
     public Booking cancelBooking(Long bookingID) {
         
         // 1. Find the active booking in the database
-        Booking booking = bookingRepository.findById(bookingID)
+        Booking booking = bookingRepository.findById(Objects.requireNonNull(bookingID, "bookingID must not be null"))
                 .orElseThrow(() -> new RuntimeException("Booking not found."));
 
         // 2. Prevent canceling an already canceled appointment

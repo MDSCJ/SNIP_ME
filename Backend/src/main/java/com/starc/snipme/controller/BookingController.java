@@ -75,7 +75,7 @@ public class BookingController {
     public ResponseEntity<?> cancelBooking(@RequestParam Long bookingID) {
         try {
             // Triggers the service logic mapped to your Post-Booking Lifecycle diagram
-            Booking canceledBooking = bookingService.cancelBooking(bookingID);
+            bookingService.cancelBooking(bookingID);
             
             return ResponseEntity.ok("Appointment canceled successfully. The time slot is now available for other customers.");
             
