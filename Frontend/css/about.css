@@ -299,7 +299,7 @@ body:hover .team-card.glow-box::before {
     backdrop-filter: blur(12px) saturate(145%);
     -webkit-backdrop-filter: blur(12px) saturate(145%);
     border-radius: 13px;
-    border: 1px solid rgba(255, 255, 255, 0.28);
+    border: none;
     z-index: 2;
     padding: 26px;
     min-height: calc(420px - 4px);
@@ -315,7 +315,7 @@ body:hover .team-card.glow-box::before {
 
 .developer-card .box-content {
     background: linear-gradient(155deg, rgba(34, 43, 58, 0.1), rgba(8, 12, 20, 0.03));
-    border: 1px solid rgba(215, 240, 255, 0.36);
+    border: none;
 }
 
 .developer-card .box-content::before {

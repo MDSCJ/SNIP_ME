@@ -1,4 +1,4 @@
-package com.starc.snipme.repositories;
+package com.starc.snipme.repository;
 
 import java.time.LocalDateTime;
 import java.util.List;

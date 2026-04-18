@@ -1,6 +1,7 @@
-package com.starc.snipme.services;
+package com.starc.snipme.service;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,8 +10,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.starc.snipme.model.Booking;
 import com.starc.snipme.model.TimeSlot;
-import com.starc.snipme.repositories.BookingRepository;
-import com.starc.snipme.repositories.TimeSlotRepository;
+import com.starc.snipme.repository.BookingRepository;
+import com.starc.snipme.repository.TimeSlotRepository;
 
 import com.starc.snipme.service.SalonNotificationService;
 
@@ -57,7 +58,7 @@ public class BookingService {
         throw new IllegalArgumentException("Slot ID and Customer ID must not be null.");
         }
         // 1. Find the specific TimeSlot in the database
-        TimeSlot slot = timeSlotRepository.findById(slotID)
+        TimeSlot slot = timeSlotRepository.findById(Objects.requireNonNull(slotID, "slotID must not be null"))
                 .orElseThrow(() -> new RuntimeException("Time slot not found."));
 
         // 2. Security Check: Ensure the slot is actually locked before confirming
@@ -102,7 +103,7 @@ public class BookingService {
         throw new IllegalArgumentException("Booking ID must not be null.");
         }
         // 1. Find the active booking in the database
-        Booking booking = bookingRepository.findById(bookingID)
+        Booking booking = bookingRepository.findById(Objects.requireNonNull(bookingID, "bookingID must not be null"))
                 .orElseThrow(() -> new RuntimeException("Booking not found."));
 
         // 2. Prevent canceling an already canceled appointment
