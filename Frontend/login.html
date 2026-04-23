@@ -21,7 +21,7 @@
     </header>
 
     <nav class="nav-bar">
-        <div class="nav-toggle">&#9776;</div>
+        <button class="nav-toggle" aria-label="open menu">☰</button>
         <ul>
             <li><a href="../index.html" >Home</a></li>
             <li><a href="about.html">About Us</a></li>
@@ -37,41 +37,124 @@
 
     <!-- Center Content -->
     <div class="center-container">
+        <div class="role-group" id="customerRoleGroup">
+            <button class="btn-outline role-main-btn" type="button">Log in as Customer</button>
+            <div class="role-options">
+                <button class="btn-outline role-option-btn" type="button" data-target="customer_login.html?mode=signin">Sign In</button>
+                <button class="btn-outline role-option-btn" type="button" data-target="customer_login.html?mode=signup">Sign Up</button>
+            </div>
+        </div>
+
+        <div class="role-group" id="ownerRoleGroup">
+            <button class="btn-outline role-main-btn" type="button">Log in as Salon Owner</button>
+            <div class="role-options">
+                <button class="btn-outline role-option-btn" type="button" data-target="salon-owner-login.html?mode=signin">Sign In</button>
+                <button class="btn-outline role-option-btn" type="button" data-target="salon-owner-login.html?mode=signup">Sign Up</button>
+            </div>
+        </div>
 
         <button class="btn-outline"
-            onclick="window.location.href='customer_login.html'">
-            Log in as Customer
+            onclick="window.location.href='admin-login.html'">
+            Log in as Admin
         </button>
 
-        <button class="btn-outline"
-            onclick="window.location.href='salon-owner-login.html'">
-            Log in as Salon Owner
+        <button id="goToOwnerDashboardBtn" class="btn-outline" style="display: none;"
+            onclick="window.location.href='Salon-Owner-Dashboard.html'">
+            Go to My Dashboard
+        </button>
+
+        <button id="goToAdminDashboardBtn" class="btn-outline" style="display: none;"
+            onclick="window.location.href='admin-dashboard.html'">
+            Go to Admin Dashboard
         </button>
 
     </div>
     <script>
     document.addEventListener('DOMContentLoaded', function () {
-    var toggle = document.querySelector('.nav-toggle');
-    var navList = document.querySelector('.nav-bar ul');
+    var goToOwnerDashboardBtn = document.getElementById('goToOwnerDashboardBtn');
+    var goToAdminDashboardBtn = document.getElementById('goToAdminDashboardBtn');
+    var roleGroups = document.querySelectorAll('.role-group');
 
-    if (toggle && navList) {
-        toggle.addEventListener('click', function () {
-            navList.classList.toggle('open');
-        });
+    function isValidJwt(token) {
+        if (!token || token.split('.').length !== 3) {
+            return false;
+        }
+
+        try {
+            var payloadPart = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+            var payload = JSON.parse(atob(payloadPart));
+            if (!payload.exp) {
+                return false;
+            }
+            return (payload.exp * 1000) > Date.now();
+        } catch (e) {
+            return false;
+        }
     }
 
-    var navLinks = document.querySelectorAll('.nav-bar ul li a');
-    navLinks.forEach(function(link) {
-        link.addEventListener('click', function() {
-            navList.classList.remove('open');
+    var ownerLoggedIn = localStorage.getItem('snipmeOwnerLoggedIn') === 'true';
+    var ownerToken = localStorage.getItem('snipmeOwnerToken');
+    var ownerEmail = localStorage.getItem('snipmeOwnerEmail');
+    var adminLoggedIn = localStorage.getItem('snipmeAdminLoggedIn') === 'true';
+
+    var ownerSessionValid = ownerLoggedIn && ownerToken && ownerEmail && isValidJwt(ownerToken);
+    if (!ownerSessionValid) {
+        localStorage.removeItem('snipmeOwnerLoggedIn');
+        localStorage.removeItem('snipmeOwnerToken');
+        localStorage.removeItem('snipmeOwnerEmail');
+        localStorage.removeItem('snipmeOwnerName');
+        localStorage.removeItem('snipmeOwnerSalonName');
+        localStorage.removeItem('snipmeOwnerUserId');
+        localStorage.removeItem('snipmeOwnerPhone');
+    }
+
+    var adminToken = localStorage.getItem('snipmeAdminToken');
+    var adminSessionValid = adminLoggedIn && adminToken && isValidJwt(adminToken);
+    if (!adminSessionValid) {
+        localStorage.removeItem('snipmeAdminLoggedIn');
+        localStorage.removeItem('snipmeAdminToken');
+        localStorage.removeItem('snipmeAdminEmail');
+        localStorage.removeItem('snipmeAdminName');
+    }
+
+    if (goToOwnerDashboardBtn && ownerSessionValid) {
+        goToOwnerDashboardBtn.style.display = 'block';
+    }
+    if (goToAdminDashboardBtn && adminSessionValid) {
+        goToAdminDashboardBtn.style.display = 'block';
+    }
+
+    roleGroups.forEach(function (group) {
+        var mainBtn = group.querySelector('.role-main-btn');
+        var optionBtns = group.querySelectorAll('.role-option-btn');
+
+        if (mainBtn) {
+            mainBtn.addEventListener('click', function () {
+                var alreadyActive = group.classList.contains('active');
+                roleGroups.forEach(function (g) { g.classList.remove('active'); });
+                if (!alreadyActive) {
+                    group.classList.add('active');
+                }
+            });
+        }
+
+        optionBtns.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var target = btn.getAttribute('data-target');
+                if (target) {
+                    window.location.href = target;
+                }
+            });
         });
     });
+
 });
 </script>
     <footer>
-        <p>&copy; 2026 <a href="../index.html">SNIP ME</a>. All rights reserved.</p>
+        <p>&copy; 2026 <a href="../index.html">SNIP ME</a>. All rights reserved. by <span class="footer-starc">STARC</span>.</p>
     </footer>
 
+    <script src="js/api-config.js"></script>
     <script src="js/main.js"></script>
 
     <script src="js/customer_session.js"></script>

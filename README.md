@@ -134,8 +134,7 @@ CREATE DATABASE snipme_db;
 
 ```bash
 cd Backend/
-mvn clean install
-mvn spring-boot:run
+./mvnw spring-boot:run -DskipTests
 ```
 
 The API will run on `http://localhost:8080`

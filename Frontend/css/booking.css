@@ -1,0 +1,652 @@
+/* =========================
+   BOOKING PAGE - SNIP ME
+   ========================= */
+
+body.dark-theme {
+    margin: 0;
+    padding: 0;
+    color: #ffffff;
+    background: #0b0b0b;
+    overflow-x: hidden;
+}
+
+/* Background video */
+.bg-video {
+    position: fixed;
+    top: 0;
+    left: 0;
+    min-width: 100%;
+    min-height: 100%;
+    object-fit: cover;
+    z-index: -2;
+}
+
+body.dark-theme::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: -1;
+    pointer-events: none;
+}
+
+/* Main booking card */
+.booking-container {
+    max-width: 470px;
+    width: calc(100% - 32px);
+    margin: 36px auto 56px;
+    padding: 32px;
+    background: linear-gradient(180deg, #181818 0%, #121212 100%);
+    border: 1px solid #2f2f2f;
+    border-radius: 24px;
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.38);
+    position: relative;
+    z-index: 2;
+}
+
+/* Header */
+.booking-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding-bottom: 18px;
+    margin-bottom: 26px;
+    border-bottom: 1px solid #2d2d2d;
+}
+
+.booking-header h1 {
+    margin: 0;
+    color: #fff;
+    font-size: 2.15rem;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: 0.3px;
+}
+
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 96px;
+    height: 52px;
+    padding: 0 18px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #f1c40f, #ffd84d);
+    color: #111;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.95rem;
+    box-shadow: 0 10px 24px rgba(241, 196, 15, 0.18);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.back-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 28px rgba(241, 196, 15, 0.22);
+}
+
+/* Steps */
+.booking-steps {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 28px;
+    position: relative;
+}
+
+.booking-steps::before {
+    content: "";
+    position: absolute;
+    top: 20px;
+    left: 11%;
+    right: 11%;
+    height: 2px;
+    background: #343434;
+    z-index: 0;
+}
+
+.step {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+}
+
+.step-indicator {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: #232323;
+    border: 1px solid #3a3a3a;
+    color: #a9a9a9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    margin-bottom: 10px;
+    transition: all 0.28s ease;
+}
+
+.step span {
+    color: #9a9a9a;
+    font-size: 0.96rem;
+    text-align: center;
+    line-height: 1.35;
+    transition: color 0.28s ease;
+}
+
+.step.active .step-indicator {
+    background: linear-gradient(135deg, #f1c40f, #ffd84d);
+    color: #111;
+    border-color: transparent;
+    box-shadow: 0 0 0 5px rgba(241, 196, 15, 0.10);
+}
+
+.step.active span {
+    color: #f1c40f;
+    font-weight: 700;
+}
+
+/* Step content */
+.step-content {
+    display: none;
+    animation: fadeSlideUp 0.35s ease;
+}
+
+.step-content.active {
+    display: block;
+}
+
+@keyframes fadeSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Section cards */
+.salon-info-card,
+.slots-container,
+.payment-container,
+.success-container {
+    background: linear-gradient(180deg, #1d1d1d 0%, #161616 100%);
+    border: 1px solid #2f2f2f;
+    border-radius: 20px;
+    padding: 26px;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
+}
+
+/* Salon info */
+.salon-header h2 {
+    margin: 0 0 10px;
+    color: #fff;
+    font-size: 1.6rem;
+    line-height: 1.3;
+}
+
+.salon-header p {
+    margin: 0 0 24px;
+    color: #cfcfcf;
+    line-height: 1.7;
+}
+
+/* Section headings */
+.slots-container h3,
+.payment-container h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #fff;
+    font-size: 1.35rem;
+}
+
+.slots-container p,
+.payment-container p {
+    color: #cfcfcf;
+    line-height: 1.7;
+}
+
+/* Forms */
+.booking-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    margin-bottom: 8px;
+    color: #f1c40f;
+    font-weight: 700;
+    font-size: 0.95rem;
+    letter-spacing: 0.2px;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    min-height: 54px;
+    padding: 13px 16px;
+    background: #101010;
+    border: 1px solid #303030;
+    border-radius: 14px;
+    color: #fff;
+    font-size: 0.95rem;
+    box-sizing: border-box;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #f1c40f;
+    box-shadow: 0 0 0 4px rgba(241, 196, 15, 0.10);
+    background: #141414;
+}
+
+.form-group small {
+    margin-top: 8px;
+    color: #aaaaaa;
+    font-size: 0.86rem;
+}
+
+/* Date input wrapper */
+.date-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.date-input-wrapper input[type="date"] {
+    padding-right: 56px;
+    appearance: none;
+    -webkit-appearance: none;
+    position: relative;
+}
+
+/* Native calendar icon */
+.date-input-wrapper input[type="date"]::-webkit-calendar-picker-indicator {
+    opacity: 1;
+    cursor: pointer;
+    filter: invert(1);
+    position: absolute;
+    right: 14px;
+    width: 20px;
+    height: 20px;
+}
+
+/* Extra custom calendar button */
+.calendar-btn {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 38px;
+    height: 38px;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    color: #f1c40f;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.25s ease, transform 0.2s ease;
+}
+
+.calendar-btn:hover {
+    background: rgba(241, 196, 15, 0.12);
+}
+
+.calendar-btn:active {
+    transform: translateY(-50%) scale(0.96);
+}
+
+/* Error text */
+.error-text {
+    color: #ff6b6b !important;
+    font-size: 0.85rem;
+    margin-top: 8px;
+    min-height: 18px;
+}
+
+/* Buttons */
+.form-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 26px;
+}
+
+.btn-primary,
+.btn-secondary {
+    border: none;
+    border-radius: 999px;
+    min-height: 46px;
+    padding: 0 22px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.25s ease, opacity 0.25s ease, box-shadow 0.25s ease;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #d8af09, #f1c40f);
+    color: #111;
+    box-shadow: 0 10px 22px rgba(241, 196, 15, 0.16);
+}
+
+.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 28px rgba(241, 196, 15, 0.20);
+}
+
+.btn-primary:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.btn-secondary {
+    background: #2a2a2a;
+    color: #ffffff;
+    border: 1px solid #3a3a3a;
+}
+
+.btn-secondary:hover {
+    transform: translateY(-1px);
+    background: #323232;
+}
+
+/* Time slots */
+.time-slots-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.time-slot {
+    position: relative;
+}
+
+.time-slot input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.time-slot label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    padding: 16px 18px;
+    background: #121212;
+    border: 1px solid #303030;
+    border-radius: 14px;
+    color: #fff;
+    cursor: pointer;
+    box-sizing: border-box;
+    transition: all 0.25s ease;
+}
+
+.time-slot:hover label {
+    border-color: #f1c40f;
+    background: #181818;
+}
+
+.time-slot.selected label {
+    border-color: #f1c40f;
+    background: rgba(241, 196, 15, 0.08);
+    box-shadow: 0 0 0 4px rgba(241, 196, 15, 0.08);
+}
+
+.slot-time {
+    font-weight: 700;
+    color: #fff;
+}
+
+.slot-duration {
+    color: #bdbdbd;
+    font-size: 0.88rem;
+}
+
+.loading,
+.no-slots {
+    color: #cfcfcf;
+    margin: 8px 0 0;
+}
+
+/* Payment options */
+.payment-options {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin: 18px 0 22px;
+}
+
+.payment-option input[type="radio"] {
+    display: none;
+}
+
+.payment-option label {
+    display: block;
+    position: relative;
+    padding: 16px 18px 16px 52px;
+    background: #121212;
+    border: 1px solid #2f2f2f;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.payment-option label:hover {
+    border-color: #f1c40f;
+}
+
+.payment-option input[type="radio"]:checked + label {
+    border-color: #f1c40f;
+    background: rgba(241, 196, 15, 0.07);
+    box-shadow: 0 0 0 4px rgba(241, 196, 15, 0.08);
+}
+
+.radio-custom {
+    position: absolute;
+    left: 18px;
+    top: 22px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid #8c8c8c;
+    background: transparent;
+    box-sizing: border-box;
+}
+
+.payment-option input[type="radio"]:checked + label .radio-custom {
+    border-color: #f1c40f;
+    background: radial-gradient(circle, #f1c40f 45%, transparent 46%);
+}
+
+.payment-title {
+    display: block;
+    color: #fff;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.payment-subtitle {
+    display: block;
+    color: #b8b8b8;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+/* Payment form */
+.payment-form {
+    margin-top: 18px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+.summary-text {
+    margin-bottom: 16px;
+    color: #d6d6d6;
+    line-height: 1.7;
+}
+
+/* Success state */
+.success-container {
+    text-align: center;
+}
+
+.success-icon {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 18px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #d8af09, #f1c40f);
+    color: #111;
+    font-size: 2rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.success-container h2 {
+    margin: 0 0 12px;
+    color: #fff;
+    font-size: 1.7rem;
+}
+
+.success-container p {
+    color: #cfcfcf;
+    line-height: 1.7;
+}
+
+.confirmation-details {
+    margin-top: 18px;
+    padding: 16px;
+    border-radius: 14px;
+    background: #101010;
+    border: 1px solid #2c2c2c;
+    text-align: left;
+    color: #d8d8d8;
+}
+
+/* Footer spacing */
+footer {
+    position: relative;
+    z-index: 2;
+}
+
+/* Responsive */
+@media (min-width: 1100px) {
+    .booking-container {
+        margin-top: 28px;
+        margin-bottom: 40px;
+    }
+}
+
+@media (max-width: 768px) {
+    .booking-container {
+        width: calc(100% - 24px);
+        margin: 24px auto 36px;
+        padding: 22px;
+        border-radius: 20px;
+    }
+
+    .booking-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .booking-header h1 {
+        font-size: 1.8rem;
+    }
+
+    .back-btn {
+        min-width: 88px;
+        height: 46px;
+        font-size: 0.9rem;
+    }
+
+    .booking-steps::before {
+        left: 14%;
+        right: 14%;
+    }
+
+    .step span {
+        font-size: 0.84rem;
+    }
+
+    .salon-info-card,
+    .slots-container,
+    .payment-container,
+    .success-container {
+        padding: 20px;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .form-actions {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+        flex: 1 1 140px;
+    }
+}
+
+@media (max-width: 480px) {
+    .booking-container {
+        padding: 18px;
+    }
+
+    .booking-header h1 {
+        font-size: 1.6rem;
+    }
+
+    .step-indicator {
+        width: 38px;
+        height: 38px;
+    }
+
+    .step span {
+        font-size: 0.78rem;
+    }
+
+    .form-group input,
+    .form-group select {
+        min-height: 50px;
+        font-size: 0.92rem;
+    }
+
+    .calendar-btn {
+        width: 34px;
+        height: 34px;
+        right: 8px;
+    }
+}

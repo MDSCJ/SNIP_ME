@@ -1,38 +1,330 @@
 /* css/about.css */
 
+:root {
+    --bg-dark: #050508;
+    --wire-color: #1a1a24;
+    --glow-cyan: #ff2b2b;
+}
+
+body.about-circuit {
+    background-color: var(--bg-dark);
+    overflow-x: hidden;
+}
+
+.circuit-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -3;
+    pointer-events: none;
+}
+
+.traces path {
+    fill: none;
+    stroke: var(--wire-color);
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.nodes circle {
+    fill: #0a0a0f;
+    stroke: var(--wire-color);
+    stroke-width: 2;
+}
+
+.energy-stream {
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 25, 4000;
+    filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.8))
+            drop-shadow(0 0 12px currentColor)
+            drop-shadow(0 0 25px currentColor);
+}
+
+.cyan {
+    stroke: #ffe3e3;
+    color: var(--glow-cyan);
+}
+
+.purple {
+    stroke: #ffe3e3;
+    color: var(--glow-cyan);
+}
+
+.blue {
+    stroke: #ffe3e3;
+    color: var(--glow-cyan);
+}
+
+.speed-1 {
+    animation: flow 12s linear infinite;
+}
+
+.speed-2 {
+    animation: flow 16s linear infinite;
+}
+
+.speed-3 {
+    animation: flow 14s linear infinite;
+}
+
+.speed-4 {
+    animation: flow 20s linear infinite;
+}
+
+.delay-1 {
+    animation-delay: 0s;
+}
+
+.delay-2 {
+    animation-delay: 3s;
+}
+
+.delay-3 {
+    animation-delay: 6s;
+}
+
+.delay-4 {
+    animation-delay: 2s;
+}
+
+.delay-5 {
+    animation-delay: 8s;
+}
+
+.reverse {
+    animation-direction: reverse;
+}
+
+@keyframes flow {
+    0% {
+        stroke-dashoffset: 4025;
+    }
+
+    100% {
+        stroke-dashoffset: 0;
+    }
+}
+
 .team-section {
     text-align: center;
     padding: 50px 5%;
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    z-index: 1;
+    font-family: "Space Grotesk", "Segoe UI", sans-serif;
 }
 
-.team-section h1 {
+.team-section::before {
+    content: "";
+    position: absolute;
+    inset: -20%;
+    background:
+        radial-gradient(circle at 20% 25%, rgba(241, 196, 15, 0.22), transparent 35%),
+        radial-gradient(circle at 80% 70%, rgba(241, 196, 15, 0.16), transparent 40%),
+        radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.05), transparent 45%);
+    animation: aboutAmbientDrift 14s ease-in-out infinite alternate;
+    z-index: -2;
+}
+
+.team-section::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+    background-size: 38px 38px;
+    opacity: 0.2;
+    animation: aboutGridFloat 18s linear infinite;
+    z-index: -1;
+    pointer-events: none;
+}
+
+@keyframes aboutAmbientDrift {
+    0% {
+        transform: translate3d(-1.5%, -1%, 0) scale(1);
+        filter: hue-rotate(0deg);
+    }
+    100% {
+        transform: translate3d(1.5%, 1.2%, 0) scale(1.05);
+        filter: hue-rotate(8deg);
+    }
+}
+
+@keyframes aboutGridFloat {
+    0% {
+        transform: translateY(0);
+    }
+    100% {
+        transform: translateY(38px);
+    }
+}
+
+body.about-circuit .team-section h1 {
     color: var(--accent-yellow);
     font-size: 2.5rem;
     margin-bottom: 50px;
     letter-spacing: 2px;
+    text-transform: uppercase;
+    position: relative;
+    display: inline-block;
+    background: linear-gradient(90deg, #f1c40f 0%, #ffe27a 45%, #f1c40f 100%);
+    background-size: 220% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0 0 10px rgba(241, 196, 15, 0.35), 0 0 26px rgba(241, 196, 15, 0.25);
+    animation: mindsShimmer 3.8s linear infinite, mindsJitter 1.9s steps(2, end) infinite;
+    font-family: "Orbitron", sans-serif;
+    font-weight: 600;
+}
+
+.team-section h1::after {
+    content: "MEET THE MINDS";
+    position: absolute;
+    left: 0;
+    top: 0;
+    color: rgba(255, 236, 140, 0.35);
+    transform: translate(1.2px, -1px);
+    filter: blur(0.35px);
+    pointer-events: none;
+}
+
+@keyframes mindsShimmer {
+    0% {
+        background-position: 0% 50%;
+    }
+    100% {
+        background-position: 220% 50%;
+    }
+}
+
+@keyframes mindsJitter {
+    0%,
+    100% {
+        transform: translate(0, 0) skewX(0deg);
+    }
+    20% {
+        transform: translate(-0.6px, 0.5px) skewX(-0.5deg);
+    }
+    40% {
+        transform: translate(0.8px, -0.4px) skewX(0.6deg);
+    }
+    60% {
+        transform: translate(-0.5px, -0.6px) skewX(-0.4deg);
+    }
+    80% {
+        transform: translate(0.6px, 0.5px) skewX(0.5deg);
+    }
 }
 
 /* Grid Layout for 5 Developers */
 .team-grid {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 40px;
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 28px;
+    max-width: 1080px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 2;
 }
 
 .team-card {
     background: #1a1a1a;
-    padding: 30px;
+    padding: 26px;
     border-radius: 15px;
-    width: 250px;
+    grid-column: span 2;
+    min-height: 420px;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     border: 1px solid #333;
+}
+
+/* Center row 2 cards on desktop: positions 2 and 4 of 6-column grid */
+.team-card:nth-child(4) {
+    grid-column: 2 / span 2;
+}
+
+.team-card:nth-child(5) {
+    grid-column: 4 / span 2;
 }
 
 .team-card:hover {
     transform: translateY(-10px);
     box-shadow: 0 10px 20px rgba(241, 196, 15, 0.2);
     border-color: var(--accent-yellow);
+}
+
+/* About page edge glow effect for developer cards only */
+.team-card.glow-box {
+    position: relative;
+    overflow: hidden;
+    padding: 2px;
+    border: none;
+    background: transparent;
+}
+
+.team-card.glow-box::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 2px;
+    border-radius: 15px;
+    background: radial-gradient(
+        400px circle at var(--mouse-x, 0) var(--mouse-y, 0),
+        rgba(241, 196, 15, 0.6),
+        transparent 40%
+    );
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    z-index: 1;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+body:hover .team-card.glow-box::before {
+    opacity: 1;
+}
+
+.team-card.glow-box .box-content {
+    position: relative;
+    background: linear-gradient(165deg, rgba(20, 20, 28, 0.14), rgba(8, 8, 14, 0.05));
+    backdrop-filter: blur(12px) saturate(145%);
+    -webkit-backdrop-filter: blur(12px) saturate(145%);
+    border-radius: 13px;
+    border: none;
+    z-index: 2;
+    padding: 26px;
+    min-height: calc(420px - 4px);
+    color: #ffffff;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2),
+                inset 0 -1px 0 rgba(255, 255, 255, 0.06),
+                0 16px 26px rgba(0, 0, 0, 0.2);
+}
+
+.developer-card {
+    cursor: default;
+}
+
+.developer-card .box-content {
+    background: linear-gradient(155deg, rgba(34, 43, 58, 0.1), rgba(8, 12, 20, 0.03));
+    border: none;
+}
+
+.developer-card .box-content::before {
+    content: "";
+    position: absolute;
+    inset: 1px;
+    border-radius: 12px;
+    background: linear-gradient(120deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0) 45%);
+    pointer-events: none;
 }
 
 /* Circular Image Cropping */
@@ -52,9 +344,33 @@
 }
 
 /* Text Styles */
-.team-card h3 { margin: 10px 0 5px; color: #fff; }
-.team-card .role { color: var(--accent-yellow); font-weight: bold; font-size: 0.9rem; margin-bottom: 15px; }
-.team-card .desc { color: #ccc; font-size: 0.9rem; margin-bottom: 20px; line-height: 1.4; }
+body.about-circuit .team-card h3 {
+    margin: 10px 0 8px;
+    color: #fff;
+    font-family: "Rajdhani", sans-serif;
+    font-size: 1.65rem;
+    font-weight: 500;
+    letter-spacing: 0.07em;
+    line-height: 1.05;
+    text-transform: uppercase;
+}
+
+body.about-circuit .team-card .role {
+    color: var(--accent-yellow);
+    font-family: "Rajdhani", sans-serif;
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 15px;
+    letter-spacing: 0.04em;
+}
+
+body.about-circuit .team-card .desc {
+    color: #d8d8d8;
+    font-size: 0.95rem;
+    margin-bottom: 20px;
+    line-height: 1.45;
+    font-family: "Space Grotesk", "Segoe UI", sans-serif;
+}
 
 /* Social Icons */
 .social-links a {
@@ -66,4 +382,36 @@
 
 .social-links a:hover {
     color: var(--accent-yellow);
+}
+
+@media (max-width: 768px) {
+    .team-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+    }
+
+    .team-card {
+        grid-column: span 1;
+        min-height: 380px;
+    }
+
+    .team-card:nth-child(4),
+    .team-card:nth-child(5) {
+        grid-column: span 1;
+    }
+
+    .team-card.glow-box .box-content {
+        min-height: calc(380px - 4px);
+        padding: 20px;
+    }
+
+    .img-circle {
+        width: 120px;
+        height: 120px;
+    }
+
+    body.about-circuit .team-card h3 {
+        font-size: 1.35rem;
+        letter-spacing: 0.05em;
+    }
 }

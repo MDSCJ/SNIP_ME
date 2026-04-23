@@ -4,11 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Our Team | SNIP ME</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600&family=Rajdhani:wght@400;500;600&family=Space+Grotesk:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/about.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-<body class="dark-theme">
+<body class="dark-theme about-circuit">
 
     <header class="main-header">
         <div class="header-content">
@@ -19,7 +22,7 @@
     </header>
 
     <nav class="nav-bar">
-        <div class="nav-toggle">&#9776;</div>
+        <button class="nav-toggle" aria-label="open menu">☰</button>
         <ul>
             <li><a href="../index.html">Home</a></li>
             <li><a href="about.html" class="active">About Us</a></li>
@@ -29,80 +32,148 @@
     </nav>
 
     <section class="team-section">
+        <svg class="circuit-background" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <g class="nodes">
+                <circle cx="350" cy="350" r="3"/> <circle cx="350" cy="370" r="3"/> <circle cx="350" cy="390" r="3"/>
+                <circle cx="350" cy="610" r="3"/> <circle cx="350" cy="630" r="3"/> <circle cx="350" cy="650" r="3"/>
+                <circle cx="650" cy="350" r="3"/> <circle cx="650" cy="370" r="3"/> <circle cx="650" cy="390" r="3"/>
+
+                <circle cx="50" cy="150" r="4"/> <circle cx="50" cy="170" r="4"/> <circle cx="50" cy="190" r="4"/>
+                <circle cx="950" cy="850" r="4"/> <circle cx="950" cy="870" r="4"/> <circle cx="950" cy="890" r="4"/>
+                <circle cx="50" cy="850" r="4"/> <circle cx="150" cy="950" r="4"/>
+                <circle cx="950" cy="150" r="4"/> <circle cx="850" cy="50" r="4"/>
+            </g>
+
+            <g class="traces">
+                <path d="M 350,350 L 250,350 L 150,250 L 50,250" />
+                <path d="M 350,370 L 270,370 L 170,270 L 50,270" />
+                <path d="M 350,390 L 290,390 L 190,290 L 50,290" />
+
+                <path d="M 650,610 L 750,610 L 850,710 L 950,710" />
+                <path d="M 650,630 L 730,630 L 830,730 L 950,730" />
+                <path d="M 650,650 L 710,650 L 810,750 L 950,750" />
+
+                <path d="M 50,850 L 150,850 L 250,750 L 250,650 L 350,650" />
+                <path d="M 150,950 L 150,870 L 270,750 L 270,630 L 350,630" />
+
+                <path d="M 650,350 L 650,250 L 750,150 L 950,150" />
+                <path d="M 670,350 L 670,230 L 770,130 L 950,130" />
+                <path d="M 690,350 L 690,210 L 790,110 L 850,50" />
+
+                <path d="M 450,50 L 450,300 L 400,350 L 400,650 L 450,700 L 450,950" />
+                <path d="M 550,50 L 550,300 L 600,350 L 600,650 L 550,700 L 550,950" />
+            </g>
+
+            <g class="glow-paths">
+                <path class="energy-stream cyan speed-1 delay-1" d="M 350,350 L 250,350 L 150,250 L 50,250" />
+                <path class="energy-stream cyan speed-1 delay-4" d="M 350,370 L 270,370 L 170,270 L 50,270" />
+                <path class="energy-stream cyan speed-1 delay-2" d="M 350,390 L 290,390 L 190,290 L 50,290" />
+
+                <path class="energy-stream purple speed-2 delay-3 reverse" d="M 650,610 L 750,610 L 850,710 L 950,710" />
+                <path class="energy-stream purple speed-2 delay-1 reverse" d="M 650,630 L 730,630 L 830,730 L 950,730" />
+                <path class="energy-stream purple speed-2 delay-5 reverse" d="M 650,650 L 710,650 L 810,750 L 950,750" />
+
+                <path class="energy-stream blue speed-3 delay-2" d="M 50,850 L 150,850 L 250,750 L 250,650 L 350,650" />
+                <path class="energy-stream blue speed-3 delay-4" d="M 150,950 L 150,870 L 270,750 L 270,630 L 350,630" />
+
+                <path class="energy-stream cyan speed-4 delay-1" d="M 650,350 L 650,250 L 750,150 L 950,150" />
+                <path class="energy-stream purple speed-4 delay-5" d="M 670,350 L 670,230 L 770,130 L 950,130" />
+                <path class="energy-stream blue speed-3 delay-3" d="M 690,350 L 690,210 L 790,110 L 850,50" />
+
+                <path class="energy-stream purple speed-1 delay-1" d="M 450,50 L 450,300 L 400,350 L 400,650 L 450,700 L 450,950" />
+                <path class="energy-stream cyan speed-1 delay-4 reverse" d="M 550,50 L 550,300 L 600,350 L 600,650 L 550,700 L 550,950" />
+            </g>
+        </svg>
+
         <h1>MEET THE MINDS</h1>
         <div class="team-grid">
             
-            <div class="team-card">
-                <div class="img-circle">
-                    <img src="images/dev1.jpg" alt="Chamath">
-                </div>
-                <h3>Chamath</h3>
-                <p class="role">Developer</p>
-                <p class="desc">Passionate about creating innovative solutions.</p>
-                <div class="social-links">
-                    <a href="#"><i class="fab fa-linkedin"></i></a>
-                    <a href="#"><i class="fab fa-github"></i></a>
-                </div>
-            </div>
-
-            <div class="team-card">
-                <div class="img-circle">
-                    <img src="images/dev2.jpg" alt="Dev 2">
-                </div>
-                <h3>Name 2</h3>
-                <p class="role">UI/UX Designer</p>
-                <p class="desc">Creating seamless visual experiences.</p>
-                <div class="social-links">
-                    <a href="#"><i class="fab fa-linkedin"></i></a>
-                    <a href="#"><i class="fab fa-github"></i></a>
+            <div class="team-card glow-box developer-card">
+                <div class="box-content">
+                    <div class="img-circle">
+                        <img src="images/chamath.png" alt="Chamath" onerror="this.onerror=null;this.src='images/dev1.jpg';">
+                    </div>
+                    <h3>Chamath Jayasinghe</h3>
+                    <p class="role">Full Stack Developer & Graphic Designer</p>
+                    <p class="desc">Focused on making the site visually attractive, user-friendly, and easy to understand. Managing both frontend and backend development while keeping the database synchronized.</p>
+                    <div class="social-links">
+                        <a href="https://www.linkedin.com/in/mdscj" target="_blank" rel="noopener noreferrer"><i class="fab fa-linkedin"></i></a>
+                        <a href="https://github.com/MDSCJ" target="_blank" rel="noopener noreferrer"><i class="fab fa-github"></i></a>
+                    </div>
                 </div>
             </div>
 
-            <div class="team-card">
-                <div class="img-circle"><img src="images/dev3.jpg" alt="Dev 3"></div>
-                <h3>Name 3</h3>
-                <p class="role">Frontend Dev</p>
-                <p class="desc">Turning designs into interactive code.</p>
-                <div class="social-links"><a href="#"><i class="fab fa-linkedin"></i></a><a href="#"><i class="fab fa-github"></i></a></div>
+            <div class="team-card glow-box developer-card">
+                <div class="box-content">
+                    <div class="img-circle">
+                        <img src="images/induru.jpg" alt="Adeesha W. G. I" onerror="this.onerror=null;this.src='images/dev2.jpg';">
+                    </div>
+                    <h3>Adeesha W. G. I</h3>
+                    <p class="role">Full Stack Developer</p>
+                    <p class="desc">CSE Undergraduate at the University of Moratuwa, building robust backend systems.</p>
+                    <div class="social-links">
+                        <a href="https://www.linkedin.com/in/induru-adeesha-85b019343" target="_blank" rel="noopener noreferrer"><i class="fab fa-linkedin"></i></a>
+                        <a href="https://www.github.com/induru07" target="_blank" rel="noopener noreferrer"><i class="fab fa-github"></i></a>
+                    </div>
+                </div>
             </div>
 
-            <div class="team-card">
-                <div class="img-circle"><img src="images/dev4.jpg" alt="Dev 4"></div>
-                <h3>Name 4</h3>
-                <p class="role">Database Admin</p>
-                <p class="desc">Ensuring data integrity and speed.</p>
-                <div class="social-links"><a href="#"><i class="fab fa-linkedin"></i></a><a href="#"><i class="fab fa-github"></i></a></div>
+            <div class="team-card glow-box">
+                <div class="box-content">
+                    <div class="img-circle">
+                        <img src="images/Shavini.jpeg" alt="Kaveesha K. H. S" onerror="this.onerror=null;this.src='images/dev3.jpg';"></div>
+                    <h3>Kaveesha K. H. S</h3>
+                    <p class="role">Full Stack Developer</p>
+                    <p class="desc">CSE Undergraduate at the University of Moratuwa,Focused on developing the core User Management and Security module for the backend</p>
+                    <div class="social-links">
+                        <a href="http://linkedin.com/in/shavini-kaveesha-861a3232b"><i class="fab fa-linkedin"></i></a>
+                        <a href="https://github.com/ShaviniKaveesha"><i class="fab fa-github"></i></a></div>
+                </div>
             </div>
 
-            <div class="team-card">
-                <div class="img-circle"><img src="images/dev5.jpg" alt="Dev 5"></div>
-                <h3>Name 5</h3>
-                <p class="role">QA Engineer</p>
-                <p class="desc">Breaking things so users don't have to.</p>
-                <div class="social-links"><a href="#"><i class="fab fa-linkedin"></i></a><a href="#"><i class="fab fa-github"></i></a></div>
+            <div class="team-card glow-box">
+                <div class="box-content">
+                    <div class="img-circle"><img src="images/dev4.jpg" alt="Dev 4"></div>
+                    <h3>Name 4</h3>
+                    <p class="role">Database Admin</p>
+                    <p class="desc">Ensuring data integrity and speed.</p>
+                    <div class="social-links"><a href="#"><i class="fab fa-linkedin"></i></a><a href="#"><i class="fab fa-github"></i></a></div>
+                </div>
+            </div>
+
+            <div class="team-card glow-box">
+                <div class="box-content">
+                    <div class="img-circle"><img src="images/dev5.jpg" alt="Dev 5"></div>
+                    <h3>Name 5</h3>
+                    <p class="role">QA Engineer</p>
+                    <p class="desc">Breaking things so users don't have to.</p>
+                    <div class="social-links"><a href="#"><i class="fab fa-linkedin"></i></a><a href="#"><i class="fab fa-github"></i></a></div>
+                </div>
             </div>
 
         </div>
     </section>
 
     <footer>
-        <p>&copy; 2026 <a href="../index.html">SNIP ME</a>. All rights reserved.</p>
+        <p>&copy; 2026 <a href="../index.html">SNIP ME</a>. All rights reserved. by <span class="footer-starc">STARC</span>.</p>
     </footer>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            var toggle = document.querySelector('.nav-toggle');
-            var list = document.querySelector('.nav-bar ul');
-            if (toggle && list) {
-                toggle.addEventListener('click', function() {
-                    list.classList.toggle('open');
-                });
-            }
-        });
-    </script>
 
     <script src="js/main.js"></script>
     <script src="js/customer_session.js"></script>
     <script src="js/devtools-warning.js"></script>
+    <script>
+        const glowBoxes = document.querySelectorAll('.glow-box');
+
+        document.addEventListener('mousemove', (e) => {
+            glowBoxes.forEach(box => {
+                const rect = box.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                box.style.setProperty('--mouse-x', `${x}px`);
+                box.style.setProperty('--mouse-y', `${y}px`);
+            });
+        });
+    </script>
 </body>
 </html>

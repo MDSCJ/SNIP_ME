@@ -1,4 +1,4 @@
-package com.starc.snipme.services;
+package com.starc.snipme.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.starc.snipme.model.TimeSlot;
-import com.starc.snipme.repositories.TimeSlotRepository;
+import com.starc.snipme.repository.TimeSlotRepository;
 
 @Service
 public class SlotManagerService {

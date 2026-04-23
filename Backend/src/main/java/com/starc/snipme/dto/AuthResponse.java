@@ -5,6 +5,9 @@ public class AuthResponse {
     private String name;
     private String phoneNumber;
     private String email;
+    private String userType;
+    private Long userId;
+    private String salonName;
 
     public AuthResponse(String token) {
         this.token = token;
@@ -15,6 +18,24 @@ public class AuthResponse {
         this.name = name;
         this.phoneNumber = phoneNumber;
         this.email = email;
+    }
+
+    public AuthResponse(String token, String name, String phoneNumber, String email, String userType) {
+        this.token = token;
+        this.name = name;
+        this.phoneNumber = phoneNumber;
+        this.email = email;
+        this.userType = userType;
+    }
+
+    public AuthResponse(String token, String name, String phoneNumber, String email, String userType, Long userId, String salonName) {
+        this.token = token;
+        this.name = name;
+        this.phoneNumber = phoneNumber;
+        this.email = email;
+        this.userType = userType;
+        this.userId = userId;
+        this.salonName = salonName;
     }
 
     public String getToken() {
@@ -47,6 +68,30 @@ public class AuthResponse {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getUserType() {
+        return userType;
+    }
+
+    public void setUserType(String userType) {
+        this.userType = userType;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
+
+    public String getSalonName() {
+        return salonName;
+    }
+
+    public void setSalonName(String salonName) {
+        this.salonName = salonName;
     }
 
 }

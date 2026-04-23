@@ -6,6 +6,15 @@ document.addEventListener("DOMContentLoaded", function () {
     const PHONE_KEY = "snipmeCustomerPhone";
     const TOKEN_KEY = "snipmeCustomerToken";
     const PASSWORD_KEY = "snipmeCustomerPassword";
+    const OWNER_LOGIN_FLAG_KEY = "snipmeOwnerLoggedIn";
+    const OWNER_NAME_KEY = "snipmeOwnerName";
+    const OWNER_EMAIL_KEY = "snipmeOwnerEmail";
+    const OWNER_PHONE_KEY = "snipmeOwnerPhone";
+    const OWNER_TOKEN_KEY = "snipmeOwnerToken";
+    const ADMIN_LOGIN_KEY = "snipmeAdminLoggedIn";
+    const ADMIN_NAME_KEY = "snipmeAdminName";
+    const ADMIN_EMAIL_KEY = "snipmeAdminEmail";
+    const ADMIN_TOKEN_KEY = "snipmeAdminToken";
     const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
     const PHONE_REGEX = /^0[0-9]{9,14}$/;
     const GOOGLE_CLIENT_ID = "520195887658-u2vcovmf6k1htff623gc92ak3j3g1r67.apps.googleusercontent.com";
@@ -28,6 +37,21 @@ document.addEventListener("DOMContentLoaded", function () {
             if (v) v.classList.add("hidden-view");
         });
         if (show) show.classList.remove("hidden-view");
+    }
+
+    function applyInitialModeFromQuery() {
+        const mode = (new URLSearchParams(window.location.search).get("mode") || "").toLowerCase();
+        if (mode === "signin") {
+            switchView(loginView);
+            return;
+        }
+        if (mode === "signup") {
+            switchView(signupView);
+            return;
+        }
+        if (mode === "forgot") {
+            switchView(forgotView);
+        }
     }
 
     function setupPasswordToggle(toggleId, inputId, eyeOpenId, eyeClosedId) {
@@ -165,6 +189,7 @@ document.addEventListener("DOMContentLoaded", function () {
     setupPasswordToggle("toggleLoginPassword", "loginPassword", "loginEyeOpen", "loginEyeClosed");
     setupPasswordToggle("toggleSignupPassword", "signupPassword", "signupEyeOpen", "signupEyeClosed");
     setupPasswordToggle("toggleConfirmPassword", "signupConfirmPassword", "confirmEyeOpen", "confirmEyeClosed");
+    applyInitialModeFromQuery();
 
     if (showSignup) {
         showSignup.addEventListener("click", function (e) {
@@ -235,7 +260,37 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 const serverName = typeof result.data.name === "string" ? result.data.name.trim() : "";
                 const serverPhone = typeof result.data.phoneNumber === "string" ? result.data.phoneNumber.trim() : "";
+                const userType = typeof result.data.userType === "string" ? result.data.userType.trim().toUpperCase() : "CUSTOMER";
                 const username = serverName || email.split("@")[0] || "Customer";
+
+                if (userType === "SALON_OWNER") {
+                    localStorage.setItem(OWNER_LOGIN_FLAG_KEY, "true");
+                    localStorage.setItem(OWNER_NAME_KEY, username);
+                    localStorage.setItem(OWNER_EMAIL_KEY, email);
+                    if (serverPhone) {
+                        localStorage.setItem(OWNER_PHONE_KEY, serverPhone);
+                    }
+                    if (result.data.token) {
+                        localStorage.setItem(OWNER_TOKEN_KEY, result.data.token);
+                    }
+
+                    alert("Salon owner login successful.");
+                    window.location.href = "Salon-Owner-Dashboard.html";
+                    return;
+                }
+
+                if (userType === "ADMIN") {
+                    localStorage.setItem(ADMIN_LOGIN_KEY, "true");
+                    localStorage.setItem(ADMIN_NAME_KEY, username);
+                    localStorage.setItem(ADMIN_EMAIL_KEY, email);
+                    if (result.data.token) {
+                        localStorage.setItem(ADMIN_TOKEN_KEY, result.data.token);
+                    }
+
+                    alert("Admin login successful.");
+                    window.location.href = "admin-dashboard.html";
+                    return;
+                }
 
                 localStorage.setItem(LOGIN_FLAG_KEY, "true");
                 localStorage.setItem(USERNAME_KEY, username);

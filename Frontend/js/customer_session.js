@@ -64,6 +64,10 @@ document.addEventListener("DOMContentLoaded", function () {
         logoutBtn.textContent = "\u23FB";
 
         logoutBtn.addEventListener("click", function () {
+            var shouldLogout = window.confirm("Do you need to logout?");
+            if (!shouldLogout) {
+                return;
+            }
             clearSession();
         });
 

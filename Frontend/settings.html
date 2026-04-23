@@ -18,7 +18,7 @@
     </header>
 
     <nav class="nav-bar">
-        <div class="nav-toggle">&#9776;</div>
+        <button class="nav-toggle" aria-label="open menu">☰</button>
         <ul>
             <li><a href="../index.html">Home</a></li>
             <li><a href="about.html">About Us</a></li>
@@ -29,10 +29,16 @@
 
     <main class="settings-section">
         <div class="settings-wrapper">
-            <h1 class="settings-title">Account Settings</h1>
+            <!-- Tab Navigation -->
+            <div class="settings-tabs">
+                <button class="tab-btn active" data-tab="account">Account Settings</button>
+                <button class="tab-btn" data-tab="bookings">My Bookings</button>
+            </div>
 
-            <!-- Change Username -->
-            <div class="settings-card">
+            <!-- ACCOUNT SETTINGS TAB -->
+            <div class="tab-content active" id="account-tab">
+                <!-- Change Username -->
+                <div class="settings-card">
                 <h2>Change Username</h2>
                 <p class="settings-desc">Update the display name shown in the login pill.</p>
                 <form id="changeUsernameForm" novalidate>
@@ -74,26 +80,25 @@
                 <button id="deleteAccountBtn" class="settings-btn danger-btn">Delete My Account</button>
                 <p id="deleteMsg" class="settings-msg hidden"></p>
             </div>
+            </div>
+
+            <!-- BOOKINGS TAB -->
+            <div class="tab-content" id="bookings-tab">
+                <div class="bookings-container" id="bookingsContainer">
+                    <p class="loading-text">Loading your bookings...</p>
+                </div>
+            </div>
         </div>
     </main>
 
     <footer>
-        <p>&copy; 2026 <a href="../index.html">SNIP ME</a>. All rights reserved.</p>
+        <p>&copy; 2026 <a href="../index.html">SNIP ME</a>. All rights reserved. by <span class="footer-starc">STARC</span>.</p>
     </footer>
 
+    <script src="js/api-config.js"></script>
+    <script src="js/main.js"></script>
     <script src="js/customer_session.js"></script>
     <script src="js/settings.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            var toggle = document.querySelector('.nav-toggle');
-            var list = document.querySelector('.nav-bar ul');
-            if (toggle && list) {
-                toggle.addEventListener('click', function () {
-                    list.classList.toggle('open');
-                });
-            }
-        });
-    </script>
     <script src="js/devtools-warning.js"></script>
 </body>
 </html>
