@@ -25,6 +25,9 @@
         "Content-Type": "application/json",
         "Authorization": "Bearer " + adminToken
     };
+    const authOnlyHeaders = {
+        "Authorization": "Bearer " + adminToken
+    };
 
     const statLoggedUsers = document.getElementById("statLoggedUsers");
     const statLoggedOwners = document.getElementById("statLoggedOwners");
@@ -396,31 +399,56 @@
 
     if (notificationBellBtn) {
         notificationBellBtn.addEventListener("click", function () {
+            notificationBellBtn.blur();
             loadAndDisplayNotifications();
         });
     }
 
     function loadAndDisplayNotifications() {
+        if (notificationsModal) {
+            notificationsModal.style.display = "flex";
+        }
+        if (notificationsList) {
+            notificationsList.innerHTML = '<p style="text-align: center; color: #9affc7; padding: 20px;">Loading notifications...</p>';
+        }
+
         const url = apiRoot + "/admin/notifications";
         
         fetch(url, {
             method: "GET",
-            headers: headers
+            headers: authOnlyHeaders
         })
-        .then(response => {
-            if (!response.ok) throw new Error("Failed to load notifications");
+        .then(function (response) {
+            if (handleAuthFailure(response)) return Promise.reject(new Error("Unauthorized"));
+            if (!response.ok) {
+                return response.text().then(function (text) {
+                    throw new Error(text || ("Failed to load notifications (HTTP " + response.status + ")"));
+                });
+            }
             return response.json();
         })
-        .then(data => {
-            displayNotifications(data.notifications || []);
-            if (notificationsModal) {
-                notificationsModal.style.display = "flex";
+        .then(function (data) {
+            // Support both { notifications: [...] } and raw array response shapes.
+            const notifications = Array.isArray(data)
+                ? data
+                : (Array.isArray(data.notifications) ? data.notifications : []);
+            displayNotifications(notifications);
+
+            const unreadCount = Number.isFinite(Number(data.unreadCount)) ? Number(data.unreadCount) : null;
+            if (unreadCount !== null && notificationBadge) {
+                if (unreadCount > 0) {
+                    notificationBadge.textContent = unreadCount;
+                    notificationBadge.style.display = "block";
+                } else {
+                    notificationBadge.style.display = "none";
+                }
             }
         })
-        .catch(error => {
+        .catch(function (error) {
             console.error("Error loading notifications:", error);
             if (notificationsList) {
-                notificationsList.innerHTML = '<p style="color: red; padding: 20px;">Failed to load notifications</p>';
+                const message = String(error && error.message ? error.message : "Failed to load notifications");
+                notificationsList.innerHTML = '<p style="color: #ff9db0; padding: 20px;">' + message + '</p>';
             }
         });
     }
@@ -458,15 +486,18 @@
             method: "PUT",
             headers: headers
         })
-        .then(response => {
+        .then(function (response) {
+            if (handleAuthFailure(response)) return Promise.reject(new Error("Unauthorized"));
             if (!response.ok) throw new Error("Failed to mark notification as read");
             return response.json();
         })
-        .then(() => {
+        .then(function () {
             loadAndDisplayNotifications();
             updateNotificationBadge();
         })
-        .catch(error => console.error("Error marking notification as read:", error));
+        .catch(function (error) {
+            console.error("Error marking notification as read:", error);
+        });
     };
 
     function updateNotificationBadge() {
@@ -474,13 +505,14 @@
         
         fetch(url, {
             method: "GET",
-            headers: headers
+            headers: authOnlyHeaders
         })
-        .then(response => {
+        .then(function (response) {
+            if (handleAuthFailure(response)) return Promise.reject(new Error("Unauthorized"));
             if (!response.ok) throw new Error("Failed to get notification count");
             return response.json();
         })
-        .then(data => {
+        .then(function (data) {
             const count = data.unreadCount || 0;
             if (notificationBadge) {
                 if (count > 0) {
@@ -491,7 +523,9 @@
                 }
             }
         })
-        .catch(error => console.error("Error updating notification badge:", error));
+        .catch(function (error) {
+            console.error("Error updating notification badge:", error);
+        });
     }
 
     window.closeNotificationsModal = function() {
@@ -499,6 +533,14 @@
             notificationsModal.style.display = "none";
         }
     };
+
+    if (notificationsModal) {
+        notificationsModal.addEventListener("click", function (event) {
+            if (event.target === notificationsModal) {
+                window.closeNotificationsModal();
+            }
+        });
+    }
 
     // Update notification badge on page load and every 30 seconds
     updateNotificationBadge();

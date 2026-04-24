@@ -29,7 +29,7 @@ public class PublicSalonController {
     @GetMapping("/trending")
     public ResponseEntity<?> getTrendingSalons() {
         try {
-            List<Salon> trendingSalons = salonRepository.findTrendingSalons();
+            List<Salon> trendingSalons = salonRepository.findTop10ByIsActiveTrueOrderByRateDesc();
             
             List<Map<String, Object>> salonDTOs = new ArrayList<>();
             DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("h:mm a");

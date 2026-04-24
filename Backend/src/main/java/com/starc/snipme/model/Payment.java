@@ -32,6 +32,12 @@ public class Payment {
 
     //Getter and Setters
     public Long getPaymentID(){return paymentID;}
+    public Double getAmount(){return amount;}
+    public void setAmount(Double amount){this.amount = amount;}
     public String getPaymentStatus(){return paymentStatus;}
-    
+    public void setPaymentStatus(String paymentStatus){this.paymentStatus = paymentStatus;}
+    public LocalDateTime getTransactionDate(){return transactionDate;}
+    public void setTransactionDate(LocalDateTime transactionDate){this.transactionDate = transactionDate;}
+    public Booking getBooking(){return booking;}
+    public void setBooking(Booking booking){this.booking = booking;}
 }

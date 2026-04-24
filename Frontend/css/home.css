@@ -610,8 +610,8 @@ body.modal-open {
 .salon-rating {
     padding: 14px 18px 0;
     color: #ffd65a;
-    font-size: 0.95rem;
-    font-weight: 700;
+    font-size: 0.85rem;
+    font-weight: 400;
     letter-spacing: 0.3px;
     margin-bottom: 4px;
 }
@@ -883,7 +883,7 @@ body.modal-open {
 
 .search-result-rating {
     color: var(--accent-yellow);
-    font-weight: 600;
+    font-weight: 500;
     margin-bottom: 12px;
 }
 

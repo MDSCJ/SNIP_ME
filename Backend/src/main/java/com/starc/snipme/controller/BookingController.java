@@ -1,4 +1,4 @@
-package com.starc.snipme.controllers;
+package com.starc.snipme.controller;
 
 import java.util.List;
 
@@ -12,7 +12,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.starc.snipme.model.Booking;
 import com.starc.snipme.model.TimeSlot;
-import com.starc.snipme.services.BookingService;
+import com.starc.snipme.service.BookingService;
+import com.starc.snipme.repository.BookingRepository;
+import com.starc.snipme.repository.TimeSlotRepository;
 
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,10 +25,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class BookingController {
 
     @Autowired
-    private com.starc.snipme.repositories.BookingRepository bookingRepository;
+    private BookingRepository bookingRepository;
 
     @Autowired
-    private com.starc.snipme.repositories.TimeSlotRepository timeSlotRepository;
+    private TimeSlotRepository timeSlotRepository;
 
     @Autowired
     private BookingService bookingService;
@@ -73,7 +75,7 @@ public class BookingController {
     public ResponseEntity<?> cancelBooking(@RequestParam Long bookingID) {
         try {
             // Triggers the service logic mapped to your Post-Booking Lifecycle diagram
-            Booking canceledBooking = bookingService.cancelBooking(bookingID);
+            bookingService.cancelBooking(bookingID);
             
             return ResponseEntity.ok("Appointment canceled successfully. The time slot is now available for other customers.");
             

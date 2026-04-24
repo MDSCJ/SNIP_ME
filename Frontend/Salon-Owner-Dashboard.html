@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
+
 <body>
 
     <div id="loadingOverlay" class="loading-overlay">
@@ -42,7 +43,11 @@
             <ul>
                 <li class="nav-link active" data-target="calendar-section"><i class="fas fa-calendar-alt"></i> Calendar</li>
                 <li class="nav-link" data-target="details-section"><i class="fas fa-info-circle"></i> Details</li>
-                 <li class="nav-link" data-target="services-section"><i class="fas fa-info-circle"></i> Services</li>
+                <li class="nav-link" data-target="services-section"><i class="fas fa-info-circle"></i> Services</li>
+                <li class="nav-link" data-target="notifications-section">
+                    <i class="fas fa-bell"></i> Notifications 
+                    <span class="sidebar-badge" id="sidebarBadge"></span>  
+                </li>
             </ul>
         </nav>
 
@@ -288,6 +293,22 @@
                     </div>
                 </div>
             </section>
+            <section id="notifications-section" class="content-section" style="display:none;">
+                <div class="details-container">
+                    <header class="calendar-header">
+                        <h2>Notification Center</h2>
+                        <p>All your salon activity and alerts</p>
+                    </header>
+                    <div class="info-card">
+                        <div class="notif-center-actions" style="display:flex;justify-content:flex-end;margin-bottom:14px;">
+                            <button class="btn btn-small" id="clearAllNotifsBtn">Clear All</button>
+                        </div>
+                        <div id="notif-center-list" class="notif-center-list">
+                   
+                        </div>
+                    </div>
+                </div>
+            </section>
 
             
             
@@ -409,11 +430,36 @@
         </div>
     </div>
 
+        <!-- Notification Bell -->
+    <div class="notif-bell-wrap" id="bellWrap">
+        <div class="notif-bell-icon" id="bellBtn">
+            <i class="fas fa-bell"></i>
+        </div>
+        <div class="notif-badge" id="notifBadge">0</div>
+
+        <div class="notif-panel" id="notifPanel">
+            <div class="notif-panel-header">
+                <h4>Notifications</h4>
+                <button class="notif-mark-read" id="markAllReadBtn">Mark all read</button>
+            </div>
+        <div class="notif-list" id="notifList">
+        <!-- dynamically populated -->
+        </div>
+            <div class="notif-footer">
+                <button class="notif-see-all" id="seeAllBtn">
+                    See all notifications <i class="fas fa-arrow-right" style="font-size:12px;"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+
     <script src="js/api-config.js"></script>
     <script src="js/loader.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="../Frontend/js/Salon-Owner-Script.js"></script>
     <script src="js/devtools-warning.js"></script>
     <div id="toast">Notification Message Here</div>
+
 </body>
 </html>

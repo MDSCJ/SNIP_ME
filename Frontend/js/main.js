@@ -35,10 +35,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const salonSlider = document.getElementById('salonSlider');
     const leftArrow = document.querySelector('.slider-btn.left');
     const rightArrow = document.querySelector('.slider-btn.right');
+    let trendingRetryTimer = null;
 
     // Load trending salons from API
     function loadTrendingSalons() {
         console.log('Loading trending salons...');
+        ensureSkeletonsFillViewport();
         
         // Determine API endpoint
         let apiRoot = '';
@@ -67,6 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(salons => {
                 console.log('Salons received:', salons);
                 if (Array.isArray(salons) && salons.length > 0) {
+                    clearRetryTimer();
                     console.log(`Rendering ${salons.length} salons`);
                     renderTrendingSalons(salons);
                 } else {
@@ -77,9 +80,61 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .catch(err => {
                 console.error('Error loading trending salons:', err);
-                removeSkeletons();
-                salonSlider.innerHTML = '<div style="padding: 40px; text-align: center; color: #ff6b6b;">⚠️ Failed to load trending salons: ' + err.message + '</div>';
+                // Keep skeletons visible forever while backend is unavailable.
+                ensureSkeletonsFillViewport();
+                scheduleTrendingRetry();
             });
+    }
+
+    function clearRetryTimer() {
+        if (trendingRetryTimer) {
+            clearTimeout(trendingRetryTimer);
+            trendingRetryTimer = null;
+        }
+    }
+
+    function scheduleTrendingRetry() {
+        if (trendingRetryTimer) {
+            return;
+        }
+        trendingRetryTimer = setTimeout(() => {
+            trendingRetryTimer = null;
+            loadTrendingSalons();
+        }, 5000);
+    }
+
+    function buildSkeletonCard() {
+        const card = document.createElement('div');
+        card.className = 'salon-card skeleton-loader';
+        card.innerHTML = `
+            <div class="skeleton-title"></div>
+            <div class="skeleton-img"></div>
+            <div class="skeleton-services"></div>
+            <div class="skeleton-rating"></div>
+            <div class="skeleton-buttons"></div>
+        `;
+        return card;
+    }
+
+    function ensureSkeletonsFillViewport() {
+        const sliderWidth = salonSlider.clientWidth || Math.floor(window.innerWidth * 0.9);
+        const approxCardWidthWithGap = 320;
+        const requiredCount = Math.max(3, Math.ceil(sliderWidth / approxCardWidthWithGap) + 1);
+        const existingSkeletons = salonSlider.querySelectorAll('.skeleton-loader');
+
+        if (existingSkeletons.length > 0) {
+            if (existingSkeletons.length < requiredCount) {
+                for (let i = existingSkeletons.length; i < requiredCount; i++) {
+                    salonSlider.appendChild(buildSkeletonCard());
+                }
+            }
+            return;
+        }
+
+        salonSlider.innerHTML = '';
+        for (let i = 0; i < requiredCount; i++) {
+            salonSlider.appendChild(buildSkeletonCard());
+        }
     }
 
     function renderTrendingSalons(salons) {
@@ -92,6 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Build rating stars
             const rating = parseFloat(salon.rating) || 0;
+            const numberOfRatings = Number.isFinite(Number(salon.numberOfRatings)) ? Number(salon.numberOfRatings) : 0;
             const fullStars = Math.floor(rating);
             let ratingHTML = '';
             for (let i = 0; i < 5; i++) {
@@ -112,7 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span class="view-more">View more</span>
                     <div class="more-services">${sanitizeHTML(salon.city || '')}</div>
                 </div>
-                <div class="salon-rating">${ratingHTML} (${rating.toFixed(1)})</div>
+                <div class="salon-rating">${ratingHTML} (${numberOfRatings} ratings)</div>
                 <div class="salon-actions">
                     <button class="btn-view">View</button>
                     <button class="btn-book">Book Now</button>
@@ -229,6 +285,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    window.addEventListener('resize', () => {
+        ensureSkeletonsFillViewport();
+    });
+
     // Load salons on page load
     loadTrendingSalons();
 
@@ -329,6 +389,11 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentPage = 0;
     let currentSearchResults = [];
     let apiRoot = '';
+    const LOCATION_CACHE_KEY = 'snipmeUserLocation';
+    const DEFAULT_LOCATION = {
+        latitude: 7.8731,
+        longitude: 80.7718
+    };
 
     // Determine API root
     if (typeof API_BASE_URL !== 'undefined' && API_BASE_URL) {
@@ -341,8 +406,46 @@ document.addEventListener('DOMContentLoaded', () => {
         apiRoot = 'https://snip-me.onrender.com/api';
     }
 
-    // Get user's current location
-    function getUserLocation() {
+    function getCachedLocation() {
+        try {
+            const raw = localStorage.getItem(LOCATION_CACHE_KEY);
+            if (!raw) {
+                return null;
+            }
+            const parsed = JSON.parse(raw);
+            if (!Number.isFinite(parsed.latitude) || !Number.isFinite(parsed.longitude)) {
+                return null;
+            }
+            return {
+                latitude: Number(parsed.latitude),
+                longitude: Number(parsed.longitude)
+            };
+        } catch {
+            return null;
+        }
+    }
+
+    function cacheLocation(location) {
+        try {
+            localStorage.setItem(LOCATION_CACHE_KEY, JSON.stringify(location));
+        } catch {
+            // Ignore storage errors (private mode / storage disabled).
+        }
+    }
+
+    // Get user's current location (prompt only when explicitly requested)
+    function getUserLocation(forcePrompt = false) {
+        const cachedLocation = getCachedLocation();
+        if (cachedLocation && !forcePrompt) {
+            userLocation = cachedLocation;
+            return;
+        }
+
+        if (!forcePrompt) {
+            userLocation = DEFAULT_LOCATION;
+            return;
+        }
+
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
                 (position) => {
@@ -350,17 +453,16 @@ document.addEventListener('DOMContentLoaded', () => {
                         latitude: position.coords.latitude,
                         longitude: position.coords.longitude
                     };
+                    cacheLocation(userLocation);
                     console.log('User location:', userLocation);
                 },
                 (error) => {
                     console.warn('Geolocation error:', error.message);
-                    // Fallback to Sri Lanka center if permission denied
-                    userLocation = {
-                        latitude: 7.8731,
-                        longitude: 80.7718
-                    };
+                    userLocation = cachedLocation || DEFAULT_LOCATION;
                 }
             );
+        } else {
+            userLocation = cachedLocation || DEFAULT_LOCATION;
         }
     }
 
@@ -457,6 +559,7 @@ document.addEventListener('DOMContentLoaded', () => {
             card.className = 'search-result-card';
 
             const rating = parseFloat(salon.rating) || 0;
+            const numberOfRatings = Number.isFinite(Number(salon.numberOfRatings)) ? Number(salon.numberOfRatings) : 0;
             const fullStars = Math.floor(rating);
             let ratingHTML = '';
             for (let i = 0; i < 5; i++) {
@@ -480,7 +583,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         📍 ${sanitizeHTML(salon.city || 'Location')}
                     </div>
                     <div class="search-result-rating">
-                        ${ratingHTML} ${rating.toFixed(1)} (${salon.numberOfRatings} reviews)
+                        ${ratingHTML} (${numberOfRatings} ratings)
                     </div>
                     <div class="search-result-hours">
                         ${salon.openingTime && salon.closingTime ? '⏰ ' + salon.openingTime + ' - ' + salon.closingTime : ''}

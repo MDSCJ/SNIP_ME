@@ -2,6 +2,7 @@ package com.starc.snipme.controller;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -201,7 +202,9 @@ public class SalonOwnerServiceController {
 
             // Convert to a readable format with service details
             List<Map<String, Object>> servicesWithPrices = pricingEntries.stream().map(pricing -> {
-                ServiceItem service = serviceItemRepository.findById(pricing.getServiceId()).orElse(null);
+                ServiceItem service = serviceItemRepository
+                    .findById(Objects.requireNonNull(pricing.getServiceId(), "serviceId must not be null"))
+                    .orElse(null);
                 Map<String, Object> serviceData = new java.util.LinkedHashMap<>();
                 serviceData.put("serviceId", pricing.getServiceId());
                 serviceData.put("serviceName", service != null ? service.getName() : "Unknown Service");
