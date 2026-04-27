@@ -1,0 +1,210 @@
+/* css/style.css */
+:root {
+    --bg-dark: #f8fafc;
+    --accent-yellow: #f1c40f; /* Orange-Yellow */
+    --text-main: #1a1a1b;
+    --nav-bg: #ffffff;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* --- 1. Header Image (Scrolls Away) --- */
+.main-header {
+    width: 100%;
+    height: auto;
+    background: #fdfdfd;
+}
+.main-header img {
+    width: 100%;
+    display: block;
+    object-fit: cover;
+}
+
+/* --- 2. Sticky Navigation Bar --- */
+.nav-bar {
+    background: var(--nav-bg);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 0 20px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start; /* keep items left-to-right; we'll push links right */
+}
+
+/* Desktop Menu (aligned to right) */
+.nav-bar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    gap: 30px;
+    margin-left: auto; /* push the menu to the right */
+    align-items: center;
+}
+
+.nav-bar ul li a {
+    color: #475569;
+    text-decoration: none;
+    text-transform: uppercase;
+    font-weight: bold;
+    font-size: 1rem;
+    padding: 10px 0;
+    transition: color 0.2s ease;
+    position: relative;
+}
+
+/* Hover/Active */
+.nav-bar ul li a:hover { color: var(--accent-yellow); }
+.nav-bar ul li a.active { color: #856404; }
+.nav-bar ul li a.active::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; height: 3px;
+    bottom: -8px;
+    background: var(--accent-yellow);
+}
+
+/* --- 3. Mobile hamburger toggle --- */
+.nav-toggle {
+    display: none; /* shown on small screens only */
+    font-size: 1.6rem;
+    color: var(--text-main);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    margin-left: auto; /* push toggle to the right */
+}
+
+/* Customer login session pill shown below the nav bar */
+.customer-session-pill {
+    position: fixed;
+    top: 72px;
+    right: 20px;
+    display: none;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid var(--accent-yellow);
+    border-radius: 999px;
+    padding: 8px 12px;
+    color: #111;
+    z-index: 1100;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+}
+
+.customer-session-pill.visible {
+    display: inline-flex;
+}
+
+.customer-session-label {
+    font-size: 0.82rem;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.customer-logout-btn {
+    border: none;
+    border-radius: 999px;
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+    background: var(--accent-yellow);
+    color: #111;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.customer-logout-btn:hover {
+    filter: brightness(1.05);
+}
+
+/* --- Mobile Responsive Styles --- */
+@media (max-width: 768px) {
+    .nav-bar {
+        position: sticky;
+        top: 0;
+    }
+    
+    .nav-toggle { display: block; }
+    /* shrink hamburger icon a bit so it remains visible with other icons */
+    .nav-toggle { font-size: 1.2rem; padding: 6px; }
+
+    .nav-bar ul {
+        position: absolute;
+        top: 60px;
+        left: 0;
+        right: 0;
+        width: 100%;
+        background: var(--nav-bg);
+        flex-direction: column;
+        align-items: center;
+        padding: 0;
+        gap: 0;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+        border-bottom: none;
+        z-index: 999;
+        pointer-events: none;
+    }
+
+    /* when opened, expand menu */
+    .nav-bar ul.open {
+        max-height: 500px;
+        padding: 20px 0;
+        gap: 12px;
+        border-bottom: 2px solid var(--accent-yellow);
+        pointer-events: auto;
+    }
+
+    .nav-bar ul li { margin: 8px 0; }
+
+    .nav-bar ul li a.active::after { display: none; }
+
+    .customer-session-pill {
+        right: 12px;
+        top: 68px;
+        max-width: calc(100vw - 24px);
+    }
+
+    .customer-session-label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}
+
+/* Footer styles (ensure footer sits below content) */
+footer {
+    background: #f1f5f9;
+    color: #475569;
+    text-align: center;
+    padding: 40px 0;
+    font-size: 0.9rem;
+    margin-top: auto; /* push footer to bottom when page is short */
+    position: relative;
+    z-index: 1;
+}
+footer a { color: #856404; text-decoration: none; }
+
+.footer-starc {
+    color: #856404;
+    font-weight: 700;
+}

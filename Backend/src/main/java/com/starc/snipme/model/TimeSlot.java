@@ -2,13 +2,13 @@ package com.starc.snipme.model;
 
 import java.time.LocalDateTime;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-
+//import jakarta.persistence.Column;
+//import jakarta.persistence.Entity;
+//import jakarta.persistence.GeneratedValue;
+//import jakarta.persistence.GenerationType;
+//import jakarta.persistence.Id;
+//import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 
 @Entity
@@ -21,7 +21,11 @@ public class TimeSlot {
 
     @Column(nullable = false)
     private LocalDateTime startTime;
-
+    //---------------------------------------------------------------------
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "salon_id", nullable = false)
+    private Salon salon;
+    //--------------------------------------------------------------------
     // States: "AVAILABLE", "LOCKED", "BOOKED"
     @Column(nullable = false)
     private String status = "AVAILABLE"; 
@@ -30,6 +34,9 @@ public class TimeSlot {
     private LocalDateTime lockedAt; 
 
     // --- Getters and Setters ---
+    public Salon getSalon() { return salon; }
+    public void setSalon(Salon salon) { this.salon = salon; }
+    
     public Long getSlotID() { return slotID; }
     public void setSlotID(Long slotID) { this.slotID = slotID; }
 

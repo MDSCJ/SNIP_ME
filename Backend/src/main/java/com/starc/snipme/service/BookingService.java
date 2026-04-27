@@ -13,6 +13,8 @@ import com.starc.snipme.model.TimeSlot;
 import com.starc.snipme.repository.BookingRepository;
 import com.starc.snipme.repository.TimeSlotRepository;
 
+import com.starc.snipme.service.SalonNotificationService;
+
 @Service
 public class BookingService {
 
@@ -22,6 +24,8 @@ public class BookingService {
     @Autowired
     private BookingRepository bookingRepository;
 
+    @Autowired
+    private SalonNotificationService salonNotificationService;
     // This method perfectly matches the "1.1 InitiateBooking" call in your sequence diagram
     @Transactional
     public TimeSlot initiateBooking(Long slotID, Long customerID) {
@@ -49,7 +53,10 @@ public class BookingService {
 
     @Transactional
     public Booking confirmBooking(Long slotID, Long customerID) {
-        
+        //null value checking
+        if (slotID == null || customerID == null) {
+        throw new IllegalArgumentException("Slot ID and Customer ID must not be null.");
+        }
         // 1. Find the specific TimeSlot in the database
         TimeSlot slot = timeSlotRepository.findById(Objects.requireNonNull(slotID, "slotID must not be null"))
                 .orElseThrow(() -> new RuntimeException("Time slot not found."));
@@ -67,15 +74,34 @@ public class BookingService {
         // 4. Create the official Booking object from your OOD
         Booking newBooking = new Booking(slot.getStartTime(), slot, customerID);
         newBooking.confirm(); // Uses the confirm() method from your class design to set status to "CONFIRMED"
-        
+
+        Booking savedBooking = bookingRepository.save(newBooking);
+        // --- SALON NOTIFICATION TRIGGER ---
+        // Dynamically retrieve the salon ID from the slot
+        Long salonId = slot.getSalon().getSalonID(); 
+
+        salonNotificationService.createNotification(
+            salonId, 
+            "New booking confirmed for " + slot.getStartTime(), 
+            "BOOKING_CONFIRMED", 
+            savedBooking.getBookingID()
+        );
+
+
+
         // 5. Save the Booking permanently to MySQL
-        return bookingRepository.save(newBooking);
+        return savedBooking;
+
+        
     }
 
     // The Cancellation Logic ---
     @Transactional
     public Booking cancelBooking(Long bookingID) {
-        
+        // null value check 
+        if (bookingID == null) {
+        throw new IllegalArgumentException("Booking ID must not be null.");
+        }
         // 1. Find the active booking in the database
         Booking booking = bookingRepository.findById(Objects.requireNonNull(bookingID, "bookingID must not be null"))
                 .orElseThrow(() -> new RuntimeException("Booking not found."));
@@ -95,6 +121,14 @@ public class BookingService {
         slot.setStatus("AVAILABLE");
         timeSlotRepository.save(slot);
 
+        Long salonId = booking.getTimeSlot().getSalon().getSalonID();
+
+        salonNotificationService.createNotification(
+            salonId, 
+            "Booking cancelled for " + slot.getStartTime(), 
+            "BOOKING_CANCELLED", 
+            booking.getBookingID()
+        );
         return booking;
     }
 }
