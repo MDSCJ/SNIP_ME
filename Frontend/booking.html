@@ -8,182 +8,302 @@
     <link rel="stylesheet" href="css/booking.css">
 </head>
 <body class="dark-theme">
-    <header class="main-header">
-        <div class="header-content">
-            <div class="logo-left">
-                <img src="images/desktop.jpg" alt="SNIP ME Logo">
-            </div>
+
+<header class="main-header">
+    <div class="header-content">
+        <div class="logo-left">
+            <img src="images/desktop.jpg" alt="SNIP ME Logo">
         </div>
-    </header>
+    </div>
+</header>
 
-    <nav class="nav-bar">
-        <button class="nav-toggle" aria-label="open menu">☰</button>
-        <ul>
-            <li><a href="../index.html">Home</a></li>
-            <li><a href="about.html">About Us</a></li>
-            <li><a href="login.html">Login</a></li>
-            <li><a href="settings.html">Settings</a></li>
-        </ul>
-    </nav>
-    <video class="bg-video" autoplay muted loop playsinline>
-        <source src="videos/bc.mp4" type="video/mp4">
-        Your browser does not support the video tag.
-    </video>
+<nav class="nav-bar">
+    <button class="nav-toggle" aria-label="open menu">☰</button>
+    <ul>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="about.html">About Us</a></li>
+        <li><a href="login.html">Login</a></li>
+        <li><a href="settings.html">Settings</a></li>
+    </ul>
+</nav>
 
-    <div class="booking-container">
-        <div class="booking-header">
-            <h1>Book Now</h1>
-            <a href="javascript:history.back()" class="back-btn">← Back</a>
+<video class="bg-video" autoplay muted loop playsinline>
+    <source src="videos/bc.mp4" type="video/mp4">
+</video>
+
+<div class="booking-container">
+
+    <div class="booking-header">
+        <h1>Book Now</h1>
+        <a href="javascript:history.back()" class="back-btn">← Back</a>
+    </div>
+
+    <div class="booking-steps">
+        <div class="step active" id="step1">
+            <div class="step-indicator">1</div>
+            <span>Salon Details</span>
         </div>
-
-        <div class="booking-steps">
-            <div class="step active" id="step1">
-                <div class="step-indicator">1</div>
-                <span>Salon Details</span>
-            </div>
-            <div class="step" id="step2">
-                <div class="step-indicator">2</div>
-                <span>Select Time</span>
-            </div>
-            <div class="step" id="step3">
-                <div class="step-indicator">3</div>
-                <span>Payment</span>
-            </div>
+        <div class="step" id="step2">
+            <div class="step-indicator">2</div>
+            <span>Select Time</span>
         </div>
+        <div class="step" id="step3">
+            <div class="step-indicator">3</div>
+            <span>Payment</span>
+        </div>
+    </div>
 
-        <!-- STEP 1: SALON DETAILS -->
-        <div class="step-content active" id="step1-content">
-            <div class="salon-info-card">
-                <div class="salon-header">
-                    <h2 id="salonName">Loading...</h2>
-                    <p id="salonDescription">Loading salon details...</p>
+    <!-- ══════════ STEP 1: SALON + SERVICE + DATE ══════════ -->
+    <div class="step-content active" id="step1-content">
+        <div class="salon-info-card">
+            <div class="salon-header">
+                <h2 id="salonName">Loading...</h2>
+                <p id="salonDescription">Loading salon details...</p>
+            </div>
+            <div class="booking-form">
+
+                <div class="form-group">
+                    <label for="serviceSelect">Select Service</label>
+                    <select id="serviceSelect" required>
+                        <option value="">Loading services...</option>
+                    </select>
+                    <small id="selectedServiceDisplay">None selected</small>
                 </div>
 
-                <div class="booking-form">
-                    <div class="form-group">
-                        <label for="serviceSelect">Select Service</label>
-                        <select id="serviceSelect" required>
-                            <option value="">-- Select a service --</option>
-                        </select>
-                        <small id="selectedServiceDisplay">None selected</small>
-                    </div>
-
-                    <div class="form-group">
+                <div class="form-group">
                     <label for="dateInput">Select Date</label>
-                        <div class="date-input-wrapper">
-                         <input type="date" id="dateInput" required>
-                        <button type="button" class="calendar-btn" id="calendarBtn" aria-label="Open calendar">
-                         📅
-                        </button>
-                        </div>
-                         <small id="dateError" class="error-text"></small>
+                    <div class="date-input-wrapper">
+                        <input type="date" id="dateInput" required>
+                        <button type="button" class="calendar-btn" id="calendarBtn" aria-label="Open calendar">📅</button>
                     </div>
-
-                    <div class="form-actions">
-                        <button type="button" class="btn-secondary" onclick="goBack()">Cancel</button>
-                        <button type="button" class="btn-primary" id="nextBtn1" onclick="proceedToSlots()">Next →</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- STEP 2: TIME SLOT SELECTION -->
-        <div class="step-content" id="step2-content">
-            <div class="slots-container">
-                <h3>Available Time Slots</h3>
-                <p id="salonNameStep2"></p>
-
-                <div class="time-slots-grid" id="timeSlotsGrid">
-                    <p class="loading">Loading available slots...</p>
+                    <small id="dateError" class="error-text"></small>
+                    <small class="date-hint">📅 Book from tomorrow up to 7 days ahead</small>
                 </div>
 
                 <div class="form-actions">
-                    <button type="button" class="btn-secondary" onclick="goToPreviousStep(2)">← Back</button>
-                    <button type="button" class="btn-primary" id="nextBtn2" onclick="proceedToPayment()" disabled>Next →</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- STEP 3: PAYMENT METHOD -->
-        <div class="step-content" id="step3-content">
-            <div class="payment-container">
-                <h3>Payment Method</h3>
-                <p id="bookingSummary" class="summary-text"></p>
-
-                <div class="payment-options">
-                    <div class="payment-option">
-                        <input type="radio" id="onlinePayment" name="paymentMethod" value="online" checked>
-                        <label for="onlinePayment">
-                            <span class="radio-custom"></span>
-                            <span class="payment-title">Online Payment</span>
-                            <span class="payment-subtitle">Credit/Debit Card (Visa, Mastercard, etc.)</span>
-                        </label>
-                    </div>
-
-                    <div class="payment-option">
-                        <input type="radio" id="cashPayment" name="paymentMethod" value="cash">
-                        <label for="cashPayment">
-                            <span class="radio-custom"></span>
-                            <span class="payment-title">Cash After Order</span>
-                            <span class="payment-subtitle">Pay at salon (For testing)</span>
-                        </label>
-                    </div>
+                    <button type="button" class="btn-secondary" onclick="goBack()">Cancel</button>
+                    <button type="button" class="btn-primary" onclick="proceedToSlots()">Next →</button>
                 </div>
 
-                <div class="payment-form" id="cardForm">
-                    <div class="form-group">
-                        <label for="cardName">Full Name</label>
-                        <input type="text" id="cardName" placeholder="Name on card" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="cardNumber">Card Number</label>
-                        <input type="text" id="cardNumber" placeholder="1234 5678 9012 3456" maxlength="19" required>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="cardExpiry">Expiry Date</label>
-                            <input type="text" id="cardExpiry" placeholder="MM/YY" maxlength="5" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="cardCVV">CVV</label>
-                            <input type="text" id="cardCVV" placeholder="123" maxlength="3" required>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="paymentError" class="error-text"></div>
-
-                <div class="form-actions">
-                    <button type="button" class="btn-secondary" onclick="goToPreviousStep(3)">← Back</button>
-                    <button type="button" class="btn-primary" id="confirmBtn" onclick="confirmBooking()">Confirm Booking</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- SUCCESS MESSAGE -->
-        <div class="step-content" id="successContent">
-            <div class="success-container">
-                <div class="success-icon">✓</div>
-                <h2>Booking Confirmed!</h2>
-                <p id="confirmationMessage">Your appointment has been successfully booked.</p>
-                <div class="confirmation-details" id="confirmationDetails"></div>
-                <div class="form-actions">
-                    <button type="button" class="btn-primary" onclick="goToSettings()">View in Settings</button>
-                    <button type="button" class="btn-secondary" onclick="goHome()">Back to Home</button>
-                </div>
             </div>
         </div>
     </div>
 
-    <script src="js/api-config.js"></script>
-    <footer>
-        <p>&copy; 2026 <a href="../index.html">SNIP ME</a>. All rights reserved. by <span class="footer-starc">STARC</span>.</p>
-    </footer>
+    <!-- ══════════ STEP 2: TIME SLOTS ══════════ -->
+    <div class="step-content" id="step2-content">
+        <div class="slots-container">
+            <h3>Available Time Slots</h3>
+            <p id="salonNameStep2"></p>
+            <div class="time-slots-grid" id="timeSlotsGrid">
+                <p class="loading">Loading available slots...</p>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" onclick="goToPreviousStep(2)">← Back</button>
+                <button type="button" class="btn-primary" id="nextBtn2" onclick="proceedToPayment()" disabled>Next →</button>
+            </div>
+        </div>
+    </div>
 
-    <script src="js/customer_session.js"></script>
-    <script src="js/booking.js"></script>
-    <script src="js/main.js"></script>
+    <!-- ══════════ STEP 3: PAYMENT ══════════ -->
+    <div class="step-content" id="step3-content">
+
+        <!-- MAIN PAYMENT SUMMARY BOX -->
+        <div class="payment-container" id="mainPaymentBox">
+            <h3>Payment</h3>
+
+            <div class="booking-summary-block">
+                <div class="summary-row">
+                    <span class="summary-label">Salon</span>
+                    <span class="summary-value" id="summSalon">-</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">Service</span>
+                    <span class="summary-value" id="summService">-</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">Date</span>
+                    <span class="summary-value" id="summDate">-</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">Time</span>
+                    <span class="summary-value" id="summTime">-</span>
+                </div>
+                <div class="summary-row summary-total">
+                    <span class="summary-label">Amount</span>
+                    <span class="summary-value amount-highlight" id="summAmount">-</span>
+                </div>
+            </div>
+
+            <!-- Single online payment option -->
+            <div class="online-only-box">
+                <div class="online-only-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                        <rect x="2" y="5" width="20" height="14" rx="2" stroke="#f1c40f" stroke-width="1.8"/>
+                        <line x1="2" y1="10" x2="22" y2="10" stroke="#f1c40f" stroke-width="1.8"/>
+                        <line x1="6" y1="15" x2="10" y2="15" stroke="#f1c40f" stroke-width="1.8" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <div class="online-only-text">
+                    <span class="online-only-title">Online Payment</span>
+                    <span class="online-only-sub">Secured by PayHere · Visa · Mastercard · Amex</span>
+                </div>
+                <div class="mini-card-icons">
+                    <div class="mini-card-icon">
+                        <svg viewBox="0 0 48 16" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="48" height="16" rx="2" fill="#1A1F71"/>
+                            <text x="5" y="12" font-family="Arial" font-weight="bold" font-size="9" fill="#fff">VISA</text>
+                        </svg>
+                    </div>
+                    <div class="mini-card-icon">
+                        <svg viewBox="0 0 38 24" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="14" cy="12" r="10" fill="#EB001B"/>
+                            <circle cx="24" cy="12" r="10" fill="#F79E1B"/>
+                            <path d="M19 5.27a10 10 0 0 1 0 13.46A10 10 0 0 1 19 5.27z" fill="#FF5F00"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions" style="margin-top:22px;">
+                <button type="button" class="btn-secondary" onclick="goToPreviousStep(3)">← Back</button>
+                <button type="button" class="btn-primary" onclick="proceedToGateway()">Proceed to Pay →</button>
+            </div>
+        </div><!-- /mainPaymentBox -->
+
+        <!-- PAYMENT GATEWAY CARD FORM -->
+        <div class="pg-wrapper" id="paymentGateway" style="display:none;">
+
+            <div class="pg-header">
+                <button type="button" class="pg-back-btn" id="gatewayBackBtn">← Back</button>
+                <span class="pg-title">Secure Payment</span>
+                <span class="pg-ssl">
+                    <svg width="11" height="13" viewBox="0 0 11 13" fill="none">
+                        <rect x="1" y="5" width="9" height="7" rx="1.5" fill="#4caf50"/>
+                        <path d="M3 5V3.5a2.5 2.5 0 0 1 5 0V5" stroke="#4caf50" stroke-width="1.4" fill="none"/>
+                    </svg>
+                    SSL Secured
+                </span>
+            </div>
+
+            <div class="pg-summary">
+                <div class="pg-sum-row"><span class="pg-sum-lbl">Service</span><span class="pg-sum-val" id="pgSummService">-</span></div>
+                <div class="pg-sum-row"><span class="pg-sum-lbl">Date</span><span class="pg-sum-val" id="pgSummDate">-</span></div>
+                <div class="pg-sum-row"><span class="pg-sum-lbl">Time</span><span class="pg-sum-val" id="pgSummTime">-</span></div>
+                <div class="pg-sum-row pg-sum-total">
+                    <span class="pg-sum-lbl">Total Due</span>
+                    <span class="pg-sum-val pg-total-amt" id="pgSummTotal">-</span>
+                </div>
+            </div>
+
+            <div class="pg-method-label">Choose your payment method</div>
+
+            <div class="pg-card-block">
+                <div class="pg-card-header">
+                    <input type="radio" name="pgMethod" id="pgMethodCard" checked style="accent-color:#2563eb;">
+                    <label for="pgMethodCard" class="pg-card-title">Credit or Debit Card</label>
+                    <div class="pg-brand-icons">
+                        <div class="card-icon-item active" data-card="visa">
+                            <svg viewBox="0 0 60 38" xmlns="http://www.w3.org/2000/svg"><rect width="60" height="38" rx="4" fill="#fff"/><rect width="60" height="38" rx="4" fill="none" stroke="#e0e0e0" stroke-width="1"/><text x="7" y="26" font-family="Arial" font-weight="900" font-size="16" fill="#1A1F71">VISA</text></svg>
+                        </div>
+                        <div class="card-icon-item active" data-card="mc">
+                            <svg viewBox="0 0 60 38" xmlns="http://www.w3.org/2000/svg"><rect width="60" height="38" rx="4" fill="#fff"/><rect width="60" height="38" rx="4" fill="none" stroke="#e0e0e0" stroke-width="1"/><circle cx="23" cy="19" r="10" fill="#EB001B"/><circle cx="37" cy="19" r="10" fill="#F79E1B"/><path d="M30 11.3a10 10 0 0 1 0 15.4A10 10 0 0 1 30 11.3z" fill="#FF5F00"/></svg>
+                        </div>
+                        <div class="card-icon-item active" data-card="amex">
+                            <svg viewBox="0 0 60 38" xmlns="http://www.w3.org/2000/svg"><rect width="60" height="38" rx="4" fill="#2E77BC"/><text x="5" y="24" font-family="Arial" font-weight="bold" font-size="8" fill="#fff">AMERICAN</text><text x="5" y="33" font-family="Arial" font-weight="bold" font-size="8" fill="#fff">EXPRESS</text></svg>
+                        </div>
+                        <div class="card-icon-item active" data-card="discover">
+                            <svg viewBox="0 0 60 38" xmlns="http://www.w3.org/2000/svg"><rect width="60" height="38" rx="4" fill="#fff"/><rect width="60" height="38" rx="4" fill="none" stroke="#e0e0e0" stroke-width="1"/><circle cx="42" cy="19" r="11" fill="#F76F20"/><text x="4" y="22" font-family="Arial" font-weight="bold" font-size="7" fill="#231F20">DISCOVER</text></svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pg-fields">
+                    <div class="pg-field-group">
+                        <label for="pgCardName">Cardholder Name</label>
+                        <input type="text" id="pgCardName" placeholder="Name on card" autocomplete="cc-name">
+                        <small class="field-error" id="nameError"></small>
+                    </div>
+                    <div class="pg-field-group">
+                        <label for="pgCardNumber">Card Number</label>
+                        <div class="pg-input-wrap">
+                            <input type="text" id="pgCardNumber" placeholder="1111 2222 3333 4444" maxlength="19" autocomplete="cc-number" inputmode="numeric">
+                            <span class="pg-card-chip">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="4" width="12" height="8" rx="1.5" stroke="#aaa" stroke-width="1.2"/><line x1="5" y1="4" x2="5" y2="12" stroke="#aaa" stroke-width="1"/><line x1="11" y1="4" x2="11" y2="12" stroke="#aaa" stroke-width="1"/><line x1="2" y1="8" x2="14" y2="8" stroke="#aaa" stroke-width="1"/></svg>
+                            </span>
+                        </div>
+                        <small class="field-error" id="numberError"></small>
+                    </div>
+                    <div class="pg-field-row">
+                        <div class="pg-field-group">
+                            <label for="pgExpiry">Expiration</label>
+                            <input type="text" id="pgExpiry" placeholder="MM/YY" maxlength="5" autocomplete="cc-exp" inputmode="numeric">
+                            <small class="field-error" id="expiryError"></small>
+                        </div>
+                        <div class="pg-field-group">
+                            <label for="pgCVV">CVV</label>
+                            <div class="pg-input-wrap">
+                                <input type="password" id="pgCVV" placeholder="•••" maxlength="4" autocomplete="cc-csc" inputmode="numeric">
+                                <span class="pg-cvv-tip" title="3-digit code on back of card">
+                                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="#aaa" stroke-width="1.2"/><text x="4.5" y="11" font-family="Arial" font-size="8" font-weight="bold" fill="#aaa">?</text></svg>
+                                </span>
+                            </div>
+                            <small class="field-error" id="cvvError"></small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="pgError" class="pg-error"></div>
+
+            <div class="pg-secure-footer">
+                <svg width="12" height="13" viewBox="0 0 12 14" fill="none"><rect x="1" y="5.5" width="10" height="8" rx="1.5" fill="#4caf50"/><path d="M3.5 5.5V4a2.5 2.5 0 0 1 5 0v1.5" stroke="#4caf50" stroke-width="1.4" fill="none"/></svg>
+                Guaranteed secure payments &nbsp;·&nbsp;
+                <img src="https://www.payhere.lk/downloads/images/payhere_short_banner_dark.png"
+                     alt="PayHere" style="height:20px;vertical-align:middle;margin-left:6px;"
+                     onerror="this.style.display='none'">
+            </div>
+
+            <button class="pg-confirm-btn" id="pgConfirmBtn" onclick="confirmOnlinePayment()">
+                Confirm Booking — <span id="pgBtnAmount">-</span>
+            </button>
+
+            <div class="pg-overlay" id="pgOverlay">
+                <div class="pg-overlay-card">
+                    <div class="pg-overlay-spinner"></div>
+                    <h4>Connecting to PayHere...</h4>
+                    <p>Please wait while we prepare your secure payment.</p>
+                </div>
+            </div>
+
+        </div><!-- /paymentGateway -->
+
+    </div><!-- /step3-content -->
+
+    <!-- ══════════ SUCCESS ══════════ -->
+    <div class="step-content" id="successContent">
+        <div class="success-container">
+            <div class="success-icon">✓</div>
+            <h2>Booking Confirmed!</h2>
+            <p>Your appointment has been successfully booked.</p>
+            <div class="confirmation-details" id="confirmationDetails"></div>
+            <div class="form-actions">
+                <button type="button" class="btn-primary" onclick="goToSettings()">View in Settings</button>
+                <button type="button" class="btn-secondary" onclick="goHome()">Back to Home</button>
+            </div>
+        </div>
+    </div>
+
+</div><!-- /booking-container -->
+
+<footer>
+    <p>&copy; 2026 <a href="../index.html">SNIP ME</a>. All rights reserved. by <span class="footer-starc">STARC</span>.</p>
+</footer>
+
+<!-- SCRIPT ORDER — DO NOT CHANGE -->
+<script src="js/api-config.js"></script>
+<script type="text/javascript" src="https://www.payhere.lk/lib/payhere.js"></script>
+<script src="js/customer_session.js"></script>
+<script src="js/booking.js"></script>
+<script src="js/main.js"></script>
 </body>
 </html>

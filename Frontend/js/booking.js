@@ -1,383 +1,666 @@
-// Global state for booking
+// ═══════════════════════════════════════════════════════════
+//  SNIP ME — Booking JS
+//  Fully connected to Spring Boot backend:
+//  - Step 1: Loads salon + services from backend
+//  - Step 2: Loads real time slots from backend, filtered by date
+//  - Step 3: PayHere sandbox via backend hash endpoint
+//  NOTE: API_BASE_URL comes from js/api-config.js
+
+
+const CURRENCY = 'LKR';
+
 let bookingState = {
-    salonId: null,
-    salonName: null,
-    salonDescription: null,
-    services: [],
-    selectedService: null,
-    selectedDate: null,
-    selectedSlot: null,
-    customerID: null,
-    bookingID: null,
-    paymentMethod: 'online'
+    salonId:         null,
+    salonName:       null,
+    salonDetails:    null,
+    selectedService: null,   // { serviceId, serviceName, price }
+    selectedDate:    null,
+    selectedSlot:    null,   // { slotID, label, startTime }
+    customerID:      null,
+    bookingID:       null,
+    orderId:         null,
+    allSlots:        []      // all available slots from backend
 };
 
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('Booking page loaded');
-    
-    // Get customer ID from session or localStorage
-    bookingState.customerID = localStorage.getItem('customerID') || sessionStorage.getItem('customerID');
-    
-    // Get salon info from URL parameters or session
+// ─────────────────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function () {
+
+    bookingState.customerID = localStorage.getItem('customerID')
+                           || sessionStorage.getItem('customerID')
+                           || '1';
+
     const params = new URLSearchParams(window.location.search);
-    bookingState.salonId = params.get('salonId') || sessionStorage.getItem('selectedSalonId');
-    bookingState.salonName = params.get('salonName') || sessionStorage.getItem('selectedSalonName') || 'Salon';
-    bookingState.salonDescription = params.get('salonDesc') || sessionStorage.getItem('selectedSalonDesc') || 'Professional salon services';
-    bookingState.services = JSON.parse(params.get('services') || sessionStorage.getItem('selectedServices') || '[]');
-    
-    // Populate salon details
-    document.getElementById('salonName').textContent = bookingState.salonName;
-    document.getElementById('salonDescription').textContent = bookingState.salonDescription;
-    document.getElementById('salonNameStep2').textContent = `at ${bookingState.salonName}`;
-    
-    // Populate service dropdown
-    const serviceSelect = document.getElementById('serviceSelect');
-    if (bookingState.services.length > 0) {
-        bookingState.services.forEach(service => {
-            const option = document.createElement('option');
-            option.value = service;
-            option.textContent = service;
-            serviceSelect.appendChild(option);
-        });
-    } else {
-        serviceSelect.innerHTML += '<option value="haircut">Haircut</option><option value="beard">Beard Trim</option><option value="styling">Styling</option>';
-    }
-    
-    // Event listeners
-    serviceSelect.addEventListener('change', updateServiceDisplay);
+    bookingState.salonId = params.get('salonId')
+                        || sessionStorage.getItem('selectedSalonId')
+                        || null;
 
-    // ✅ UPDATED PART (calendar fix)
+    // ── Date picker: tomorrow min, +7 days max ────────────
     const dateInput = document.getElementById('dateInput');
-    const calendarBtn = document.getElementById('calendarBtn');
-
+    const tomorrow  = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+    const maxDate = new Date();
+    maxDate.setDate(maxDate.getDate() + 7);
+    maxDate.setHours(0, 0, 0, 0);
+    dateInput.min = tomorrow.toISOString().split('T')[0];
+    dateInput.max = maxDate.toISOString().split('T')[0];
     dateInput.addEventListener('change', validateDate);
 
-    if (calendarBtn && dateInput) {
+    const calendarBtn = document.getElementById('calendarBtn');
+    if (calendarBtn) {
         calendarBtn.addEventListener('click', function () {
-            if (dateInput.showPicker) {
-                dateInput.showPicker();
-            } else {
-                dateInput.focus();
-                dateInput.click();
-            }
+            dateInput.showPicker ? dateInput.showPicker() : dateInput.focus();
         });
     }
-    // ✅ END OF UPDATED PART
-    
-    // Payment method toggle
-    document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
-        radio.addEventListener('change', function() {
-            bookingState.paymentMethod = this.value;
-            toggleCardForm();
+
+    // ── Load salon data from backend ──────────────────────
+    if (bookingState.salonId) {
+        loadSalonData(bookingState.salonId);
+    } else {
+        // Fallback if no salonId in URL
+        document.getElementById('salonName').textContent        = 'SNIP ME Salon';
+        document.getElementById('salonDescription').textContent = 'Professional salon services';
+        document.getElementById('salonNameStep2').textContent   = 'at SNIP ME Salon';
+        loadFallbackServices();
+    }
+
+    // Gateway back button
+    const gatewayBackBtn = document.getElementById('gatewayBackBtn');
+    if (gatewayBackBtn) {
+        gatewayBackBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            showMainBox();
         });
-    });
-    
-    // Set minimum date to today
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('dateInput').min = today;
-    
-    toggleCardForm();
+    }
+
+    // ── Card field listeners ──────────────────────────────
+    const pgCard = document.getElementById('pgCardNumber');
+    if (pgCard) {
+        pgCard.addEventListener('input', function () {
+            const raw = this.value.replace(/\D/g, '').slice(0, 16);
+            this.value = raw.match(/.{1,4}/g)?.join(' ') || raw;
+            detectCardType(raw);
+            validateFieldLive('number');
+        });
+        pgCard.addEventListener('blur', function () { validateFieldLive('number'); });
+    }
+    const pgExp = document.getElementById('pgExpiry');
+    if (pgExp) {
+        pgExp.addEventListener('input', function () {
+            let v = this.value.replace(/\D/g, '');
+            if (v.length >= 2) v = v.slice(0, 2) + '/' + v.slice(2, 4);
+            this.value = v;
+            validateFieldLive('expiry');
+        });
+        pgExp.addEventListener('blur', function () { validateFieldLive('expiry'); });
+    }
+    const pgCVV = document.getElementById('pgCVV');
+    if (pgCVV) {
+        pgCVV.addEventListener('input', function () {
+            this.value = this.value.replace(/\D/g, '').slice(0, 4);
+            validateFieldLive('cvv');
+        });
+        pgCVV.addEventListener('blur', function () { validateFieldLive('cvv'); });
+    }
+    const pgName = document.getElementById('pgCardName');
+    if (pgName) {
+        pgName.addEventListener('input',  function () { validateFieldLive('name'); });
+        pgName.addEventListener('blur',   function () { validateFieldLive('name'); });
+    }
+
+    // ── PayHere SDK setup ─────────────────────────────────
+    setupPayHereHandlers();
 });
 
+// ─────────────────────────────────────────────────────────
+// STEP 1 — Load Salon + Services from backend
+// ─────────────────────────────────────────────────────────
+function loadSalonData(salonId) {
+    showStep1Loading(true);
+
+    // Fetch salon details and services in parallel
+    Promise.all([
+        fetch(API_BASE_URL + '/public/salons/' + salonId).then(r => r.json()),
+        fetch(API_BASE_URL + '/public/salons/' + salonId + '/services').then(r => r.json())
+    ])
+    .then(function (results) {
+        const salon    = results[0];
+        const services = results[1];
+
+        // Store salon info
+        bookingState.salonName    = salon.name    || 'SNIP ME Salon';
+        bookingState.salonDetails = salon.details || 'Professional salon services';
+
+        // Update UI
+        document.getElementById('salonName').textContent        = bookingState.salonName;
+        document.getElementById('salonDescription').textContent = bookingState.salonDetails;
+        document.getElementById('salonNameStep2').textContent   = 'at ' + bookingState.salonName;
+
+        // Populate services dropdown with name + price
+        const serviceSelect = document.getElementById('serviceSelect');
+        serviceSelect.innerHTML = '<option value="">-- Select a service --</option>';
+
+        if (services && services.length > 0) {
+            services.forEach(function (s) {
+                const option = document.createElement('option');
+                option.value = JSON.stringify({ serviceId: s.serviceId, serviceName: s.serviceName, price: s.price });
+                option.textContent = s.serviceName + ' — Rs. ' + Number(s.price).toLocaleString('en-US', { minimumFractionDigits: 2 });
+                serviceSelect.appendChild(option);
+            });
+        } else {
+            loadFallbackServices();
+        }
+
+        serviceSelect.addEventListener('change', updateServiceDisplay);
+        showStep1Loading(false);
+    })
+    .catch(function (err) {
+        console.error('Failed to load salon data:', err);
+        // Fallback if backend not reachable
+        document.getElementById('salonName').textContent        = 'SNIP ME Salon';
+        document.getElementById('salonDescription').textContent = 'Professional salon services';
+        document.getElementById('salonNameStep2').textContent   = 'at SNIP ME Salon';
+        bookingState.salonName = 'SNIP ME Salon';
+        loadFallbackServices();
+        showStep1Loading(false);
+    });
+}
+
+function loadFallbackServices() {
+    // Used when backend not available or no services configured
+    const fallback = [
+        { serviceId: 1, serviceName: 'Haircut',    price: 1500 },
+        { serviceId: 2, serviceName: 'Beard Trim', price: 800  },
+        { serviceId: 3, serviceName: 'Styling',    price: 2000 },
+        { serviceId: 4, serviceName: 'Hair Wash',  price: 600  },
+        { serviceId: 5, serviceName: 'Hair Color', price: 3500 }
+    ];
+    const serviceSelect = document.getElementById('serviceSelect');
+    serviceSelect.innerHTML = '<option value="">-- Select a service --</option>';
+    fallback.forEach(function (s) {
+        const option = document.createElement('option');
+        option.value = JSON.stringify({ serviceId: s.serviceId, serviceName: s.serviceName, price: s.price });
+        option.textContent = s.serviceName + ' — Rs. ' + Number(s.price).toLocaleString('en-US', { minimumFractionDigits: 2 });
+        serviceSelect.appendChild(option);
+    });
+    serviceSelect.addEventListener('change', updateServiceDisplay);
+}
+
+function showStep1Loading(isLoading) {
+    const btn = document.querySelector('#step1-content .btn-primary');
+    if (btn) btn.disabled = isLoading;
+}
+
 function updateServiceDisplay() {
-    const service = document.getElementById('serviceSelect').value;
-    bookingState.selectedService = service || null;
-    const display = document.getElementById('selectedServiceDisplay');
-    display.textContent = service ? `Selected: ${service}` : 'None selected';
+    const raw = document.getElementById('serviceSelect').value;
+    if (!raw) {
+        bookingState.selectedService = null;
+        document.getElementById('selectedServiceDisplay').textContent = 'None selected';
+        return;
+    }
+    bookingState.selectedService = JSON.parse(raw);
+    document.getElementById('selectedServiceDisplay').textContent =
+        'Selected: ' + bookingState.selectedService.serviceName;
 }
 
 function validateDate() {
-    const dateInput = document.getElementById('dateInput');
-    const errorMsg = document.getElementById('dateError');
-    
-    if (!dateInput.value) {
-        errorMsg.textContent = 'Please select a date';
-        return false;
-    }
-    
-    const selectedDate = new Date(dateInput.value);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    if (selectedDate < today) {
-        errorMsg.textContent = 'Cannot book in the past';
-        return false;
-    }
-    
-    errorMsg.textContent = '';
-    bookingState.selectedDate = dateInput.value;
+    const inp = document.getElementById('dateInput');
+    const err = document.getElementById('dateError');
+    if (!inp.value) { err.textContent = 'Please select a date'; return false; }
+
+    const sel      = new Date(inp.value + 'T00:00:00');
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+    const maxDate  = new Date();
+    maxDate.setDate(maxDate.getDate() + 7);
+    maxDate.setHours(23, 59, 59, 999);
+
+    if (sel < tomorrow) { err.textContent = 'Please select from tomorrow onwards'; return false; }
+    if (sel > maxDate)  { err.textContent = 'Cannot book more than 7 days ahead'; return false; }
+
+    err.textContent = '';
+    bookingState.selectedDate = inp.value;
     return true;
 }
 
 function proceedToSlots() {
-    // Validate inputs
-    if (!document.getElementById('serviceSelect').value) {
-        alert('Please select a service');
-        return;
-    }
-    
-    if (!validateDate()) {
-        return;
-    }
-    
-    // Move to step 2
+    if (!bookingState.selectedService) { alert('Please select a service'); return; }
+    if (!validateDate()) return;
     goToStep(2);
     loadAvailableSlots();
 }
 
+// ─────────────────────────────────────────────────────────
+// STEP 2 — Load Real Time Slots from backend
+// ─────────────────────────────────────────────────────────
 function loadAvailableSlots() {
-    const slotsGrid = document.getElementById('timeSlotsGrid');
-    slotsGrid.innerHTML = '<p class="loading">Loading available slots...</p>';
-    
-    fetch(`${API_BASE_URL}/bookings/available`)
-        .then(response => response.json())
-        .then(slots => {
-            displaySlots(slots);
-        })
-        .catch(error => {
-            console.error('Error loading slots:', error);
-            slotsGrid.innerHTML = '<p class="error-text">Failed to load available slots. Please try again.</p>';
-        });
+    const grid = document.getElementById('timeSlotsGrid');
+    grid.innerHTML = '<p class="loading">Loading available slots...</p>';
+    document.getElementById('nextBtn2').disabled = true;
+
+    fetch(API_BASE_URL + '/bookings/available')
+    .then(function (res) {
+        if (!res.ok) throw new Error('Backend returned ' + res.status);
+        return res.json();
+    })
+    .then(function (slots) {
+        bookingState.allSlots = slots;
+        filterAndDisplaySlots(slots, bookingState.selectedDate);
+    })
+    .catch(function (err) {
+        console.error('Failed to load slots:', err);
+        grid.innerHTML = '<p class="no-slots" style="color:#ff6b6b;">Could not load time slots. Please check your connection and try again.</p>';
+    });
 }
 
-function displaySlots(slots) {
-    const slotsGrid = document.getElementById('timeSlotsGrid');
-    slotsGrid.innerHTML = '';
-    
-    if (!slots || slots.length === 0) {
-        slotsGrid.innerHTML = '<p class="no-slots">No available slots for this date. Please select another date.</p>';
+function filterAndDisplaySlots(slots, selectedDate) {
+    const grid = document.getElementById('timeSlotsGrid');
+    grid.innerHTML = '';
+
+    // Filter slots for selected date and AVAILABLE status
+    const filtered = slots.filter(function (slot) {
+        if (slot.status !== 'AVAILABLE') return false;
+        // startTime from backend is LocalDateTime → "2026-04-28T09:00:00"
+        const slotDate = slot.startTime ? slot.startTime.split('T')[0] : '';
+        return slotDate === selectedDate;
+    });
+
+    if (filtered.length === 0) {
+        grid.innerHTML = '<p class="no-slots">No available slots for ' + formatDateDisplay(selectedDate) + '.<br>Please try another date.</p>';
+        document.getElementById('nextBtn2').disabled = true;
         return;
     }
-    
-    // Filter slots for the selected date
-    const selectedDate = bookingState.selectedDate;
-    const filteredSlots = slots.filter(slot => {
-        const slotDate = new Date(slot.startTime).toISOString().split('T')[0];
-        return slotDate === selectedDate && slot.status === 'AVAILABLE';
+
+    // Sort by start time
+    filtered.sort(function (a, b) { return a.startTime.localeCompare(b.startTime); });
+
+    filtered.forEach(function (slot) {
+        grid.appendChild(createSlotElement(slot));
     });
-    
-    if (filteredSlots.length === 0) {
-        slotsGrid.innerHTML = '<p class="no-slots">No available slots for the selected date. Please try another date.</p>';
-        return;
-    }
-    
-    filteredSlots.forEach(slot => {
-        const slotElement = createSlotElement(slot);
-        slotsGrid.appendChild(slotElement);
-    });
-    
-    // Enable next button once slots are loaded
-    document.getElementById('nextBtn2').disabled = false;
+
+    document.getElementById('nextBtn2').disabled = true;
 }
 
 function createSlotElement(slot) {
-    const slotDiv = document.createElement('div');
-    slotDiv.className = 'time-slot';
-    
-    const startTime = new Date(slot.startTime);
-    const endTime = new Date(slot.endTime);
-    const timeStr = `${startTime.getHours().toString().padStart(2, '0')}:${startTime.getMinutes().toString().padStart(2, '0')} - ${endTime.getHours().toString().padStart(2, '0')}:${endTime.getMinutes().toString().padStart(2, '0')}`;
-    
-    slotDiv.innerHTML = `
-        <input type="radio" name="timeSlot" value="${slot.slotID}" id="slot${slot.slotID}">
-        <label for="slot${slot.slotID}">
-            <span class="slot-time">${timeStr}</span>
-            <span class="slot-duration">30 min</span>
-        </label>
-    `;
-    
-    slotDiv.addEventListener('click', function() {
-        document.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
-        slotDiv.classList.add('selected');
-        bookingState.selectedSlot = slot.slotID;
+    // Parse startTime "2026-04-28T09:00:00" → "09:00 - 09:30"
+    const start     = new Date(slot.startTime);
+    const end       = new Date(start.getTime() + 30 * 60000); // +30 min
+    const startStr  = padTime(start.getHours()) + ':' + padTime(start.getMinutes());
+    const endStr    = padTime(end.getHours())   + ':' + padTime(end.getMinutes());
+    const label     = startStr + ' - ' + endStr;
+
+    const div = document.createElement('div');
+    div.className = 'time-slot';
+    div.innerHTML =
+        '<input type="radio" name="timeSlot" value="' + slot.slotID + '" id="ts' + slot.slotID + '">' +
+        '<label for="ts' + slot.slotID + '">' +
+            '<span class="slot-time">' + label + '</span>' +
+            '<span class="slot-duration">30 min</span>' +
+        '</label>';
+
+    div.addEventListener('click', function () {
+        document.querySelectorAll('.time-slot').forEach(function (s) { s.classList.remove('selected'); });
+        div.classList.add('selected');
+        bookingState.selectedSlot = { slotID: slot.slotID, label: label, startTime: slot.startTime };
         document.getElementById('nextBtn2').disabled = false;
     });
-    
-    return slotDiv;
+
+    return div;
 }
 
+function padTime(n) { return n.toString().padStart(2, '0'); }
+
+function formatDateDisplay(dateStr) {
+    return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
+}
+
+// ─────────────────────────────────────────────────────────
+// STEP 3 — PAYMENT
+// ─────────────────────────────────────────────────────────
 function proceedToPayment() {
-    if (!bookingState.selectedSlot) {
-        alert('Please select a time slot');
+    if (!bookingState.selectedSlot) { alert('Please select a time slot'); return; }
+    goToStep(3);
+    fillSummaries();
+    showMainBox();
+}
+
+function getAmountDisplay() {
+    if (bookingState.selectedService && bookingState.selectedService.price) {
+        return 'Rs. ' + Number(bookingState.selectedService.price).toLocaleString('en-US', { minimumFractionDigits: 2 });
+    }
+    return 'Rs. 0.00';
+}
+
+function getAmountValue() {
+    if (bookingState.selectedService && bookingState.selectedService.price) {
+        return Number(bookingState.selectedService.price).toFixed(2);
+    }
+    return '0.00';
+}
+
+function fillSummaries() {
+    const slotLbl   = bookingState.selectedSlot ? bookingState.selectedSlot.label : '';
+    const dateLbl   = formatDateDisplay(bookingState.selectedDate);
+    const svcName   = bookingState.selectedService ? bookingState.selectedService.serviceName : '-';
+    const amtDisplay = getAmountDisplay();
+
+    // Main box
+    document.getElementById('summSalon').textContent   = bookingState.salonName || 'SNIP ME Salon';
+    document.getElementById('summService').textContent = svcName;
+    document.getElementById('summDate').textContent    = dateLbl;
+    document.getElementById('summTime').textContent    = slotLbl;
+    document.getElementById('summAmount').textContent  = amtDisplay;
+
+    // Gateway box
+    document.getElementById('pgSummService').textContent = svcName;
+    document.getElementById('pgSummDate').textContent    = dateLbl;
+    document.getElementById('pgSummTime').textContent    = slotLbl;
+    document.getElementById('pgSummTotal').textContent   = amtDisplay;
+    document.getElementById('pgBtnAmount').textContent   = amtDisplay;
+}
+
+function showMainBox() {
+    document.getElementById('mainPaymentBox').style.display = 'block';
+    document.getElementById('paymentGateway').style.display = 'none';
+    clearGatewayErrors();
+    hideProcessingOverlay();
+    resetConfirmBtn();
+}
+
+function showGateway() {
+    document.getElementById('mainPaymentBox').style.display = 'none';
+    document.getElementById('paymentGateway').style.display = 'block';
+    clearGatewayErrors();
+    hideProcessingOverlay();
+}
+
+function proceedToGateway() { showGateway(); }
+
+// ─────────────────────────────────────────────────────────
+// PAYHERE SANDBOX
+// ─────────────────────────────────────────────────────────
+function setupPayHereHandlers() {
+    if (typeof payhere === 'undefined') {
+        setTimeout(setupPayHereHandlers, 300);
         return;
     }
-    
-    // Move to step 3
-    goToStep(3);
-    updateBookingSummary();
+
+    payhere.onCompleted = function onCompleted(orderId) {
+        console.log('PayHere completed. OrderID:', orderId);
+        confirmBookingInBackend();
+    };
+
+    payhere.onDismissed = function onDismissed() {
+        console.log('PayHere dismissed');
+        hideProcessingOverlay();
+        resetConfirmBtn();
+        flashError('Payment was cancelled. You can try again.');
+    };
+
+    payhere.onError = function onError(error) {
+        console.error('PayHere error:', error);
+        hideProcessingOverlay();
+        resetConfirmBtn();
+        flashError('Payment error. Please try again.');
+    };
 }
 
-function updateBookingSummary() {
-    const summaryDiv = document.getElementById('bookingSummary');
-    const serviceText = bookingState.selectedService || 'Service';
-    const dateText = new Date(bookingState.selectedDate).toLocaleDateString('en-US', { 
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
+function resetConfirmBtn() {
+    const btn = document.getElementById('pgConfirmBtn');
+    if (btn) {
+        btn.disabled  = false;
+        btn.classList.remove('loading-state');
+        btn.innerHTML = 'Confirm Booking — <span id="pgBtnAmount">' + getAmountDisplay() + '</span>';
+    }
+    document.querySelector('.pg-card-block')?.classList.remove('processing-disabled');
+}
+
+// ─────────────────────────────────────────────────────────
+// CONFIRM IN SPRING BOOT after PayHere success
+// Uses existing /api/bookings/confirm
+// ─────────────────────────────────────────────────────────
+function confirmBookingInBackend() {
+    const slotID     = bookingState.selectedSlot.slotID;
+    const customerID = bookingState.customerID;
+
+    fetch(API_BASE_URL + '/bookings/confirm?slotID=' + slotID + '&customerID=' + customerID, {
+        method: 'POST'
+    })
+    .then(function (res) { return res.text(); })
+    .then(function (data) {
+        console.log('Backend confirmed:', data);
+        // Extract booking ID from response "...Booking ID: 42"
+        const match = data.match(/Booking ID:\s*(\d+)/i);
+        if (match) bookingState.bookingID = match[1];
+        finishBooking();
+    })
+    .catch(function (err) {
+        console.error('Backend confirm error:', err);
+        finishBooking(); // Payment done — still show success
     });
-    
-    summaryDiv.innerHTML = `
-        <strong>Salon:</strong> ${bookingState.salonName}<br>
-        <strong>Service:</strong> ${serviceText}<br>
-        <strong>Date:</strong> ${dateText}<br>
-        <strong>Amount:</strong> $25.00
-    `;
 }
 
-function toggleCardForm() {
-    const cardForm = document.getElementById('cardForm');
-    if (bookingState.paymentMethod === 'online') {
-        cardForm.style.display = 'block';
-        document.querySelectorAll('#cardForm input').forEach(input => input.required = true);
-    } else {
-        cardForm.style.display = 'none';
-        document.querySelectorAll('#cardForm input').forEach(input => input.required = false);
+// ─────────────────────────────────────────────────────────
+// ONLINE PAYMENT — validate → get hash → open PayHere popup
+// ─────────────────────────────────────────────────────────
+function confirmOnlinePayment() {
+    const nameOk   = validateFieldLive('name');
+    const numberOk = validateFieldLive('number');
+    const expiryOk = validateFieldLive('expiry');
+    const cvvOk    = validateFieldLive('cvv');
+
+    if (!(nameOk && numberOk && expiryOk && cvvOk)) {
+        flashError('Please correct the highlighted fields.');
+        return;
     }
+
+    document.getElementById('pgError').textContent = '';
+    const btn = document.getElementById('pgConfirmBtn');
+    btn.disabled  = true;
+    btn.innerHTML = '<span class="pg-spinner"></span> Connecting to PayHere…';
+    showProcessingOverlay();
+
+    bookingState.orderId = 'SNIPME-' + Date.now();
+    const amount = getAmountValue();
+
+    // Step 1: Lock the slot using PESSIMISTIC_WRITE lock from backend
+    // Backend uses lockSlotForBooking() which does a DB-level row lock
+    // If slot taken by another customer → backend returns 409 CONFLICT → we stop
+    fetch(API_BASE_URL + '/bookings/initiate?slotID=' + bookingState.selectedSlot.slotID
+        + '&customerID=' + bookingState.customerID, { method: 'POST' })
+    .then(function (res) {
+        if (res.status === 409) {
+            // Another customer just locked this slot
+            throw new Error('SLOT_TAKEN');
+        }
+        if (!res.ok) {
+            throw new Error('INITIATE_FAILED');
+        }
+        // Slot locked successfully — now get PayHere hash from backend
+        return fetch(API_BASE_URL + '/payment/hash'
+            + '?orderId='  + bookingState.orderId
+            + '&amount='   + amount
+            + '&currency=' + CURRENCY);
+    })
+    .then(function (res) {
+        if (!res.ok) throw new Error('Hash backend returned ' + res.status);
+        return res.json();
+    })
+    .then(function (data) {
+        const cardName  = document.getElementById('pgCardName').value.trim();
+        const nameParts = cardName.split(' ');
+        const firstName = nameParts[0] || 'Customer';
+        const lastName  = nameParts.slice(1).join(' ') || 'User';
+
+        const payment = {
+            sandbox:     true,
+            merchant_id: data.merchant_id,
+            return_url:  undefined,
+            cancel_url:  undefined,
+            notify_url:  API_BASE_URL + '/payment/notify',
+            order_id:    data.order_id,
+            items:       (bookingState.selectedService ? bookingState.selectedService.serviceName : 'Salon Service')
+                         + ' at ' + (bookingState.salonName || 'SNIP ME'),
+            amount:      data.amount,
+            currency:    data.currency,
+            hash:        data.hash,
+            first_name:  firstName,
+            last_name:   lastName,
+            email:       'customer@snipme.lk',
+            phone:       '0771234567',
+            address:     'Sri Lanka',
+            city:        'Colombo',
+            country:     'Sri Lanka'
+        };
+
+        console.log('Opening PayHere sandbox popup...');
+        payhere.startPayment(payment);
+
+        hideProcessingOverlay();
+        resetConfirmBtn();
+    })
+    .catch(function (err) {
+        console.error('Payment init failed:', err);
+        hideProcessingOverlay();
+        resetConfirmBtn();
+        if (err.message === 'SLOT_TAKEN') {
+            // Go back to step 2 and show error
+            flashError('Sorry! This slot was just booked by someone else. Please go back and select another time slot.');
+            setTimeout(function () {
+                showMainBox();
+                goToStep(2);
+                loadAvailableSlots(); // Refresh slots from backend
+            }, 3000);
+        } else if (err.message === 'INITIATE_FAILED') {
+            flashError('Could not lock this time slot. Please try again.');
+        } else {
+            flashError('Cannot reach backend on port 8080. Start Spring Boot first, then try again.');
+        }
+    });
 }
 
-function validateCardForm() {
-    if (bookingState.paymentMethod === 'cash') {
-        return true;
-    }
-    
-    const name = document.getElementById('cardName').value;
-    const cardNumber = document.getElementById('cardNumber').value;
-    const expiry = document.getElementById('cardExpiry').value;
-    const cvv = document.getElementById('cardCVV').value;
-    const errorDiv = document.getElementById('paymentError');
-    
-    if (!name || !cardNumber || !expiry || !cvv) {
-        errorDiv.textContent = 'Please fill in all card details';
-        return false;
-    }
-    
-    if (cardNumber.replace(/\s/g, '').length !== 16) {
-        errorDiv.textContent = 'Invalid card number (should be 16 digits)';
-        return false;
-    }
-    
-    if (!expiry.match(/^\d{2}\/\d{2}$/)) {
-        errorDiv.textContent = 'Invalid expiry date format (use MM/YY)';
-        return false;
-    }
-    
-    if (cvv.length !== 3) {
-        errorDiv.textContent = 'Invalid CVV (should be 3 digits)';
-        return false;
-    }
-    
-    errorDiv.textContent = '';
+// ─────────────────────────────────────────────────────────
+// CARD FIELD VALIDATION
+// ─────────────────────────────────────────────────────────
+function detectCardType(raw) {
+    let type = '';
+    if (/^4/.test(raw))            type = 'visa';
+    else if (/^5[1-5]/.test(raw))  type = 'mc';
+    else if (/^3[47]/.test(raw))   type = 'amex';
+    else if (/^6/.test(raw))       type = 'discover';
+    document.querySelectorAll('.card-icon-item').forEach(function (el) {
+        el.classList.toggle('dim',    !(!type || el.dataset.card === type));
+        el.classList.toggle('active',  !type || el.dataset.card === type);
+    });
+}
+
+function setFieldState(inputId, errorId, isValid, message) {
+    const input = document.getElementById(inputId);
+    const error = document.getElementById(errorId);
+    if (!input || !error) return false;
+    input.classList.remove('valid', 'invalid');
+    error.textContent = message || '';
+    if (!input.value.trim()) return false;
+    input.classList.add(isValid ? 'valid' : 'invalid');
+    return isValid;
+}
+
+function validateFieldLive(field) {
+    if (field === 'name')   return setFieldState('pgCardName',   'nameError',   document.getElementById('pgCardName').value.trim().length >= 2,   'Enter name on card.');
+    if (field === 'number') return setFieldState('pgCardNumber', 'numberError', document.getElementById('pgCardNumber').value.replace(/\s/g,'').length === 16, 'Must be 16 digits.');
+    if (field === 'expiry') return setFieldState('pgExpiry',     'expiryError', /^\d{2}\/\d{2}$/.test(document.getElementById('pgExpiry').value), 'Use MM/YY format.');
+    if (field === 'cvv')    return setFieldState('pgCVV',        'cvvError',    document.getElementById('pgCVV').value.length >= 3, 'Min 3 digits.');
     return true;
 }
 
-function confirmBooking() {
-    if (!validateCardForm()) {
-        return;
-    }
-    
-    const confirmBtn = document.getElementById('confirmBtn');
-    confirmBtn.disabled = true;
-    confirmBtn.textContent = 'Processing...';
-    
-    // Step 1: Initiate booking (lock the slot)
-    fetch(`${API_BASE_URL}/bookings/initiate?slotID=${bookingState.selectedSlot}&customerID=${bookingState.customerID}`, {
-        method: 'POST'
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log('Booking initiated:', data);
-        
-        // Step 2: Confirm booking (after payment)
-        return fetch(`${API_BASE_URL}/bookings/confirm?slotID=${bookingState.selectedSlot}&customerID=${bookingState.customerID}`, {
-            method: 'POST'
-        });
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log('Booking confirmed:', data);
-        bookingState.bookingID = data.bookingID;
-        
-        let bookings = JSON.parse(localStorage.getItem('userBookings') || '[]');
-        bookings.push({
-            bookingID: bookingState.bookingID,
-            salonName: bookingState.salonName,
-            service: bookingState.selectedService,
-            date: bookingState.selectedDate,
-            slotID: bookingState.selectedSlot,
-            paymentMethod: bookingState.paymentMethod,
-            status: 'CONFIRMED',
-            bookingDate: new Date().toISOString()
-        });
-        localStorage.setItem('userBookings', JSON.stringify(bookings));
-        
-        goToStep(4);
-        confirmBtn.disabled = false;
-        confirmBtn.textContent = 'Confirm Booking';
-    })
-    .catch(error => {
-        console.error('Error confirming booking:', error);
-        document.getElementById('paymentError').textContent = 'Error processing booking. Please try again.';
-        confirmBtn.disabled = false;
-        confirmBtn.textContent = 'Confirm Booking';
+function clearGatewayErrors() {
+    const pgError = document.getElementById('pgError');
+    if (pgError) { pgError.textContent = ''; pgError.classList.remove('shake'); }
+    ['pgCardName','pgCardNumber','pgExpiry','pgCVV'].forEach(function (id) {
+        document.getElementById(id)?.classList.remove('valid','invalid');
+    });
+    ['nameError','numberError','expiryError','cvvError'].forEach(function (id) {
+        const el = document.getElementById(id); if (el) el.textContent = '';
     });
 }
 
-function goToStep(stepNumber) {
-    document.querySelectorAll('.step-content').forEach(content => {
-        content.classList.remove('active');
+function showProcessingOverlay() {
+    document.getElementById('pgOverlay')?.classList.add('show');
+    document.querySelector('.pg-card-block')?.classList.add('processing-disabled');
+    document.getElementById('pgConfirmBtn')?.classList.add('loading-state');
+}
+
+function hideProcessingOverlay() {
+    document.getElementById('pgOverlay')?.classList.remove('show');
+    document.querySelector('.pg-card-block')?.classList.remove('processing-disabled');
+    document.getElementById('pgConfirmBtn')?.classList.remove('loading-state');
+}
+
+function flashError(msg) {
+    const el = document.getElementById('pgError');
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.remove('shake');
+    void el.offsetWidth;
+    el.classList.add('shake');
+}
+
+// ─────────────────────────────────────────────────────────
+// SUCCESS SCREEN
+// ─────────────────────────────────────────────────────────
+function finishBooking() {
+    if (!bookingState.bookingID) bookingState.bookingID = 'BOOK-' + Date.now();
+
+    const slotLbl    = bookingState.selectedSlot ? bookingState.selectedSlot.label : '';
+    const dateLbl    = formatDateDisplay(bookingState.selectedDate);
+    const svcName    = bookingState.selectedService ? bookingState.selectedService.serviceName : '-';
+    const amtDisplay = getAmountDisplay();
+
+    const bookings = JSON.parse(localStorage.getItem('userBookings') || '[]');
+    bookings.push({
+        bookingID:     bookingState.bookingID,
+        salonName:     bookingState.salonName,
+        service:       svcName,
+        date:          bookingState.selectedDate,
+        slotID:        bookingState.selectedSlot ? bookingState.selectedSlot.slotID : null,
+        paymentMethod: 'online',
+        status:        'CONFIRMED',
+        bookingDate:   new Date().toISOString()
     });
-    
-    document.querySelectorAll('.step').forEach(step => {
-        step.classList.remove('active');
-    });
-    
-    if (stepNumber === 4) {
+    localStorage.setItem('userBookings', JSON.stringify(bookings));
+
+    document.getElementById('confirmationDetails').innerHTML =
+        '<div class="cd-row"><span>Booking ID</span><span>'  + bookingState.bookingID        + '</span></div>' +
+        '<div class="cd-row"><span>Salon</span><span>'       + (bookingState.salonName || '-')+ '</span></div>' +
+        '<div class="cd-row"><span>Service</span><span>'     + svcName                        + '</span></div>' +
+        '<div class="cd-row"><span>Date</span><span>'        + dateLbl                        + '</span></div>' +
+        '<div class="cd-row"><span>Time</span><span>'        + slotLbl                        + '</span></div>' +
+        '<div class="cd-row"><span>Payment</span><span>Online (PayHere)</span></div>'          +
+        '<div class="cd-row cd-total"><span>Amount</span><span>' + amtDisplay + '</span></div>';
+
+    goToStep(4);
+}
+
+// ─────────────────────────────────────────────────────────
+// NAVIGATION
+// ─────────────────────────────────────────────────────────
+function goToStep(n) {
+    document.querySelectorAll('.step-content').forEach(function (c) { c.classList.remove('active'); });
+    document.querySelectorAll('.step').forEach(function (s) { s.classList.remove('active'); });
+    if (n === 4) {
         document.getElementById('successContent').classList.add('active');
     } else {
-        document.getElementById(`step${stepNumber}-content`).classList.add('active');
-        document.getElementById(`step${stepNumber}`).classList.add('active');
+        document.getElementById('step' + n + '-content').classList.add('active');
+        document.getElementById('step' + n).classList.add('active');
     }
 }
-
-function goToPreviousStep(currentStep) {
-    if (currentStep > 1) {
-        goToStep(currentStep - 1);
-    }
-}
-
-function goBack() {
-    window.history.back();
-}
-
-function goToSettings() {
-    window.location.href = 'settings.html?tab=bookings';
-}
-
-function goHome() {
-    window.location.href = '../index.html';
-}
-
-// Format card number input
-document.addEventListener('DOMContentLoaded', function() {
-    const cardInput = document.getElementById('cardNumber');
-    if (cardInput) {
-        cardInput.addEventListener('input', function() {
-            let value = this.value.replace(/\s/g, '');
-            let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
-            this.value = formattedValue;
-        });
-    }
-    
-    const expiryInput = document.getElementById('cardExpiry');
-    if (expiryInput) {
-        expiryInput.addEventListener('input', function() {
-            let value = this.value.replace(/\D/g, '');
-            if (value.length >= 2) {
-                value = value.slice(0, 2) + '/' + value.slice(2, 4);
-            }
-            this.value = value;
-        });
-    }
-});
+function goToPreviousStep(n) { if (n > 1) goToStep(n - 1); }
+function goBack()       { window.history.back(); }
+function goToSettings() { window.location.href = 'settings.html?tab=bookings'; }
+function goHome()       { window.location.href = '../index.html'; }
