@@ -3,6 +3,7 @@ let currentYear = new Date().getFullYear();
 
 const OWNER_NAME_KEY = "snipmeOwnerName";
 const OWNER_SALON_NAME_KEY = "snipmeOwnerSalonName";
+const OWNER_SALON_ID_KEY = "snipmeOwnerSalonId";
 const OWNER_EMAIL_KEY = "snipmeOwnerEmail";
 const OWNER_TOKEN_KEY = "snipmeOwnerToken";
 let ownerProfilePhotoLowQuality = "";
@@ -14,6 +15,66 @@ let ownerSelectedLatLng = null;
 
 // ─── Notifications ────────────────────────────────────
 const NOTIFICATIONS = [];
+let ownerSalonId = null;
+
+function getNotifTypeTag(type) {
+    const t = String(type || '').toUpperCase();
+    if (t.includes('BOOKING')) return 'apt';
+    if (t.includes('SERVICE')) return 'svc';
+    return 'sys';
+}
+
+function toRelativeTime(dateValue) {
+    if (!dateValue) return 'Just now';
+    const dt = new Date(dateValue);
+    if (Number.isNaN(dt.getTime())) return 'Just now';
+    const diffMs = Date.now() - dt.getTime();
+    const mins = Math.floor(diffMs / 60000);
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return mins + 'm ago';
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return hours + 'h ago';
+    const days = Math.floor(hours / 24);
+    return days + 'd ago';
+}
+
+function mapBackendNotification(item) {
+    const typeTag = getNotifTypeTag(item && item.type);
+    const avatarMap = { apt: 'AP', svc: 'SV', sys: 'SY' };
+    return {
+        id: item && item.id,
+        type: typeTag,
+        avatar: avatarMap[typeTag] || 'SY',
+        title: item && item.type ? String(item.type).replaceAll('_', ' ') : 'Notification',
+        sub: item && item.message ? item.message : 'No details',
+        time: toRelativeTime(item && item.createdAt),
+        unread: !(item && item.isRead)
+    };
+}
+
+function reloadNotificationsFromServer() {
+    if (!ownerSalonId || typeof API_BASE_URL === 'undefined') return Promise.resolve();
+    return fetch(API_BASE_URL + '/salon-owner/notifications/' + encodeURIComponent(ownerSalonId), {
+        method: 'GET',
+        headers: getAuthHeaders()
+    })
+    .then(function (res) {
+        if (!res.ok) throw new Error('Failed to fetch notifications (' + res.status + ')');
+        return res.json();
+    })
+    .then(function (rows) {
+        NOTIFICATIONS.length = 0;
+        (Array.isArray(rows) ? rows : []).forEach(function (row) {
+            NOTIFICATIONS.push(mapBackendNotification(row));
+        });
+        renderNotifPanel();
+        renderNotifCenter();
+        updateBadge();
+    })
+    .catch(function (err) {
+        console.warn('Notification sync failed:', err && err.message ? err.message : err);
+    });
+}
 
 function getUnreadCount() {
     return NOTIFICATIONS.filter(n => n.unread).length;
@@ -44,10 +105,32 @@ function buildNotifItem(n, full = false) {
             <div class="notif-time">${n.time}</div>
         </div>`;
     el.addEventListener('click', () => {
-        n.unread = false;
-        updateBadge();
-        renderNotifPanel();
-        renderNotifCenter();
+        if (!n.unread || !n.id) {
+            n.unread = false;
+            updateBadge();
+            renderNotifPanel();
+            renderNotifCenter();
+            return;
+        }
+
+        fetch(API_BASE_URL + '/salon-owner/notifications/' + encodeURIComponent(n.id) + '/read', {
+            method: 'PUT',
+            headers: getAuthHeaders()
+        })
+        .then(function (res) {
+            if (!res.ok) throw new Error('Failed to mark as read');
+            n.unread = false;
+            updateBadge();
+            renderNotifPanel();
+            renderNotifCenter();
+        })
+        .catch(function () {
+            // fallback to local visual state even if API fails
+            n.unread = false;
+            updateBadge();
+            renderNotifPanel();
+            renderNotifCenter();
+        });
     });
     return el;
 }
@@ -117,10 +200,31 @@ function setupNotificationBell() {
     if (markAllReadBtn) {
         markAllReadBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            NOTIFICATIONS.forEach(n => n.unread = false);
-            updateBadge();
-            renderNotifPanel();
-            renderNotifCenter();
+            if (!ownerSalonId) {
+                NOTIFICATIONS.forEach(n => n.unread = false);
+                updateBadge();
+                renderNotifPanel();
+                renderNotifCenter();
+                return;
+            }
+
+            fetch(API_BASE_URL + '/salon-owner/notifications/' + encodeURIComponent(ownerSalonId) + '/mark-all-read', {
+                method: 'PUT',
+                headers: getAuthHeaders()
+            })
+            .then(function (res) {
+                if (!res.ok) throw new Error('Failed to mark all read');
+                NOTIFICATIONS.forEach(n => n.unread = false);
+                updateBadge();
+                renderNotifPanel();
+                renderNotifCenter();
+            })
+            .catch(function () {
+                NOTIFICATIONS.forEach(n => n.unread = false);
+                updateBadge();
+                renderNotifPanel();
+                renderNotifCenter();
+            });
         });
     }
 
@@ -139,10 +243,29 @@ function setupNotificationBell() {
 
     if (clearAllBtn) {
         clearAllBtn.addEventListener('click', () => {
-            NOTIFICATIONS.length = 0;
-            updateBadge();
-            renderNotifPanel();
-            renderNotifCenter();
+            if (!ownerSalonId) {
+                NOTIFICATIONS.length = 0;
+                updateBadge();
+                renderNotifPanel();
+                renderNotifCenter();
+                return;
+            }
+
+            const jobs = NOTIFICATIONS
+                .filter(function (n) { return !!n.id; })
+                .map(function (n) {
+                    return fetch(API_BASE_URL + '/salon-owner/notifications/' + encodeURIComponent(n.id), {
+                        method: 'DELETE',
+                        headers: getAuthHeaders()
+                    }).catch(function () { return null; });
+                });
+
+            Promise.all(jobs).finally(function () {
+                NOTIFICATIONS.length = 0;
+                updateBadge();
+                renderNotifPanel();
+                renderNotifCenter();
+            });
         });
     }
 
@@ -906,6 +1029,12 @@ function populateOwnerProfile(profile) {
         localStorage.setItem(OWNER_SALON_NAME_KEY, salonName);
         applyOwnerBranding();
     }
+
+    const sid = profile && (profile.salonId || profile.salonID || profile.id);
+    if (sid) {
+        ownerSalonId = sid;
+        localStorage.setItem(OWNER_SALON_ID_KEY, String(sid));
+    }
 }
 
 function loadOwnerProfile() {
@@ -924,6 +1053,7 @@ function loadOwnerProfile() {
         })
         .then(function (data) {
             populateOwnerProfile(data || {});
+            reloadNotificationsFromServer();
         })
         .catch(function (error) {
             console.warn('Failed to load owner profile:', error.message || error);
@@ -1038,6 +1168,7 @@ function setupOwnerProfilePanel() {
 
 // Initializing on load
 document.addEventListener('DOMContentLoaded', () => {
+    ownerSalonId = localStorage.getItem(OWNER_SALON_ID_KEY) || null;
     setupOwnerLocationPicker();
     setupOwnerProfilePanel();
     setupServicesSection();
@@ -1048,6 +1179,8 @@ document.addEventListener('DOMContentLoaded', () => {
     CalenderBuild(); 
     selectDate(realToday); 
     startLiveClock();
+    reloadNotificationsFromServer();
+    setInterval(reloadNotificationsFromServer, 30000);
 });
 
 // Sidebar navigation logic

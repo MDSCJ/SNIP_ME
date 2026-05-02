@@ -242,13 +242,23 @@ function loadAvailableSlots() {
     grid.innerHTML = '<p class="loading">Loading available slots...</p>';
     document.getElementById('nextBtn2').disabled = true;
 
-    fetch(API_BASE_URL + '/bookings/available')
+    if (!bookingState.salonId || !bookingState.selectedDate) {
+        grid.innerHTML = '<p class="no-slots" style="color:#ff6b6b;">Salon/date not selected.</p>';
+        return;
+    }
+
+    const endpoint = API_BASE_URL
+        + '/bookings/available-by-salon?salonId=' + encodeURIComponent(bookingState.salonId)
+        + '&date=' + encodeURIComponent(bookingState.selectedDate);
+
+    fetch(endpoint)
     .then(function (res) {
         if (!res.ok) throw new Error('Backend returned ' + res.status);
         return res.json();
     })
     .then(function (slots) {
         bookingState.allSlots = slots;
+        // Endpoint is already salon/date filtered; keep display filter as safety.
         filterAndDisplaySlots(slots, bookingState.selectedDate);
     })
     .catch(function (err) {
@@ -435,9 +445,11 @@ function confirmBookingInBackend() {
     .then(function (res) { return res.text(); })
     .then(function (data) {
         console.log('Backend confirmed:', data);
-        // Extract booking ID from response "...Booking ID: 42"
-        const match = data.match(/Booking ID:\s*(\d+)/i);
-        if (match) bookingState.bookingID = match[1];
+        // Backend now confirms using Slot ID; keep a UI booking id value as fallback.
+        const slotMatch = data.match(/Slot ID:\s*(\d+)/i);
+        if (slotMatch) {
+            bookingState.bookingID = 'SLOT-' + slotMatch[1];
+        }
         finishBooking();
     })
     .catch(function (err) {

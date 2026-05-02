@@ -144,6 +144,8 @@ document.addEventListener('DOMContentLoaded', () => {
         salons.forEach((salon, index) => {
             const card = document.createElement('div');
             card.className = 'salon-card';
+            const sid = salon.salonID || salon.id || salon.SalonID || salon.salonId || '';
+            if (sid) card.dataset.salonId = sid;
             
             // Build rating stars
             const rating = parseFloat(salon.rating) || 0;
@@ -265,13 +267,21 @@ document.addEventListener('DOMContentLoaded', () => {
                    .map(service => service.trim())
                    .filter(service => service.length > 0 && service.toLowerCase() !== 'view more');
 
-                sessionStorage.setItem('selectedSalonId', salonName.toLowerCase().replace(/\s+/g, '-'));
+                // Use the numeric salon id if available, otherwise fall back to slug
+                const cardSalonId = currentCard?.dataset?.salonId;
+                if (cardSalonId) {
+                    sessionStorage.setItem('selectedSalonId', cardSalonId);
+                } else {
+                    sessionStorage.setItem('selectedSalonId', salonName.toLowerCase().replace(/\s+/g, '-'));
+                }
                 sessionStorage.setItem('selectedSalonName', salonName);
                 sessionStorage.setItem('selectedSalonDesc', salonDescription);
                 sessionStorage.setItem('selectedServices', JSON.stringify(allServices));
 
                 if (isLoggedIn === 'true') {
-                    window.location.href = 'Frontend/booking.html';
+                    // Navigate to booking page and include salonId query param when available
+                    const target = cardSalonId ? `Frontend/booking.html?salonId=${encodeURIComponent(cardSalonId)}` : 'Frontend/booking.html';
+                    window.location.href = target;
                 }   else {
                     window.location.href = 'Frontend/customer_login.html';
                }
@@ -557,6 +567,8 @@ document.addEventListener('DOMContentLoaded', () => {
         data.salons.forEach(salon => {
             const card = document.createElement('div');
             card.className = 'search-result-card';
+            const sid = salon.salonID || salon.id || salon.SalonID || salon.salonId || '';
+            if (sid) card.dataset.salonId = sid;
 
             const rating = parseFloat(salon.rating) || 0;
             const numberOfRatings = Number.isFinite(Number(salon.numberOfRatings)) ? Number(salon.numberOfRatings) : 0;
@@ -648,13 +660,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 const isLoggedIn = localStorage.getItem('snipmeCustomerLoggedIn');
 
-                sessionStorage.setItem('selectedSalonId', salonName.toLowerCase().replace(/\s+/g, '-'));
+                const cardSalonId = card.dataset?.salonId;
+                if (cardSalonId) {
+                    sessionStorage.setItem('selectedSalonId', cardSalonId);
+                } else {
+                    sessionStorage.setItem('selectedSalonId', salonName.toLowerCase().replace(/\s+/g, '-'));
+                }
                 sessionStorage.setItem('selectedSalonName', salonName);
                 sessionStorage.setItem('selectedSalonDesc', salonDescription);
                 sessionStorage.setItem('selectedServices', JSON.stringify([]));
 
                 if (isLoggedIn === 'true') {
-                    window.location.href = 'Frontend/booking.html';
+                    const target = cardSalonId ? `Frontend/booking.html?salonId=${encodeURIComponent(cardSalonId)}` : 'Frontend/booking.html';
+                    window.location.href = target;
                 } else {
                     window.location.href = 'Frontend/customer_login.html';
                 }

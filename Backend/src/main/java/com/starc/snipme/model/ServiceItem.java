@@ -7,6 +7,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+ 
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
@@ -21,9 +22,7 @@ public class ServiceItem {
     @Column(nullable = false)
     private String name;
 
-    @Column(name = "salon_id")
-    private Long salonId;
-
+    
     @Column(name = "include_in_search", nullable = false)
     private boolean includeInSearch = true;
 
@@ -43,11 +42,13 @@ public class ServiceItem {
     public Long getId() { return id; }
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
-    public Long getSalonId() { return salonId; }
-    public void setSalonId(Long salonId) { this.salonId = salonId; }
+    // salonId column removed: services are global and salon-specific pricing
+    // is handled in the `service_prices` table.
     public boolean isIncludeInSearch() { return includeInSearch; }
     public void setIncludeInSearch(boolean includeInSearch) { this.includeInSearch = includeInSearch; }
     public boolean isActive() { return isActive; }
     public void setActive(boolean active) { isActive = active; }
     public LocalDateTime getCreatedAt() { return createdAt; }
+
+    // no salon navigation
 }

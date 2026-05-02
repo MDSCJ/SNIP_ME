@@ -24,6 +24,7 @@ import com.starc.snipme.model.AdminNotification;
 import com.starc.snipme.model.Salon;
 import com.starc.snipme.model.ServiceItem;
 import com.starc.snipme.model.ServiceRequest;
+import com.starc.snipme.model.ServicePrice;
 import com.starc.snipme.model.User;
 import com.starc.snipme.repository.AdminNotificationRepository;
 import com.starc.snipme.repository.SalonRepository;
@@ -39,22 +40,28 @@ public class AdminController {
     private final UserRepository userRepository;
     private final SalonRepository salonRepository;
     private final ServiceItemRepository serviceItemRepository;
+    private final com.starc.snipme.repository.ServicePriceRepository servicePriceRepository;
     private final ServiceRequestRepository serviceRequestRepository;
     private final AdminNotificationRepository adminNotificationRepository;
     private final LoginSessionTracker loginSessionTracker;
+    private final com.starc.snipme.service.SalonNotificationService salonNotificationService;
 
     public AdminController(UserRepository userRepository,
                            SalonRepository salonRepository,
                            ServiceItemRepository serviceItemRepository,
                            ServiceRequestRepository serviceRequestRepository,
                            AdminNotificationRepository adminNotificationRepository,
-                           LoginSessionTracker loginSessionTracker) {
+                           LoginSessionTracker loginSessionTracker,
+                           com.starc.snipme.repository.ServicePriceRepository servicePriceRepository,
+                           com.starc.snipme.service.SalonNotificationService salonNotificationService) {
         this.userRepository = userRepository;
         this.salonRepository = salonRepository;
         this.serviceItemRepository = serviceItemRepository;
         this.serviceRequestRepository = serviceRequestRepository;
         this.adminNotificationRepository = adminNotificationRepository;
         this.loginSessionTracker = loginSessionTracker;
+        this.servicePriceRepository = servicePriceRepository;
+        this.salonNotificationService = salonNotificationService;
     }
 
     @GetMapping("/overview")
@@ -200,7 +207,6 @@ public class AdminController {
 
         ServiceItem item = new ServiceItem();
         item.setName(name);
-        item.setSalonId(null);
 
         Object includeObj = payload.get("includeInSearch");
         if (includeObj != null) {
@@ -262,9 +268,20 @@ public class AdminController {
                     // Create and add the service
                     ServiceItem newService = new ServiceItem();
                     newService.setName(request.getServiceName());
-                    newService.setSalonId(request.getSalonId());
                     newService.setIncludeInSearch(true);
                     serviceItemRepository.save(newService);
+
+                    // If admin provided a price for the requesting salon, create a ServicePrice entry
+                    try {
+                        Object priceObj = payload != null ? payload.get("price") : null;
+                        if (priceObj != null) {
+                            Double price = Double.parseDouble(priceObj.toString());
+                            ServicePrice sp = new ServicePrice(request.getSalonId(), newService.getId(), price);
+                            servicePriceRepository.save(sp);
+                        }
+                    } catch (Exception ex) {
+                        // ignore price creation errors; service is still created
+                    }
 
                     // Update request status
                     request.setStatus("APPROVED");
@@ -356,7 +373,7 @@ public class AdminController {
         Map<String, Object> dto = new LinkedHashMap<>();
         dto.put("id", item.getId());
         dto.put("name", item.getName());
-        dto.put("salonId", item.getSalonId());
+        // services are global; salon-specific availability/prices are in service_prices
         dto.put("includeInSearch", item.isIncludeInSearch());
         return dto;
     }
@@ -432,6 +449,52 @@ public class AdminController {
 
         long unreadCount = adminNotificationRepository.countByIsReadFalse();
         return ResponseEntity.ok(Map.of("unreadCount", unreadCount));
+    }
+
+    @PostMapping("/salons/{id}/notify")
+    public ResponseEntity<?> notifySalon(@PathVariable("id") Long salonId,
+                                         @RequestBody Map<String, Object> payload,
+                                         Authentication authentication) {
+        if (!isAdmin(authentication)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Admin access required."));
+        }
+
+        if (salonId == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Salon id is required."));
+        }
+
+        if (!salonRepository.existsById(salonId)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Salon not found."));
+        }
+
+        String message = payload == null ? null : (payload.get("message") == null ? null : payload.get("message").toString());
+        String type = payload == null ? null : (payload.get("type") == null ? null : payload.get("type").toString());
+        Long relatedId = null;
+        try {
+            if (payload != null && payload.get("relatedId") != null) {
+                relatedId = Long.parseLong(payload.get("relatedId").toString());
+            }
+        } catch (Exception ex) {
+            relatedId = null;
+        }
+
+        if (message == null || message.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Message is required."));
+        }
+
+        try {
+            salonNotificationService.createNotification(salonId, message, (type == null ? "ADMIN_MESSAGE" : type), relatedId);
+            return ResponseEntity.ok(Map.of("message", "Notification sent to salon."));
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "Failed to send notification: " + ex.getMessage()));
+        }
+    }
+
+    @PostMapping("/salons/{id}/notifications")
+    public ResponseEntity<?> notifySalonAlias(@PathVariable("id") Long salonId,
+                                              @RequestBody Map<String, Object> payload,
+                                              Authentication authentication) {
+        return notifySalon(salonId, payload, authentication);
     }
 
     private boolean isAdmin(Authentication authentication) {

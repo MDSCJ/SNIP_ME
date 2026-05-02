@@ -137,6 +137,8 @@ cd Backend/
 ./mvnw spring-boot:run -DskipTests
 ```
 
+On Windows PowerShell, run the wrapper as `.\mvnw.cmd spring-boot:run -DskipTests` from the `Backend` folder.
+
 The API will run on `http://localhost:8080`
 
 ---

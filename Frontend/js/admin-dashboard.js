@@ -36,6 +36,13 @@
 
     const usersTableBody = document.getElementById("usersTableBody");
     const salonsTableBody = document.getElementById("salonsTableBody");
+    const messageModal = document.getElementById("messageModal");
+    const messageModalClose = document.getElementById("messageModalClose");
+    const messageCancelBtn = document.getElementById("messageCancelBtn");
+    const messageSendBtn = document.getElementById("messageSendBtn");
+    const messageText = document.getElementById("messageText");
+    const messageModalSalonName = document.getElementById("messageModalSalonName");
+    const messageStatus = document.getElementById("messageStatus");
     const servicesTableBody = document.getElementById("servicesTableBody");
 
     const userSearch = document.getElementById("userSearch");
@@ -290,14 +297,19 @@
                 salonsTableBody.innerHTML = "";
                 salons.forEach(function (s) {
                     const tr = document.createElement("tr");
+                    const salonId = s.salonID || s.salonId || s.id || '';
                     const statusClass = s.isActive ? "active" : "banned";
                     const statusText = s.isActive ? "ACTIVE" : "BANNED";
                     const actionBtn = s.isActive
-                        ? "<button class=\"ban-btn\" data-id=\"" + s.salonID + "\" data-action=\"ban\">Ban</button>"
-                        : "<button class=\"ban-btn\" data-id=\"" + s.salonID + "\" data-action=\"unban\">Unban</button>";
+                        ? "<button class=\"ban-btn\" data-id=\"" + salonId + "\" data-action=\"ban\">Ban</button>"
+                        : "<button class=\"ban-btn\" data-id=\"" + salonId + "\" data-action=\"unban\">Unban</button>";
                     tr.innerHTML =
-                        "<td>" + (s.salonID ?? "") + "</td>" +
-                        "<td>" + (s.name || "-") + "</td>" +
+                        "<td>" + (salonId || "") + "</td>" +
+                        // message icon + name
+                        "<td>" +
+                            "<button class=\"message-btn\" data-id=\"" + (salonId || "") + "\" title=\"Message salon\" style=\"margin-right:8px;border:none;background:transparent;cursor:pointer;color:#6bd;\">📩</button>" +
+                            (s.name || "-") +
+                        "</td>" +
                         "<td>" + (s.details || "-") + "</td>" +
                         "<td><span class=\"status-pill " + statusClass + "\">" + statusText + "</span></td>" +
                         "<td>" + actionBtn + "</td>";
@@ -331,6 +343,17 @@
                             .catch(function () {
                                 alert("Failed to ban salon.");
                             });
+                    });
+                });
+
+                // Attach message button listeners
+                salonsTableBody.querySelectorAll('.message-btn').forEach(function (btn) {
+                    btn.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                        const salonId = btn.getAttribute('data-id');
+                        const row = btn.closest('tr');
+                        const salonName = row ? row.querySelector('td:nth-child(2)')?.textContent.trim() : '';
+                        openMessageModal(salonId, salonName);
                     });
                 });
             })
@@ -401,6 +424,62 @@
         notificationBellBtn.addEventListener("click", function () {
             notificationBellBtn.blur();
             loadAndDisplayNotifications();
+        });
+    }
+
+    // Message modal helpers
+    function openMessageModal(salonId, salonName) {
+        if (!messageModal) return;
+        if (!salonId) {
+            alert('Cannot send message: salon id missing. Please refresh salons.');
+            return;
+        }
+        messageModal.style.display = 'flex';
+        messageModal.dataset.salonId = salonId || '';
+        if (messageModalSalonName) messageModalSalonName.textContent = salonName || ('Salon ' + salonId);
+        if (messageText) messageText.value = '';
+        if (messageStatus) { messageStatus.style.display = 'none'; messageStatus.textContent = ''; }
+    }
+
+    function closeMessageModal() {
+        if (!messageModal) return;
+        messageModal.style.display = 'none';
+        messageModal.dataset.salonId = '';
+        if (messageText) messageText.value = '';
+    }
+
+    if (messageModalClose) messageModalClose.addEventListener('click', closeMessageModal);
+    if (messageCancelBtn) messageCancelBtn.addEventListener('click', closeMessageModal);
+
+    if (messageSendBtn) {
+        messageSendBtn.addEventListener('click', function () {
+            const salonId = messageModal?.dataset?.salonId;
+            const text = messageText?.value?.trim();
+            if (!salonId || !text) { alert('Please enter a message.'); return; }
+
+            messageSendBtn.disabled = true;
+            messageStatus.style.display = 'block';
+            messageStatus.textContent = 'Sending...';
+
+            fetch(apiRoot + '/admin/salons/' + encodeURIComponent(salonId) + '/notify', {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify({ message: text, type: 'ADMIN_MESSAGE' })
+            })
+            .then(function (res) {
+                if (handleAuthFailure(res)) throw new Error('Unauthorized');
+                if (!res.ok) return res.text().then(t => { throw new Error(t || ('Failed to send message (HTTP ' + res.status + ')')); });
+                return res.json().catch(() => ({}));
+            })
+            .then(function () {
+                messageStatus.textContent = 'Message sent.';
+                setTimeout(function () { closeMessageModal(); messageSendBtn.disabled = false; }, 700);
+            })
+            .catch(function (err) {
+                console.error('Failed to send salon message:', err);
+                messageStatus.textContent = 'Failed to send message: ' + (err && err.message ? err.message : 'Unknown error');
+                messageSendBtn.disabled = false;
+            });
         });
     }
 
