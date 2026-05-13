@@ -6,6 +6,7 @@
     <title>Book Appointment | SNIP ME</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/booking.css">
+    <link rel="stylesheet" href="css/loader.css">
     <link rel="stylesheet" href="css/heading-shadows.css">
 </head>
 <body class="dark-theme">
@@ -31,6 +32,26 @@
 <video class="bg-video" autoplay muted loop playsinline>
     <source src="videos/bc.mp4" type="video/mp4">
 </video>
+
+<!-- Loading Overlay with Scissor Animation -->
+<div id="loadingOverlay" class="loading-overlay">
+    <div class="glass-card">
+        <svg class="scissor-loader" viewBox="0 0 100 50" xmlns="http://www.w3.org/2000/svg">
+            <g fill="none" stroke="rgba(255, 255, 255, 0.85)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M 28 15 C 28 5 12 5 12 15 C 12 25 25 24 40 25" class="wave-line delay-1" />
+                <path d="M 28 35 C 28 45 12 45 12 35 C 12 25 25 26 40 25" class="wave-line delay-1" />
+                <circle cx="20" cy="15" r="4.5" class="wave-line delay-2" />
+                <circle cx="20" cy="35" r="4.5" class="wave-line delay-2" />
+                <path d="M 40 25 L 85 31 L 45 25" class="wave-line delay-3" />
+                <path d="M 40 25 L 85 19 L 45 25" class="wave-line delay-3" />
+                <circle cx="43" cy="25" r="1.5" class="wave-line delay-4" />
+            </g>
+        </svg>
+        <div class="loader-text">
+            <span>.</span><span>.</span><span>.</span>
+        </div>
+    </div>
+</div>
 
 <div class="booking-container">
 
@@ -304,6 +325,7 @@
 <script src="js/api-config.js"></script>
 <script type="text/javascript" src="https://www.payhere.lk/lib/payhere.js"></script>
 <script src="js/customer_session.js"></script>
+<script src="js/loader.js"></script>
 <script src="js/booking.js"></script>
 <script src="js/main.js"></script>
 </body>

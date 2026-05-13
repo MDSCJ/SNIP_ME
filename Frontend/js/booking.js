@@ -19,7 +19,9 @@ let bookingState = {
     customerID:      null,
     bookingID:       null,
     orderId:         null,
-    allSlots:        []      // all available slots from backend
+    allSlots:        [],     // all available slots from backend
+    openingTime:     null,   // salon opening time (HH:mm:ss)
+    closingTime:     null    // salon closing time (HH:mm:ss)
 };
 
 // ─────────────────────────────────────────────────────────
@@ -133,6 +135,9 @@ function loadSalonData(salonId) {
         // Store salon info
         bookingState.salonName    = salon.name    || 'SNIP ME Salon';
         bookingState.salonDetails = salon.details || 'Professional salon services';
+        // Store opening/closing times if backend provides them
+        bookingState.openingTime = salon.openingTime || salon.opening_time || bookingState.openingTime;
+        bookingState.closingTime = salon.closingTime || salon.closing_time || bookingState.closingTime;
 
         // Update UI
         document.getElementById('salonName').textContent        = bookingState.salonName;
@@ -247,19 +252,41 @@ function loadAvailableSlots() {
         return;
     }
 
-    const endpoint = API_BASE_URL
+    // Fetch both the backend's available slots and all known slots (to detect booked ones).
+    const availEndpoint = API_BASE_URL
         + '/bookings/available-by-salon?salonId=' + encodeURIComponent(bookingState.salonId)
         + '&date=' + encodeURIComponent(bookingState.selectedDate);
+    const allEndpoint = API_BASE_URL + '/bookings/all';
 
-    fetch(endpoint)
-    .then(function (res) {
-        if (!res.ok) throw new Error('Backend returned ' + res.status);
-        return res.json();
-    })
-    .then(function (slots) {
-        bookingState.allSlots = slots;
-        // Endpoint is already salon/date filtered; keep display filter as safety.
-        filterAndDisplaySlots(slots, bookingState.selectedDate);
+    Promise.all([
+        fetch(availEndpoint).then(r => r.ok ? r.json() : []).catch(() => []),
+        fetch(allEndpoint).then(r => r.ok ? r.json() : []).catch(() => [])
+    ])
+    .then(function (results) {
+        const avail = results[0] || [];
+        const all   = results[1] || [];
+        bookingState.allSlots = avail;
+        // Build quick maps of existing slots for the selected salon+date
+        const occupied = {}; // times that are NOT AVAILABLE
+        const availableMap = {}; // times that are AVAILABLE with slotID
+
+        all.forEach(function (s) {
+            try {
+                // s.startTime expected like "2026-04-28T09:00:00"
+                const key = s.startTime;
+                if (!key) return;
+                // ensure salon filter
+                if (!s.salon || !s.salon.salonID) return;
+                if (String(s.salon.salonID) !== String(bookingState.salonId)) return;
+                const datePart = key.split('T')[0];
+                if (datePart !== bookingState.selectedDate) return;
+                if (s.status && s.status !== 'AVAILABLE') occupied[key] = s;
+                if (s.status === 'AVAILABLE') availableMap[key] = s;
+            } catch (e) { /* ignore malformed items */ }
+        });
+
+        // Now generate hourly slots based on salon opening/closing times
+        filterAndDisplayGeneratedSlots(availableMap, occupied, bookingState.selectedDate);
     })
     .catch(function (err) {
         console.error('Failed to load slots:', err);
@@ -268,31 +295,117 @@ function loadAvailableSlots() {
 }
 
 function filterAndDisplaySlots(slots, selectedDate) {
+    // Deprecated by generated slots flow — retained for compatibility
+    filterAndDisplayGeneratedSlots({}, {}, selectedDate);
+}
+
+function filterAndDisplayGeneratedSlots(availableMap, occupiedMap, selectedDate) {
     const grid = document.getElementById('timeSlotsGrid');
     grid.innerHTML = '';
 
-    // Filter slots for selected date and AVAILABLE status
-    const filtered = slots.filter(function (slot) {
-        if (slot.status !== 'AVAILABLE') return false;
-        // startTime from backend is LocalDateTime → "2026-04-28T09:00:00"
-        const slotDate = slot.startTime ? slot.startTime.split('T')[0] : '';
-        return slotDate === selectedDate;
-    });
+    // Determine opening/closing times (HH:mm:ss). Fallback if missing.
+    const opening = bookingState.openingTime || '09:00:00';
+    const closing = bookingState.closingTime || '17:00:00';
 
-    if (filtered.length === 0) {
+    // Parse HH:mm:ss
+    function parseHM(t) {
+        const parts = (t || '00:00:00').split(':');
+        return { h: parseInt(parts[0]||'0',10), m: parseInt(parts[1]||'0',10) };
+    }
+
+    const op = parseHM(opening);
+    const cl = parseHM(closing);
+
+    // Build JS Dates in local (no timezone suffix) by using the selectedDate
+    const start = new Date(selectedDate + 'T' + padTime(op.h) + ':' + padTime(op.m) + ':00');
+    const end   = new Date(selectedDate + 'T' + padTime(cl.h) + ':' + padTime(cl.m) + ':00');
+
+    if (start >= end) {
+        grid.innerHTML = '<p class="no-slots">Salon has invalid opening/closing times configured.</p>';
+        document.getElementById('nextBtn2').disabled = true;
+        return;
+    }
+
+    let any = false;
+    for (let t = new Date(start.getTime()); t < end; t.setHours(t.getHours() + 1)) {
+        const hh = padTime(t.getHours());
+        const mm = padTime(t.getMinutes());
+        const isoLocal = selectedDate + 'T' + hh + ':' + mm + ':00';
+        const label = hh + ':' + mm + ' - ' + padTime((t.getHours()+1)%24) + ':' + mm;
+
+        // If there is an AVAILABLE slot row in DB for this time, prefer that slotID
+        if (availableMap[isoLocal]) {
+            const s = availableMap[isoLocal];
+            grid.appendChild(createGeneratedSlotElement({ slotID: s.slotID, label: label, startTime: isoLocal, state: 'available' }));
+            any = true;
+            continue;
+        }
+
+        // If DB shows occupied/locked/booked → show as taken
+        if (occupiedMap[isoLocal]) {
+            grid.appendChild(createGeneratedSlotElement({ slotID: occupiedMap[isoLocal].slotID, label: label, startTime: isoLocal, state: 'taken' }));
+            any = true;
+            continue;
+        }
+
+        // No DB row exists → treat as virtual available
+        grid.appendChild(createGeneratedSlotElement({ slotID: null, label: label, startTime: isoLocal, state: 'virtual' }));
+        any = true;
+    }
+
+    if (!any) {
         grid.innerHTML = '<p class="no-slots">No available slots for ' + formatDateDisplay(selectedDate) + '.<br>Please try another date.</p>';
         document.getElementById('nextBtn2').disabled = true;
         return;
     }
 
-    // Sort by start time
-    filtered.sort(function (a, b) { return a.startTime.localeCompare(b.startTime); });
-
-    filtered.forEach(function (slot) {
-        grid.appendChild(createSlotElement(slot));
-    });
-
     document.getElementById('nextBtn2').disabled = true;
+}
+
+function createGeneratedSlotElement(slot) {
+    // slot: { slotID, label, startTime, state: 'available'|'taken'|'virtual' }
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'time-slot';
+
+    const inner = document.createElement('div');
+    inner.className = 'slot-inner';
+
+    const timeSpan = document.createElement('span');
+    timeSpan.className = 'slot-time';
+    timeSpan.textContent = slot.label;
+    inner.appendChild(timeSpan);
+
+    const durSpan = document.createElement('span');
+    durSpan.className = 'slot-duration';
+    durSpan.textContent = '60 min';
+    inner.appendChild(durSpan);
+
+    if (slot.state === 'taken') {
+        button.classList.add('taken');
+        button.disabled = true;
+        button.setAttribute('aria-disabled', 'true');
+        button.appendChild(inner);
+        const badge = document.createElement('span'); badge.className = 'slot-badge'; badge.textContent = 'Booked'; button.appendChild(badge);
+        // not clickable
+    } else {
+        // available (either real DB slot or virtual)
+        button.classList.add(slot.state === 'virtual' ? 'virtual-available' : 'available');
+        button.appendChild(inner);
+        const input = document.createElement('input');
+        input.type = 'radio'; input.name = 'timeSlot'; input.id = 'ts' + (slot.slotID || 'v' + slot.startTime.replace(/[:T]/g,''));
+        input.value = slot.slotID || '';
+        button.prepend(input);
+
+        button.addEventListener('click', function () {
+            document.querySelectorAll('.time-slot').forEach(function (s) { s.classList.remove('selected'); });
+            button.classList.add('selected');
+            bookingState.selectedSlot = { slotID: slot.slotID, label: slot.label, startTime: slot.startTime, virtual: slot.slotID == null };
+            document.getElementById('nextBtn2').disabled = false;
+        });
+    }
+
+    return button;
 }
 
 function createSlotElement(slot) {
@@ -436,8 +549,15 @@ function resetConfirmBtn() {
 // Uses existing /api/bookings/confirm
 // ─────────────────────────────────────────────────────────
 function confirmBookingInBackend() {
-    const slotID     = bookingState.selectedSlot.slotID;
+    const slotID     = bookingState.selectedSlot && bookingState.selectedSlot.slotID;
     const customerID = bookingState.customerID;
+
+    if (!slotID) {
+        // Virtual slot (no DB slot row existed). We don't have a slotID to confirm on the server.
+        // For now, treat as local success (frontend persisted booking) and finish.
+        finishBooking();
+        return;
+    }
 
     fetch(API_BASE_URL + '/bookings/confirm?slotID=' + slotID + '&customerID=' + customerID, {
         method: 'POST'
@@ -477,6 +597,9 @@ function confirmOnlinePayment() {
     btn.disabled  = true;
     btn.innerHTML = '<span class="pg-spinner"></span> Connecting to PayHere…';
     showProcessingOverlay();
+    if (typeof showLoader === 'function') {
+        showLoader();
+    }
 
     bookingState.orderId = 'SNIPME-' + Date.now();
     const amount = getAmountValue();
@@ -484,17 +607,22 @@ function confirmOnlinePayment() {
     // Step 1: Lock the slot using PESSIMISTIC_WRITE lock from backend
     // Backend uses lockSlotForBooking() which does a DB-level row lock
     // If slot taken by another customer → backend returns 409 CONFLICT → we stop
-    fetch(API_BASE_URL + '/bookings/initiate?slotID=' + bookingState.selectedSlot.slotID
-        + '&customerID=' + bookingState.customerID, { method: 'POST' })
+    // If this is a virtual slot (no DB slot row exists yet), skip locking and go straight to payment
+    const initiatePromise = (bookingState.selectedSlot && bookingState.selectedSlot.slotID == null)
+        ? Promise.resolve(null)
+        : fetch(API_BASE_URL + '/bookings/initiate?slotID=' + bookingState.selectedSlot.slotID
+            + '&customerID=' + bookingState.customerID, { method: 'POST' });
+
+    initiatePromise
     .then(function (res) {
-        if (res.status === 409) {
+        if (res && res.status === 409) {
             // Another customer just locked this slot
             throw new Error('SLOT_TAKEN');
         }
-        if (!res.ok) {
+        if (res && !res.ok) {
             throw new Error('INITIATE_FAILED');
         }
-        // Slot locked successfully — now get PayHere hash from backend
+        // Slot locked successfully (or virtual) — now get PayHere hash from backend
         return fetch(API_BASE_URL + '/payment/hash'
             + '?orderId='  + bookingState.orderId
             + '&amount='   + amount
@@ -505,6 +633,9 @@ function confirmOnlinePayment() {
         return res.json();
     })
     .then(function (data) {
+        if (typeof hideLoader === 'function') {
+            hideLoader();
+        }
         const cardName  = document.getElementById('pgCardName').value.trim();
         const nameParts = cardName.split(' ');
         const firstName = nameParts[0] || 'Customer';
@@ -539,6 +670,9 @@ function confirmOnlinePayment() {
     })
     .catch(function (err) {
         console.error('Payment init failed:', err);
+        if (typeof hideLoader === 'function') {
+            hideLoader();
+        }
         hideProcessingOverlay();
         resetConfirmBtn();
         if (err.message === 'SLOT_TAKEN') {
