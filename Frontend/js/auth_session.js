@@ -123,25 +123,33 @@ document.addEventListener('DOMContentLoaded', function () {
         try { var navRect = navBar && navBar.getBoundingClientRect(); if (navRect) pill.style.top = Math.max(navRect.bottom + 10, 10) + 'px'; } catch(e){}
     }
 
-    // If any session exists, hide general login links/buttons
+    // If any session exists, remove general login links/buttons from DOM
     var anyLogged = (localStorage.getItem('snipmeCustomerLoggedIn') === 'true') || (localStorage.getItem('snipmeOwnerLoggedIn') === 'true') || (localStorage.getItem('snipmeAdminLoggedIn') === 'true');
 
     if (anyLogged) {
-        // Hide nav login anchors
-        document.querySelectorAll('a[href$="login.html"]').forEach(function (a) {
-            if (a.getAttribute('href') && a.getAttribute('href').indexOf('admin-dashboard') === -1 && a.getAttribute('href').indexOf('Salon-Owner-Dashboard') === -1) {
-                a.style.display = 'none';
+        // Remove only the login nav item container so no extra empty spacing remains.
+        document.querySelectorAll('.nav-bar li a[href$="login.html"]').forEach(function (a) {
+            const href = a.getAttribute('href') || '';
+            if (href.indexOf('admin-dashboard') !== -1 || href.indexOf('Salon-Owner-Dashboard') !== -1) {
+                return;
+            }
+
+            const li = a.closest('li');
+            if (li) {
+                li.remove();
+            } else {
+                a.remove();
             }
         });
 
-        // Hide role groups on login page
-        document.querySelectorAll('.role-group').forEach(function (g) { g.style.display = 'none'; });
+        // Remove role groups on login page from DOM
+        document.querySelectorAll('.role-group').forEach(function (g) { g.remove(); });
 
-        // Hide login buttons that navigate to specific login pages but keep dashboard buttons
+        // Remove login buttons that navigate to specific login pages (keep dashboard buttons)
         document.querySelectorAll('button[onclick]').forEach(function (b) {
             var onclick = b.getAttribute('onclick') || '';
             if (onclick.indexOf('admin-login.html') !== -1 || onclick.indexOf('salon-owner-login.html') !== -1 || onclick.indexOf('customer_login.html') !== -1) {
-                b.style.display = 'none';
+                b.remove();
             }
         });
     }

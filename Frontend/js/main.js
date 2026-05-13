@@ -683,6 +683,23 @@ document.addEventListener('DOMContentLoaded', () => {
     // Search button click
     searchBtn.addEventListener('click', (e) => {
         e.preventDefault();
+        
+        // Validate date: must be tomorrow or later
+        var dateVal = document.getElementById('date') ? document.getElementById('date').value : '';
+        if (dateVal) {
+            var today = new Date();
+            today.setHours(0, 0, 0, 0);
+            var todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+            if (dateVal === todayStr) {
+                alert('Cannot search for today. Please select a date from tomorrow onwards.');
+                return;
+            }
+            if (dateVal < todayStr) {
+                alert('Please select a date from tomorrow onwards.');
+                return;
+            }
+        }
+        
         currentPage = 0;
         performSearch();
     });

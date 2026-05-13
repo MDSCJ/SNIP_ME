@@ -285,6 +285,9 @@
                     return;
                 }
 
+                // Prevent today from being selected
+                var today = new Date();
+                today.setHours(0, 0, 0, 0);
                 var tomorrow = new Date();
                 tomorrow.setDate(tomorrow.getDate() + 1);
                 var minDate = tomorrow.getFullYear() + '-' +

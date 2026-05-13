@@ -216,6 +216,12 @@ function validateDate() {
     const err = document.getElementById('dateError');
     if (!inp.value) { err.textContent = 'Please select a date'; return false; }
 
+    // Prevent today from being selected (must book from tomorrow onwards)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+    if (inp.value === todayStr) { err.textContent = 'Cannot book for today. Please select from tomorrow onwards'; return false; }
+
     const sel      = new Date(inp.value + 'T00:00:00');
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
