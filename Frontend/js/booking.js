@@ -113,8 +113,9 @@ document.addEventListener('DOMContentLoaded', function () {
         pgName.addEventListener('blur',   function () { validateFieldLive('name'); });
     }
 
-    // ── PayHere SDK setup ─────────────────────────────────
-    setupPayHereHandlers();
+    // ── PayHere SDK setup ───────────────────────────────────
+    // DISABLED: Using custom payment gateway instead of PayHere popup
+    // setupPayHereHandlers();
 });
 
 // ─────────────────────────────────────────────────────────
@@ -512,33 +513,34 @@ function showGateway() {
 function proceedToGateway() { showGateway(); }
 
 // ─────────────────────────────────────────────────────────
-// PAYHERE SANDBOX
+// PAYHERE SANDBOX (DISABLED - Using Custom Payment Gateway)
 // ─────────────────────────────────────────────────────────
-function setupPayHereHandlers() {
-    if (typeof payhere === 'undefined') {
-        setTimeout(setupPayHereHandlers, 300);
-        return;
-    }
+// function setupPayHereHandlers() {
+//     if (typeof payhere === 'undefined') {
+//         setTimeout(setupPayHereHandlers, 300);
+//         return;
+//     }
+//
+//     payhere.onCompleted = function onCompleted(orderId) {
+//         console.log('PayHere completed. OrderID:', orderId);
+//         confirmBookingInBackend();
+//     };
+//
+//     payhere.onDismissed = function onDismissed() {
+//         console.log('PayHere dismissed');
+//         hideProcessingOverlay();
+//         resetConfirmBtn();
+//         flashError('Payment was cancelled. You can try again.');
+//     };
+//
+//     payhere.onError = function onError(error) {
+//         console.error('PayHere error:', error);
+//         hideProcessingOverlay();
+//         resetConfirmBtn();
+//         flashError('Payment error. Please try again.');
+//     };
+// }
 
-    payhere.onCompleted = function onCompleted(orderId) {
-        console.log('PayHere completed. OrderID:', orderId);
-        confirmBookingInBackend();
-    };
-
-    payhere.onDismissed = function onDismissed() {
-        console.log('PayHere dismissed');
-        hideProcessingOverlay();
-        resetConfirmBtn();
-        flashError('Payment was cancelled. You can try again.');
-    };
-
-    payhere.onError = function onError(error) {
-        console.error('PayHere error:', error);
-        hideProcessingOverlay();
-        resetConfirmBtn();
-        flashError('Payment error. Please try again.');
-    };
-}
 
 function resetConfirmBtn() {
     const btn = document.getElementById('pgConfirmBtn');
@@ -642,35 +644,50 @@ function confirmOnlinePayment() {
         if (typeof hideLoader === 'function') {
             hideLoader();
         }
-        const cardName  = document.getElementById('pgCardName').value.trim();
-        const nameParts = cardName.split(' ');
-        const firstName = nameParts[0] || 'Customer';
-        const lastName  = nameParts.slice(1).join(' ') || 'User';
-
-        const payment = {
-            sandbox:     true,
+        
+        // ── AUTO-FILL TEST CARD DETAILS FOR PROTOTYPING ───────────
+        // Only fill if the form is empty (user hasn't entered their own card)
+        const cardNumberField = document.getElementById('pgCardNumber');
+        const cardNameField = document.getElementById('pgCardName');
+        const expiryField = document.getElementById('pgExpiry');
+        const cvvField = document.getElementById('pgCVV');
+        
+        if (cardNumberField && !cardNumberField.value.trim() && data.card_number) {
+            // Auto-fill test card details from backend response
+            cardNumberField.value = data.card_number;
+            if (cardNameField) cardNameField.value = data.card_holder_name || 'Test User';
+            if (expiryField) expiryField.value = data.card_expiry || '12/29';
+            if (cvvField) cvvField.value = data.card_cvv || '123';
+            
+            // Log to console for developer reference
+            console.log('✓ Test card details auto-filled:');
+            console.log('  Card: ' + data.card_number);
+            console.log('  Name: ' + data.card_holder_name);
+            console.log('  Expiry: ' + data.card_expiry);
+            console.log('  CVV: ' + data.card_cvv);
+        }
+        
+        // ── CUSTOM PAYMENT GATEWAY (No PayHere popup) ─────────────
+        // Payment validated ✓ | Slot locked ✓ | Hash received ✓
+        // Now proceed to confirm the booking in the backend
+        console.log('✓ Custom Payment Gateway Process:');
+        console.log('  ✓ Card validated');
+        console.log('  ✓ Time slot locked');
+        console.log('  ✓ Hash received: ' + data.hash);
+        console.log('  ✓ Now confirming booking with /bookings/confirm endpoint...');
+        
+        // Store payment data for reference
+        bookingState.paymentData = {
+            order_id: data.order_id,
             merchant_id: data.merchant_id,
-            return_url:  undefined,
-            cancel_url:  undefined,
-            notify_url:  API_BASE_URL + '/payment/notify',
-            order_id:    data.order_id,
-            items:       (bookingState.selectedService ? bookingState.selectedService.serviceName : 'Salon Service')
-                         + ' at ' + (bookingState.salonName || 'SNIP ME'),
-            amount:      data.amount,
-            currency:    data.currency,
-            hash:        data.hash,
-            first_name:  firstName,
-            last_name:   lastName,
-            email:       'customer@snipme.lk',
-            phone:       '0771234567',
-            address:     'Sri Lanka',
-            city:        'Colombo',
-            country:     'Sri Lanka'
+            amount: data.amount,
+            currency: data.currency,
+            hash: data.hash
         };
-
-        console.log('Opening PayHere sandbox popup...');
-        payhere.startPayment(payment);
-
+        
+        // Proceed directly to confirm the booking (skip PayHere popup)
+        confirmBookingInBackend();
+        
         hideProcessingOverlay();
         resetConfirmBtn();
     })

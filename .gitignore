@@ -5,3 +5,4 @@ Backend/src/main/resources/application-secrets.properties
 .env.*
 index1.html
 script.js
+Backend/src/main/resources/application.properties
