@@ -1,11 +1,12 @@
 package com.starc.snipme.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigInteger;
-import java.security.MessageDigest;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -14,28 +15,47 @@ import java.util.Map;
 @RequestMapping("/api/payment")
 public class PaymentController {
 
-    // ── PayHere Sandbox Credentials ───────────────────────
-    private static final String MERCHANT_ID     = "1235274";
-    private static final String MERCHANT_SECRET = "Mjg2ODM5NDc3OTU4ODM2Njg4NTM5NDc2MDU0MDk3NzI1NTE4MDg=";
+    // ── PayHere Sandbox Credentials ───────────────────────────
+    private static final String MERCHANT_ID = "1235274";
 
-    // ─────────────────────────────────────────────────────
-    // GET /api/payment/hash
-    // Called by booking.js to get secure hash for PayHere
-    // Params: orderId, amount, currency
-    // ─────────────────────────────────────────────────────
+    // Secret for localhost (your existing one)
+    private static final String SECRET_LOCALHOST =
+        "Mjg2ODM5NDc3OTU4ODM2Njg4NTM5NDc2MDU0MDk3NzI1NTE4MDg=";
+
+    // Secret for mdscj.github.io
+
+    private static final String SECRET_GITHUB =
+        "MjczNjUwNTQzOTUxNjQzNTIxMTY1NzMyODMzNDE4NjQ2MDE1NA=";
+
+    // ── GET /api/payment/hash ─────────────────────────────────
+    // Called by booking.js — detects which domain the request
+    // came from and uses the correct merchant secret
     @GetMapping("/hash")
     public ResponseEntity<Map<String, String>> generateHash(
             @RequestParam String orderId,
             @RequestParam String amount,
-            @RequestParam(defaultValue = "LKR") String currency) {
+            @RequestParam(defaultValue = "LKR") String currency,
+            HttpServletRequest request) {
 
         try {
-            // Step 1: MD5 of merchant secret (uppercase)
-            String hashedSecret = md5(MERCHANT_SECRET).toUpperCase();
+            // Detect which frontend is calling us
+            String origin = request.getHeader("Origin");
+            String referer = request.getHeader("Referer");
+            String source = (origin != null ? origin : "") + (referer != null ? referer : "");
 
-            // Step 2: MD5 of full string (uppercase)
-            String rawString = MERCHANT_ID + orderId + amount + currency + hashedSecret;
-            String hash      = md5(rawString).toUpperCase();
+            // Pick the correct secret based on domain
+            String secret;
+            if (source.contains("github.io")) {
+                secret = SECRET_GITHUB;
+            } else {
+                // localhost, 127.0.0.1, or any other local dev
+                secret = SECRET_LOCALHOST;
+            }
+
+            // Generate hash: MD5(merchant_id + order_id + amount + currency + MD5(secret).toUpperCase())
+            String hashedSecret = md5(secret).toUpperCase();
+            String rawString    = MERCHANT_ID + orderId + amount + currency + hashedSecret;
+            String hash         = md5(rawString).toUpperCase();
 
             Map<String, String> response = new HashMap<>();
             response.put("merchant_id", MERCHANT_ID);
@@ -52,11 +72,8 @@ public class PaymentController {
         }
     }
 
-    // ─────────────────────────────────────────────────────
-    // POST /api/payment/notify
+    // ── POST /api/payment/notify ──────────────────────────────
     // PayHere calls this after payment is processed
-    // (PayHere sandbox calls this server-to-server)
-    // ─────────────────────────────────────────────────────
     @PostMapping("/notify")
     public ResponseEntity<String> paymentNotify(
             @RequestParam(required = false) String merchant_id,
@@ -67,25 +84,23 @@ public class PaymentController {
             @RequestParam(required = false) String status_code,
             @RequestParam(required = false) String md5sig) {
 
-        // Log payment notification
-        System.out.println("=== PayHere Notification ===");
-        System.out.println("Order ID    : " + order_id);
-        System.out.println("Payment ID  : " + payment_id);
-        System.out.println("Amount      : " + payhere_amount);
-        System.out.println("Status Code : " + status_code);
-        // status_code: 2=success, 0=pending, -1=cancelled, -2=failed
-        System.out.println("============================");
+        System.out.println("=== PayHere Notify ===");
+        System.out.println("Order ID   : " + order_id);
+        System.out.println("Payment ID : " + payment_id);
+        System.out.println("Status     : " + status_code);
+        System.out.println("Amount     : " + payhere_amount);
+        System.out.println("======================");
 
         return ResponseEntity.ok("OK");
     }
 
-    // ── MD5 helper ────────────────────────────────────────
+    // ── MD5 helper ────────────────────────────────────────────
     private String md5(String input) throws Exception {
-        MessageDigest md      = MessageDigest.getInstance("MD5");
-        byte[] digest         = md.digest(input.getBytes(StandardCharsets.UTF_8));
-        BigInteger number     = new BigInteger(1, digest);
-        String hashText       = number.toString(16);
-        while (hashText.length() < 32) hashText = "0" + hashText;
-        return hashText;
+        MessageDigest md  = MessageDigest.getInstance("MD5");
+        byte[] digest     = md.digest(input.getBytes(StandardCharsets.UTF_8));
+        BigInteger number = new BigInteger(1, digest);
+        String hash       = number.toString(16);
+        while (hash.length() < 32) hash = "0" + hash;
+        return hash;
     }
 }
