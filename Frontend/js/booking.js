@@ -21,8 +21,70 @@ let bookingState = {
     orderId:         null,
     allSlots:        [],     // all available slots from backend
     openingTime:     null,   // salon opening time (HH:mm:ss)
-    closingTime:     null    // salon closing time (HH:mm:ss)
+    closingTime:     null,   // salon closing time (HH:mm:ss)
+    holidays:        []      // salon holidays (JSON array of dates: ["2026-03-20", "2026-03-21"])
 };
+
+function normalizeDateKey(value) {
+    if (!value) {
+        return '';
+    }
+
+    const text = String(value).trim();
+    if (!text) {
+        return '';
+    }
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+        return text;
+    }
+
+    if (text.includes('T')) {
+        return text.split('T')[0];
+    }
+
+    return text;
+}
+
+function parseSalonHolidays(rawValue) {
+    if (!rawValue) {
+        return [];
+    }
+
+    const trimmed = String(rawValue).trim();
+    if (!trimmed) {
+        return [];
+    }
+
+    let values = [];
+    if (trimmed.startsWith('[')) {
+        try {
+            values = JSON.parse(trimmed);
+        } catch (error) {
+            values = [];
+        }
+    } else {
+        values = trimmed.split(/[;,\n]/);
+    }
+
+    return values
+        .map(normalizeDateKey)
+        .filter(Boolean);
+}
+
+function isSalonHoliday(dateValue) {
+    const selectedKey = normalizeDateKey(dateValue);
+    return bookingState.holidays.some(function (holiday) {
+        return normalizeDateKey(holiday) === selectedKey;
+    });
+}
+
+function setStep1NextState(isEnabled) {
+    const nextButton = document.getElementById('nextBtn1');
+    if (nextButton) {
+        nextButton.disabled = !isEnabled;
+    }
+}
 
 // ─────────────────────────────────────────────────────────
 // INIT
@@ -49,6 +111,7 @@ document.addEventListener('DOMContentLoaded', function () {
     dateInput.min = tomorrow.toISOString().split('T')[0];
     dateInput.max = maxDate.toISOString().split('T')[0];
     dateInput.addEventListener('change', validateDate);
+    dateInput.addEventListener('input', validateDate);
 
     const calendarBtn = document.getElementById('calendarBtn');
     if (calendarBtn) {
@@ -74,7 +137,8 @@ document.addEventListener('DOMContentLoaded', function () {
         gatewayBackBtn.addEventListener('click', function (e) {
             e.preventDefault();
             e.stopPropagation();
-            showMainBox();
+            hideGateway();
+            goToStep(2);
         });
     }
 
@@ -138,6 +202,11 @@ function loadSalonData(salonId) {
         // Store opening/closing times if backend provides them
         bookingState.openingTime = salon.openingTime || salon.opening_time || bookingState.openingTime;
         bookingState.closingTime = salon.closingTime || salon.closing_time || bookingState.closingTime;
+        
+        // Parse and store holidays whether the backend sends JSON or comma-separated text
+        bookingState.holidays = parseSalonHolidays(salon.holidays);
+
+        validateDate();
 
         // Update UI
         document.getElementById('salonName').textContent        = bookingState.salonName;
@@ -214,13 +283,21 @@ function updateServiceDisplay() {
 function validateDate() {
     const inp = document.getElementById('dateInput');
     const err = document.getElementById('dateError');
-    if (!inp.value) { err.textContent = 'Please select a date'; return false; }
+    if (!inp.value) {
+        err.textContent = 'Please select a date';
+        setStep1NextState(false);
+        return false;
+    }
 
     // Prevent today from being selected (must book from tomorrow onwards)
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
-    if (inp.value === todayStr) { err.textContent = 'Cannot book for today. Please select from tomorrow onwards'; return false; }
+    if (inp.value === todayStr) {
+        err.textContent = 'Cannot book for today. Please select from tomorrow onwards';
+        setStep1NextState(false);
+        return false;
+    }
 
     const sel      = new Date(inp.value + 'T00:00:00');
     const tomorrow = new Date();
@@ -230,11 +307,27 @@ function validateDate() {
     maxDate.setDate(maxDate.getDate() + 7);
     maxDate.setHours(23, 59, 59, 999);
 
-    if (sel < tomorrow) { err.textContent = 'Please select from tomorrow onwards'; return false; }
-    if (sel > maxDate)  { err.textContent = 'Cannot book more than 7 days ahead'; return false; }
+    if (sel < tomorrow) {
+        err.textContent = 'Please select from tomorrow onwards';
+        setStep1NextState(false);
+        return false;
+    }
+    if (sel > maxDate)  {
+        err.textContent = 'Cannot book more than 7 days ahead';
+        setStep1NextState(false);
+        return false;
+    }
+
+    // Check if selected date is a salon holiday
+    if (isSalonHoliday(inp.value)) {
+        err.textContent = 'Salon is closed on this date. Please select another date.';
+        setStep1NextState(false);
+        return false;
+    }
 
     err.textContent = '';
     bookingState.selectedDate = inp.value;
+    setStep1NextState(true);
     return true;
 }
 
@@ -456,7 +549,7 @@ function proceedToPayment() {
     if (!bookingState.selectedSlot) { alert('Please select a time slot'); return; }
     goToStep(3);
     fillSummaries();
-    showMainBox();
+    showGateway();
 }
 
 function getAmountDisplay() {
@@ -479,13 +572,6 @@ function fillSummaries() {
     const svcName   = bookingState.selectedService ? bookingState.selectedService.serviceName : '-';
     const amtDisplay = getAmountDisplay();
 
-    // Main box
-    document.getElementById('summSalon').textContent   = bookingState.salonName || 'SNIP ME Salon';
-    document.getElementById('summService').textContent = svcName;
-    document.getElementById('summDate').textContent    = dateLbl;
-    document.getElementById('summTime').textContent    = slotLbl;
-    document.getElementById('summAmount').textContent  = amtDisplay;
-
     // Gateway box
     document.getElementById('pgSummService').textContent = svcName;
     document.getElementById('pgSummDate').textContent    = dateLbl;
@@ -495,18 +581,17 @@ function fillSummaries() {
 }
 
 function showMainBox() {
-    document.getElementById('mainPaymentBox').style.display = 'block';
-    document.getElementById('paymentGateway').style.display = 'none';
-    clearGatewayErrors();
-    hideProcessingOverlay();
-    resetConfirmBtn();
+    hideGateway();
 }
 
 function showGateway() {
-    document.getElementById('mainPaymentBox').style.display = 'none';
     document.getElementById('paymentGateway').style.display = 'block';
     clearGatewayErrors();
     hideProcessingOverlay();
+}
+
+function hideGateway() {
+    document.getElementById('paymentGateway').style.display = 'none';
 }
 
 function proceedToGateway() { showGateway(); }
@@ -685,8 +770,8 @@ function confirmOnlinePayment() {
             // Go back to step 2 and show error
             flashError('Sorry! This slot was just booked by someone else. Please go back and select another time slot.');
             setTimeout(function () {
-                showMainBox();
                 goToStep(2);
+                hideGateway();
                 loadAvailableSlots(); // Refresh slots from backend
             }, 3000);
         } else if (err.message === 'INITIATE_FAILED') {
