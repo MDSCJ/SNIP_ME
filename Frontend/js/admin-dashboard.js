@@ -214,50 +214,14 @@
                     const tr = document.createElement("tr");
                     tr.innerHTML =
                         "<td>" + (u.email || "") + "</td>" +
-                        "<td>" + (u.name || "-") + " <button class=\"edit-btn\" data-email=\"" + (u.email || "") + "\" data-field=\"name\" data-value=\"" + escapeHtml(u.name || "") + "\">✎</button></td>" +
-                        "<td>" + (u.phoneNumber || "-") + " <button class=\"edit-btn\" data-email=\"" + (u.email || "") + "\" data-field=\"phoneNumber\" data-value=\"" + escapeHtml(u.phoneNumber || "") + "\">✎</button></td>" +
-                        "<td>" + (u.userType || "CUSTOMER") + " <button class=\"edit-btn\" data-email=\"" + (u.email || "") + "\" data-field=\"userType\" data-value=\"" + escapeHtml(u.userType || "CUSTOMER") + "\">✎</button></td>" +
+                        "<td>" + (u.name || "-") + "</td>" +
+                        "<td>" + (u.phoneNumber || "-") + "</td>" +
+                        "<td>" + (u.userType || "CUSTOMER") + "</td>" +
                         "<td><button class=\"delete-btn\" data-email=\"" + (u.email || "") + "\">Delete</button></td>";
                     usersTableBody.appendChild(tr);
                 });
 
                 syncTableScroll(usersTableBody);
-
-                usersTableBody.querySelectorAll(".edit-btn").forEach(function (btn) {
-                    btn.addEventListener("click", function () {
-                        const email = btn.getAttribute("data-email");
-                        const field = btn.getAttribute("data-field");
-                        const currentValue = btn.getAttribute("data-value") || "";
-                        if (!email) return;
-
-                        const label = field === "phoneNumber"
-                            ? "phone number"
-                            : field === "userType"
-                                ? "role (CUSTOMER/SALON_OWNER/ADMIN)"
-                                : "name";
-                        const nextValue = prompt("Edit " + label + ":", currentValue);
-                        if (nextValue === null) return;
-
-                        const payload = {};
-                        payload[field] = nextValue;
-
-                        fetch(apiRoot + "/admin/users/" + encodeURIComponent(email), {
-                            method: "PUT",
-                            headers: headers,
-                            body: JSON.stringify(payload)
-                        })
-                            .then(function (res) {
-                                if (handleAuthFailure(res)) return Promise.reject(new Error("Unauthorized"));
-                                return res.json();
-                            })
-                            .then(function () {
-                                fetchUsers();
-                            })
-                            .catch(function () {
-                                alert("Failed to update user.");
-                            });
-                    });
-                });
 
                 usersTableBody.querySelectorAll(".delete-btn").forEach(function (btn) {
                     btn.addEventListener("click", function () {
