@@ -104,7 +104,7 @@
 
                 <div class="form-actions">
                     <button type="button" class="btn-secondary" onclick="goBack()">Cancel</button>
-                    <button type="button" class="btn-primary" onclick="proceedToSlots()">Next →</button>
+                    <button type="button" class="btn-primary" id="nextBtn1" onclick="proceedToSlots()">Next →</button>
                 </div>
 
             </div>
@@ -128,72 +128,8 @@
 
     <!-- ══════════ STEP 3: PAYMENT ══════════ -->
     <div class="step-content" id="step3-content">
-
-        <!-- MAIN PAYMENT SUMMARY BOX -->
-        <div class="payment-container" id="mainPaymentBox">
-            <h3>Payment</h3>
-
-            <div class="booking-summary-block">
-                <div class="summary-row">
-                    <span class="summary-label">Salon</span>
-                    <span class="summary-value" id="summSalon">-</span>
-                </div>
-                <div class="summary-row">
-                    <span class="summary-label">Service</span>
-                    <span class="summary-value" id="summService">-</span>
-                </div>
-                <div class="summary-row">
-                    <span class="summary-label">Date</span>
-                    <span class="summary-value" id="summDate">-</span>
-                </div>
-                <div class="summary-row">
-                    <span class="summary-label">Time</span>
-                    <span class="summary-value" id="summTime">-</span>
-                </div>
-                <div class="summary-row summary-total">
-                    <span class="summary-label">Amount</span>
-                    <span class="summary-value amount-highlight" id="summAmount">-</span>
-                </div>
-            </div>
-
-            <!-- Single online payment option -->
-            <div class="online-only-box">
-                <div class="online-only-icon">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                        <rect x="2" y="5" width="20" height="14" rx="2" stroke="#f1c40f" stroke-width="1.8"/>
-                        <line x1="2" y1="10" x2="22" y2="10" stroke="#f1c40f" stroke-width="1.8"/>
-                        <line x1="6" y1="15" x2="10" y2="15" stroke="#f1c40f" stroke-width="1.8" stroke-linecap="round"/>
-                    </svg>
-                </div>
-                <div class="online-only-text">
-                    <span class="online-only-title">Online Payment</span>
-                    <span class="online-only-sub">Secured by PayHere · Visa · Mastercard · Amex</span>
-                </div>
-                <div class="mini-card-icons">
-                    <div class="mini-card-icon">
-                        <svg viewBox="0 0 48 16" xmlns="http://www.w3.org/2000/svg">
-                            <rect width="48" height="16" rx="2" fill="#1A1F71"/>
-                            <text x="5" y="12" font-family="Arial" font-weight="bold" font-size="9" fill="#fff">VISA</text>
-                        </svg>
-                    </div>
-                    <div class="mini-card-icon">
-                        <svg viewBox="0 0 38 24" xmlns="http://www.w3.org/2000/svg">
-                            <circle cx="14" cy="12" r="10" fill="#EB001B"/>
-                            <circle cx="24" cy="12" r="10" fill="#F79E1B"/>
-                            <path d="M19 5.27a10 10 0 0 1 0 13.46A10 10 0 0 1 19 5.27z" fill="#FF5F00"/>
-                        </svg>
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-actions" style="margin-top:22px;">
-                <button type="button" class="btn-secondary" onclick="goToPreviousStep(3)">← Back</button>
-                <button type="button" class="btn-primary" onclick="proceedToGateway()">Proceed to Pay →</button>
-            </div>
-        </div><!-- /mainPaymentBox -->
-
         <!-- PAYMENT GATEWAY CARD FORM -->
-        <div class="pg-wrapper" id="paymentGateway" style="display:none;">
+        <div class="pg-wrapper" id="paymentGateway">
 
             <div class="pg-header">
                 <button type="button" class="pg-back-btn" id="gatewayBackBtn">← Back</button>

@@ -189,6 +189,7 @@ public class PublicSalonController {
                 res.put("rate",        salon.getRate());
                 res.put("openingTime", salon.getOpeningTime() != null ? salon.getOpeningTime().toString() : "");
                 res.put("closingTime", salon.getClosingTime() != null ? salon.getClosingTime().toString() : "");
+                res.put("holidays",    salon.getHolidays()    != null ? salon.getHolidays()    : "[]");
                 return ResponseEntity.ok((Object) res);
             })
             .orElse(ResponseEntity.notFound().build());

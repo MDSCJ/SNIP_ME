@@ -65,6 +65,7 @@ public class BookingService {
         // Keep the slot state aligned with TimeSlot model states.
         slot.setStatus("BOOKED");
         slot.setLockedAt(null); // Clear the timer
+        slot.setCustomerID(customerID); // Store who booked this slot
         timeSlotRepository.save(slot);
 
         // --- SALON NOTIFICATION TRIGGER ---
