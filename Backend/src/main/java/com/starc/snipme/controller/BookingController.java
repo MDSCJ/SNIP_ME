@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.starc.snipme.model.TimeSlot;
+import com.starc.snipme.model.Booking;
 import com.starc.snipme.service.BookingService;
 import com.starc.snipme.repository.TimeSlotRepository;
 
@@ -80,6 +81,23 @@ public class BookingController {
             
             return ResponseEntity.ok("Payment Successful! Appointment Confirmed. Slot ID: " + confirmedSlot.getSlotID());
         } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/complete")
+    public ResponseEntity<?> completeBooking(
+            @RequestParam(required = false) Long slotID,
+            @RequestParam Long customerID,
+            @RequestParam Long salonID,
+            @RequestParam Long serviceID,
+            @RequestParam String startTime,
+            @RequestParam String orderId,
+            @RequestParam Double amount) {
+        try {
+            Booking booking = bookingService.completeBooking(slotID, customerID, salonID, serviceID, startTime, orderId, amount);
+            return ResponseEntity.ok("Booking completed successfully with Booking ID: " + booking.getBookingID());
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }

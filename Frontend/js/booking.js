@@ -142,41 +142,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // ── Card field listeners ──────────────────────────────
-    const pgCard = document.getElementById('pgCardNumber');
-    if (pgCard) {
-        pgCard.addEventListener('input', function () {
-            const raw = this.value.replace(/\D/g, '').slice(0, 16);
-            this.value = raw.match(/.{1,4}/g)?.join(' ') || raw;
-            detectCardType(raw);
-            validateFieldLive('number');
-        });
-        pgCard.addEventListener('blur', function () { validateFieldLive('number'); });
-    }
-    const pgExp = document.getElementById('pgExpiry');
-    if (pgExp) {
-        pgExp.addEventListener('input', function () {
-            let v = this.value.replace(/\D/g, '');
-            if (v.length >= 2) v = v.slice(0, 2) + '/' + v.slice(2, 4);
-            this.value = v;
-            validateFieldLive('expiry');
-        });
-        pgExp.addEventListener('blur', function () { validateFieldLive('expiry'); });
-    }
-    const pgCVV = document.getElementById('pgCVV');
-    if (pgCVV) {
-        pgCVV.addEventListener('input', function () {
-            this.value = this.value.replace(/\D/g, '').slice(0, 4);
-            validateFieldLive('cvv');
-        });
-        pgCVV.addEventListener('blur', function () { validateFieldLive('cvv'); });
-    }
-    const pgName = document.getElementById('pgCardName');
-    if (pgName) {
-        pgName.addEventListener('input',  function () { validateFieldLive('name'); });
-        pgName.addEventListener('blur',   function () { validateFieldLive('name'); });
-    }
-
     // ── PayHere SDK setup ─────────────────────────────────
     setupPayHereHandlers();
 });
@@ -642,24 +607,32 @@ function resetConfirmBtn() {
 function confirmBookingInBackend() {
     const slotID     = bookingState.selectedSlot && bookingState.selectedSlot.slotID;
     const customerID = bookingState.customerID;
+    const salonID    = bookingState.salonId;
+    const serviceID  = bookingState.selectedService ? bookingState.selectedService.serviceId : null;
+    const startTime  = bookingState.selectedSlot ? bookingState.selectedSlot.startTime : null;
+    const orderId    = bookingState.orderId;
+    const amount     = getAmountValue();
 
-    if (!slotID) {
-        // Virtual slot (no DB slot row existed). We don't have a slotID to confirm on the server.
-        // For now, treat as local success (frontend persisted booking) and finish.
-        finishBooking();
-        return;
+    let url = API_BASE_URL + '/bookings/complete?customerID=' + customerID
+            + '&salonID=' + salonID
+            + '&serviceID=' + serviceID
+            + '&startTime=' + encodeURIComponent(startTime)
+            + '&orderId=' + encodeURIComponent(orderId)
+            + '&amount=' + amount;
+            
+    if (slotID) {
+        url += '&slotID=' + slotID;
     }
 
-    fetch(API_BASE_URL + '/bookings/confirm?slotID=' + slotID + '&customerID=' + customerID, {
+    fetch(url, {
         method: 'POST'
     })
     .then(function (res) { return res.text(); })
     .then(function (data) {
         console.log('Backend confirmed:', data);
-        // Backend now confirms using Slot ID; keep a UI booking id value as fallback.
-        const slotMatch = data.match(/Slot ID:\s*(\d+)/i);
-        if (slotMatch) {
-            bookingState.bookingID = 'SLOT-' + slotMatch[1];
+        const match = data.match(/Booking ID:\s*(\d+)/i);
+        if (match) {
+            bookingState.bookingID = 'BOOK-' + match[1];
         }
         finishBooking();
     })
@@ -670,19 +643,9 @@ function confirmBookingInBackend() {
 }
 
 // ─────────────────────────────────────────────────────────
-// ONLINE PAYMENT — validate → get hash → open PayHere popup
+// ONLINE PAYMENT — get hash → open PayHere popup
 // ─────────────────────────────────────────────────────────
 function confirmOnlinePayment() {
-    const nameOk   = validateFieldLive('name');
-    const numberOk = validateFieldLive('number');
-    const expiryOk = validateFieldLive('expiry');
-    const cvvOk    = validateFieldLive('cvv');
-
-    if (!(nameOk && numberOk && expiryOk && cvvOk)) {
-        flashError('Please correct the highlighted fields.');
-        return;
-    }
-
     document.getElementById('pgError').textContent = '';
     const btn = document.getElementById('pgConfirmBtn');
     btn.disabled  = true;
@@ -727,10 +690,8 @@ function confirmOnlinePayment() {
         if (typeof hideLoader === 'function') {
             hideLoader();
         }
-        const cardName  = document.getElementById('pgCardName').value.trim();
-        const nameParts = cardName.split(' ');
-        const firstName = nameParts[0] || 'Customer';
-        const lastName  = nameParts.slice(1).join(' ') || 'User';
+        const firstName = 'Customer';
+        const lastName  = 'User';
 
         const payment = {
             sandbox:     true,
@@ -782,49 +743,9 @@ function confirmOnlinePayment() {
     });
 }
 
-// ─────────────────────────────────────────────────────────
-// CARD FIELD VALIDATION
-// ─────────────────────────────────────────────────────────
-function detectCardType(raw) {
-    let type = '';
-    if (/^4/.test(raw))            type = 'visa';
-    else if (/^5[1-5]/.test(raw))  type = 'mc';
-    else if (/^3[47]/.test(raw))   type = 'amex';
-    else if (/^6/.test(raw))       type = 'discover';
-    document.querySelectorAll('.card-icon-item').forEach(function (el) {
-        el.classList.toggle('dim',    !(!type || el.dataset.card === type));
-        el.classList.toggle('active',  !type || el.dataset.card === type);
-    });
-}
-
-function setFieldState(inputId, errorId, isValid, message) {
-    const input = document.getElementById(inputId);
-    const error = document.getElementById(errorId);
-    if (!input || !error) return false;
-    input.classList.remove('valid', 'invalid');
-    error.textContent = message || '';
-    if (!input.value.trim()) return false;
-    input.classList.add(isValid ? 'valid' : 'invalid');
-    return isValid;
-}
-
-function validateFieldLive(field) {
-    if (field === 'name')   return setFieldState('pgCardName',   'nameError',   document.getElementById('pgCardName').value.trim().length >= 2,   'Enter name on card.');
-    if (field === 'number') return setFieldState('pgCardNumber', 'numberError', document.getElementById('pgCardNumber').value.replace(/\s/g,'').length === 16, 'Must be 16 digits.');
-    if (field === 'expiry') return setFieldState('pgExpiry',     'expiryError', /^\d{2}\/\d{2}$/.test(document.getElementById('pgExpiry').value), 'Use MM/YY format.');
-    if (field === 'cvv')    return setFieldState('pgCVV',        'cvvError',    document.getElementById('pgCVV').value.length >= 3, 'Min 3 digits.');
-    return true;
-}
-
 function clearGatewayErrors() {
     const pgError = document.getElementById('pgError');
     if (pgError) { pgError.textContent = ''; pgError.classList.remove('shake'); }
-    ['pgCardName','pgCardNumber','pgExpiry','pgCVV'].forEach(function (id) {
-        document.getElementById(id)?.classList.remove('valid','invalid');
-    });
-    ['nameError','numberError','expiryError','cvvError'].forEach(function (id) {
-        const el = document.getElementById(id); if (el) el.textContent = '';
-    });
 }
 
 function showProcessingOverlay() {

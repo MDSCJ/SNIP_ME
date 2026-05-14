@@ -15,19 +15,22 @@ public class Payment {
     private String paymentStatus; // "Success" or "Failed"
     private LocalDateTime transactionDate;
 
-    // Link this payment to a specific finalized time slot
+    // Link this payment to a Booking
     @OneToOne
-    @JoinColumn (name = "slot_id", nullable = false)
-    private TimeSlot timeSlot;
+    @JoinColumn (name = "booking_id", nullable = false)
+    private Booking booking;
+
+    private String orderId;
 
     //Default constructor dor Spring Boot
     public Payment(){}
 
-    public Payment(Double amount, String paymentStatus, TimeSlot timeSlot){
+    public Payment(Double amount, String paymentStatus, Booking booking, String orderId){
         this.amount= amount;
         this.paymentStatus = paymentStatus;
         this.transactionDate = LocalDateTime.now();
-        this.timeSlot = timeSlot;
+        this.booking = booking;
+        this.orderId = orderId;
     }
 
     //Getter and Setters
@@ -38,6 +41,8 @@ public class Payment {
     public void setPaymentStatus(String paymentStatus){this.paymentStatus = paymentStatus;}
     public LocalDateTime getTransactionDate(){return transactionDate;}
     public void setTransactionDate(LocalDateTime transactionDate){this.transactionDate = transactionDate;}
-    public TimeSlot getTimeSlot(){return timeSlot;}
-    public void setTimeSlot(TimeSlot timeSlot){this.timeSlot = timeSlot;}
+    public Booking getBooking(){return booking;}
+    public void setBooking(Booking booking){this.booking = booking;}
+    public String getOrderId(){return orderId;}
+    public void setOrderId(String orderId){this.orderId = orderId;}
 }

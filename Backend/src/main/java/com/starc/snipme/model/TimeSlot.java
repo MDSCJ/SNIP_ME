@@ -33,11 +33,7 @@ public class TimeSlot {
     // Tracks when the 5-minute lock started
     private LocalDateTime lockedAt;
 
-    // Customer who booked this slot
-    private Long customerID;
-
-    // Service booked for this slot
-    private Long serviceID; 
+    // Booking handles customer and service references now 
 
     // --- Getters and Setters ---
     public Salon getSalon() { return salon; }
@@ -55,9 +51,5 @@ public class TimeSlot {
     public LocalDateTime getLockedAt() { return lockedAt; }
     public void setLockedAt(LocalDateTime lockedAt) { this.lockedAt = lockedAt; }
 
-    public Long getCustomerID() { return customerID; }
-    public void setCustomerID(Long customerID) { this.customerID = customerID; }
 
-    public Long getServiceID() { return serviceID; }
-    public void setServiceID(Long serviceID) { this.serviceID = serviceID; }
 }
