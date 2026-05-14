@@ -123,12 +123,11 @@ If you're completely new to MySQL, the easiest way to begin is by installing the
 
 👉 **Download here:**  
 [Download MySQL Installer](https://dev.mysql.com/get/Downloads/MySQLInstaller/mysql-installer-community-8.0.45.0.msi)
-1. Create a new database:
-```sql
-CREATE DATABASE snipme_db;
-```
+1. Use the existing `defaultdb` database from your MySQL provider.
 
-2. Update the database credentials in `application-secrets.properties` to match your setup
+2. Make sure the `bookings`, `payments`, `users`, `salons`, `services`, and `time_slots` tables are created in `defaultdb`.
+
+3. Update the database credentials in `application-secrets.properties` to match your setup.
 
 #### 3. Build and Run
 
@@ -239,7 +238,7 @@ Each folder has its own `.gitignore` for technology-specific rules.
 ### Database connection fails
 - Verify MySQL username/password in `application-secrets.properties`
 - Check MySQL is running: `mysql -u root -p`
-- Ensure database name is `snipme_db`
+- Ensure database name is `defaultdb`
 
 ---
 
