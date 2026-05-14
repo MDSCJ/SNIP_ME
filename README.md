@@ -243,6 +243,54 @@ Each folder has its own `.gitignore` for technology-specific rules.
 
 ---
 
+## PayHere Payment Testing
+
+The application uses **PayHere Sandbox** for payment processing. Use the following test card numbers to simulate different payment scenarios:
+
+### ✅ Successful Payments
+
+| Card Type | Card Number |
+|-----------|------------|
+| Visa | 4916217501611292 |
+| MasterCard | 5307732125531191 |
+| AMEX | 346781005510225 |
+
+### ❌ Insufficient Funds
+
+| Card Type | Card Number |
+|-----------|------------|
+| Visa | 4024007194349121 |
+| MasterCard | 5459051433777487 |
+| AMEX | 370787711978928 |
+
+### 🚫 Limit Exceeded
+
+| Card Type | Card Number |
+|-----------|------------|
+| Visa | 4929119799365646 |
+| MasterCard | 5491182243178283 |
+| AMEX | 340701811823469 |
+
+### ⛔ Do Not Honor
+
+| Card Type | Card Number |
+|-----------|------------|
+| Visa | 4929768900837248 |
+| MasterCard | 5388172137367973 |
+| AMEX | 374664175202812 |
+
+### 🔴 Network Error
+
+| Card Type | Card Number |
+|-----------|------------|
+| Visa | 4024007120869333 |
+| MasterCard | 5237980565185003 |
+| AMEX | 373433500205887 |
+
+**Note:** Use any future expiry date (e.g., 12/27) and any 3-digit CVV for testing.
+
+---
+
 ## Contributing
 
 1. Create a local `application-secrets.properties` with your credentials
