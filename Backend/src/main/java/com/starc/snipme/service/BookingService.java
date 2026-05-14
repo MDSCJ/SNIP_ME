@@ -1,6 +1,7 @@
 package com.starc.snipme.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -36,6 +37,15 @@ public class BookingService {
 
     @Autowired
     private SalonNotificationService salonNotificationService;
+
+    @Transactional(readOnly = true)
+    public List<Booking> getBookingsForCustomer(Long customerID) {
+        if (customerID == null) {
+            throw new IllegalArgumentException("Customer ID must not be null.");
+        }
+        return bookingRepository.findByCustomer_IdOrderByBookingDateDesc(customerID);
+    }
+
     // This method perfectly matches the "1.1 InitiateBooking" call in your sequence diagram
     @Transactional
     public TimeSlot initiateBooking(Long slotID, Long customerID) {

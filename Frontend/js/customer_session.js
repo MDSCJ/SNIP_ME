@@ -31,6 +31,9 @@ document.addEventListener("DOMContentLoaded", function () {
     function clearSession() {
         localStorage.removeItem(LOGIN_FLAG_KEY);
         localStorage.removeItem(USERNAME_KEY);
+        localStorage.removeItem("snipmeCustomerUserId");
+        localStorage.removeItem("customerID");
+        sessionStorage.removeItem("customerID");
         window.isCustomerLoggedIn = false;
         window.dispatchEvent(new Event("customer-auth-changed"));
         renderSessionPill();

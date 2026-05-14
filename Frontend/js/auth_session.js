@@ -32,6 +32,11 @@ document.addEventListener('DOMContentLoaded', function () {
         localStorage.removeItem('snipmeOwnerPhone');
         ownerLogged = false;
     }
+    if (!customerLogged) {
+        localStorage.removeItem('snipmeCustomerUserId');
+        localStorage.removeItem('customerID');
+        sessionStorage.removeItem('customerID');
+    }
     if (!adminSessionValid) {
         localStorage.removeItem('snipmeAdminLoggedIn');
         localStorage.removeItem('snipmeAdminToken');
