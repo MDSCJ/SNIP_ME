@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
@@ -11,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 @Component
+@ConditionalOnProperty(name = "app.migration.drop-bookings.enabled", havingValue = "true", matchIfMissing = false)
 public class DropBookingsTableMigration implements ApplicationRunner {
 
     private static final Logger logger = LoggerFactory.getLogger(DropBookingsTableMigration.class);
