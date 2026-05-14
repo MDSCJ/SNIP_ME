@@ -146,90 +146,113 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     // ========= 5. Bookings Management =========
-    function loadBookings() {
-        var bookingsContainer = document.getElementById('bookingsContainer');
-        var bookings = JSON.parse(localStorage.getItem('userBookings') || '[]');
-        
-        if (!bookings || bookings.length === 0) {
-            bookingsContainer.innerHTML = `
-                <div class="no-bookings-wrap">
-                    <p class="no-bookings">No bookings yet.</p>
-                    <a href="booking.html" class="continue-search-btn">Continue Searching</a>
-                </div>
-            `;
-            return;
-        }
-        
-        var bookingsHTML = '<div class="bookings-list">';
-        bookings.forEach(function(booking, index) {
-            var bookingDate = new Date(booking.date);
-            var formattedDate = bookingDate.toLocaleDateString('en-US', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
-            
-            var statusClass = booking.status === 'CANCELED' ? 'status-canceled' : 'status-confirmed';
-            
-            bookingsHTML += `
-                <div class="booking-card ${statusClass}">
-                    <div class="booking-info">
-                        <h3>${booking.salonName}</h3>
-                        <p><strong>Service:</strong> ${booking.service}</p>
-                        <p><strong>Date:</strong> ${formattedDate}</p>
-                        <p><strong>Payment Method:</strong> ${booking.paymentMethod === 'online' ? 'Online Payment' : 'Cash After Order'}</p>
-                        <p><strong>Status:</strong> <span class="status-badge">${booking.status}</span></p>
-                    </div>
-                    <div class="booking-actions">
-                        ${booking.status === 'CONFIRMED' ? `
-                            <button onclick="editBooking(${index})" class="btn-edit">Edit Date</button>
-                            <button onclick="cancelBooking(${index})" class="btn-cancel">Cancel Booking</button>
-                        ` : `
-                            <p class="booking-canceled">This booking has been canceled</p>
-                        `}
-                    </div>
-                </div>
-            `;
-        });
-        bookingsHTML += '</div>';
-        bookingsContainer.innerHTML = bookingsHTML;
+    var dbBookings = [];
+
+    // Remove legacy local cache so stale snippets do not appear.
+    localStorage.removeItem('userBookings');
+
+    function getCustomerIdFromSession() {
+        return localStorage.getItem('customerID')
+            || localStorage.getItem('snipmeCustomerUserId')
+            || sessionStorage.getItem('customerID');
     }
 
-    window.editBooking = function(index) {
-        var bookings = JSON.parse(localStorage.getItem('userBookings') || '[]');
-        if (bookings[index]) {
-            sessionStorage.setItem('editingBookingIndex', index);
-            window.location.href = 'booking.html?edit=' + index;
-        }
-    };
+    function renderNoBookings(bookingsContainer) {
+        bookingsContainer.innerHTML = `
+            <div class="no-bookings-wrap">
+                <p class="no-bookings">No bookings yet.</p>
+                <a href="booking.html" class="continue-search-btn">Continue Searching</a>
+            </div>
+        `;
+    }
 
-    window.cancelBooking = function(index) {
-        var bookings = JSON.parse(localStorage.getItem('userBookings') || '[]');
-        if (!bookings[index]) return;
-        
-        var confirmed = confirm('Are you sure you want to cancel this booking?');
-        if (!confirmed) return;
-        
-        var booking = bookings[index];
-        
-        // Call backend to cancel by slot ID (time_slots-only flow)
-        const cancelSlotId = booking.slotID;
-        if (!cancelSlotId) {
-            bookings[index].status = 'CANCELED';
-            localStorage.setItem('userBookings', JSON.stringify(bookings));
-            loadBookings();
-            alert('Booking canceled locally (slot id missing).');
+    function formatBookingDate(rawDate) {
+        var dt = rawDate ? new Date(rawDate) : null;
+        if (!dt || isNaN(dt.getTime())) return '-';
+        return dt.toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    }
+
+    function loadBookings() {
+        var bookingsContainer = document.getElementById('bookingsContainer');
+        var customerId = getCustomerIdFromSession();
+
+        if (!customerId) {
+            renderNoBookings(bookingsContainer);
             return;
         }
 
-        fetch(API_BASE_URL + '/bookings/cancel?slotID=' + cancelSlotId, {
+        fetch(API_BASE_URL + '/bookings/customer?customerID=' + encodeURIComponent(customerId), {
+            method: 'GET'
+        })
+        .then(function(response) {
+            if (!response.ok) throw new Error('Failed to load bookings');
+            return response.json();
+        })
+        .then(function(bookings) {
+            dbBookings = Array.isArray(bookings) ? bookings : [];
+
+            if (dbBookings.length === 0) {
+                renderNoBookings(bookingsContainer);
+                return;
+            }
+
+            var bookingsHTML = '<div class="bookings-list">';
+            dbBookings.forEach(function(booking, index) {
+                var formattedDate = formatBookingDate(booking.slotStartTime || booking.bookingDate);
+                var status = String(booking.status || '').toUpperCase();
+                var statusClass = status === 'CANCELED' || status === 'CANCELLED' ? 'status-canceled' : 'status-confirmed';
+                var paymentText = booking.paymentStatus ? ('Online Payment (' + booking.paymentStatus + ')') : 'Online Payment';
+
+                bookingsHTML += `
+                    <div class="booking-card ${statusClass}">
+                        <div class="booking-info">
+                            <h3>${booking.salonName || '-'}</h3>
+                            <p><strong>Service:</strong> ${booking.service || '-'}</p>
+                            <p><strong>Date:</strong> ${formattedDate}</p>
+                            <p><strong>Payment Method:</strong> ${paymentText}</p>
+                            <p><strong>Status:</strong> <span class="status-badge">${status || '-'}</span></p>
+                        </div>
+                        <div class="booking-actions">
+                            ${status === 'CONFIRMED' ? `
+                                <button onclick="cancelBooking(${index})" class="btn-cancel">Cancel Booking</button>
+                            ` : `
+                                <p class="booking-canceled">This booking has been canceled</p>
+                            `}
+                        </div>
+                    </div>
+                `;
+            });
+            bookingsHTML += '</div>';
+            bookingsContainer.innerHTML = bookingsHTML;
+        })
+        .catch(function(error) {
+            console.error('Error loading bookings from database:', error);
+            renderNoBookings(bookingsContainer);
+        });
+    }
+
+    window.cancelBooking = function(index) {
+        if (!dbBookings[index]) return;
+
+        var confirmed = confirm('Are you sure you want to cancel this booking?');
+        if (!confirmed) return;
+
+        var cancelSlotId = dbBookings[index].slotID;
+        if (!cancelSlotId) {
+            alert('Cannot cancel: missing slot ID for this booking.');
+            return;
+        }
+
+        fetch(API_BASE_URL + '/bookings/cancel?slotID=' + encodeURIComponent(cancelSlotId), {
             method: 'POST'
         })
         .then(function(response) {
             if (response.ok) {
-                bookings[index].status = 'CANCELED';
-                localStorage.setItem('userBookings', JSON.stringify(bookings));
                 loadBookings();
                 alert('Booking canceled successfully!');
             } else {
@@ -238,11 +261,7 @@ document.addEventListener("DOMContentLoaded", function () {
         })
         .catch(function(error) {
             console.error('Error canceling booking:', error);
-            // Still update local state even if API fails
-            bookings[index].status = 'CANCELED';
-            localStorage.setItem('userBookings', JSON.stringify(bookings));
-            loadBookings();
-            alert('Booking canceled (offline mode)');
+            alert('Failed to cancel booking due to network/backend error.');
         });
     };
 

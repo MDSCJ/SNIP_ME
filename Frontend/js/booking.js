@@ -780,19 +780,6 @@ function finishBooking() {
     const svcName    = bookingState.selectedService ? bookingState.selectedService.serviceName : '-';
     const amtDisplay = getAmountDisplay();
 
-    const bookings = JSON.parse(localStorage.getItem('userBookings') || '[]');
-    bookings.push({
-        bookingID:     bookingState.bookingID,
-        salonName:     bookingState.salonName,
-        service:       svcName,
-        date:          bookingState.selectedDate,
-        slotID:        bookingState.selectedSlot ? bookingState.selectedSlot.slotID : null,
-        paymentMethod: 'online',
-        status:        'CONFIRMED',
-        bookingDate:   new Date().toISOString()
-    });
-    localStorage.setItem('userBookings', JSON.stringify(bookings));
-
     document.getElementById('confirmationDetails').innerHTML =
         '<div class="cd-row"><span>Booking ID</span><span>'  + bookingState.bookingID        + '</span></div>' +
         '<div class="cd-row"><span>Salon</span><span>'       + (bookingState.salonName || '-')+ '</span></div>' +

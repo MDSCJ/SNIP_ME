@@ -295,6 +295,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 localStorage.setItem(LOGIN_FLAG_KEY, "true");
                 localStorage.setItem(USERNAME_KEY, username);
                 localStorage.setItem(EMAIL_KEY, email);
+                if (result.data.userId != null) {
+                    localStorage.setItem("snipmeCustomerUserId", String(result.data.userId));
+                    localStorage.setItem("customerID", String(result.data.userId));
+                    sessionStorage.setItem("customerID", String(result.data.userId));
+                }
                 if (serverPhone) {
                     localStorage.setItem(PHONE_KEY, serverPhone);
                 }

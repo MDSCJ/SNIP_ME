@@ -1,8 +1,11 @@
 package com.starc.snipme.controller;
 
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -126,6 +129,35 @@ public class BookingController {
             return ResponseEntity.ok(allSlots);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Could not load dashboard data.");
+        }
+    }
+
+    @GetMapping("/customer")
+    public ResponseEntity<?> getCustomerBookings(@RequestParam Long customerID) {
+        try {
+            List<Booking> bookings = bookingService.getBookingsForCustomer(customerID);
+
+            List<Map<String, Object>> response = bookings.stream().map(booking -> {
+                TimeSlot slot = booking.getTimeSlot();
+                String paymentStatus = booking.getPayment() != null ? booking.getPayment().getPaymentStatus() : null;
+                String orderId = booking.getPayment() != null ? booking.getPayment().getOrderId() : null;
+
+                Map<String, Object> row = new HashMap<>();
+                row.put("bookingID", booking.getBookingID());
+                row.put("salonName", booking.getSalon() != null ? booking.getSalon().getName() : "");
+                row.put("service", booking.getService() != null ? booking.getService().getName() : "");
+                row.put("status", booking.getStatus());
+                row.put("bookingDate", booking.getBookingDate() != null ? booking.getBookingDate().toString() : "");
+                row.put("slotID", slot != null ? slot.getSlotID() : null);
+                row.put("slotStartTime", slot != null && slot.getStartTime() != null ? slot.getStartTime().toString() : "");
+                row.put("paymentStatus", paymentStatus == null ? "" : paymentStatus);
+                row.put("orderId", orderId == null ? "" : orderId);
+                return row;
+            }).collect(Collectors.toList());
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Could not load customer bookings.");
         }
     }
 
