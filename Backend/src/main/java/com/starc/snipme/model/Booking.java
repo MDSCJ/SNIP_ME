@@ -1,7 +1,15 @@
 package com.starc.snipme.model;
 
-import jakarta.persistence.*;
 import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "bookings")
@@ -11,51 +19,57 @@ public class Booking {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long bookingID;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "customer_id", nullable = false)
-    private User customer;
+    @Column(nullable = false)
+    private LocalDateTime date;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "salon_id", nullable = false)
-    private Salon salon;
+    @Column(nullable = false)
+    private String status; 
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "service_id", nullable = false)
-    private ServiceItem service;
+    // --- NEW: The Object Relationships ---
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "slot_id")
+    // This tells MySQL to create a Foreign Key linking this booking to a specific time slot
+    @OneToOne
+    @JoinColumn(name = "slot_id", referencedColumnName = "slotID", nullable = false)
     private TimeSlot timeSlot;
 
-    @OneToOne(mappedBy = "booking", cascade = CascadeType.ALL)
-    private Payment payment;
+    // We store the customer's ID here. 
+    // (Once Developer 1 finishes the Customer class, you can change this to a @ManyToOne relationship!)
+    @Column(nullable = false)
+    private Long customerID;
 
-    private String status; // PENDING, CONFIRMED, CANCELLED
-    private LocalDateTime bookingDate;
-
+    // Constructors
     public Booking() {}
 
+    public Booking(LocalDateTime date, TimeSlot timeSlot, Long customerID) {
+        this.date = date;
+        this.status = "PENDING";
+        this.timeSlot = timeSlot;
+        this.customerID = customerID;
+    }
+
+    // --- Getters and Setters ---
     public Long getBookingID() { return bookingID; }
     public void setBookingID(Long bookingID) { this.bookingID = bookingID; }
 
-    public User getCustomer() { return customer; }
-    public void setCustomer(User customer) { this.customer = customer; }
-
-    public Salon getSalon() { return salon; }
-    public void setSalon(Salon salon) { this.salon = salon; }
-
-    public ServiceItem getService() { return service; }
-    public void setService(ServiceItem service) { this.service = service; }
-
-    public TimeSlot getTimeSlot() { return timeSlot; }
-    public void setTimeSlot(TimeSlot timeSlot) { this.timeSlot = timeSlot; }
-
-    public Payment getPayment() { return payment; }
-    public void setPayment(Payment payment) { this.payment = payment; }
+    public LocalDateTime getDate() { return date; }
+    public void setDate(LocalDateTime date) { this.date = date; }
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
 
-    public LocalDateTime getBookingDate() { return bookingDate; }
-    public void setBookingDate(LocalDateTime bookingDate) { this.bookingDate = bookingDate; }
+    public TimeSlot getTimeSlot() { return timeSlot; }
+    public void setTimeSlot(TimeSlot timeSlot) { this.timeSlot = timeSlot; }
+
+    public Long getCustomerID() { return customerID; }
+    public void setCustomerID(Long customerID) { this.customerID = customerID; }
+
+    // --- Methods from your OOD ---
+    // These align with your OOD class structure methods[cite: 151].
+    public void confirm() {
+        this.status = "CONFIRMED";
+    }
+
+    public void cancel() {
+        this.status = "CANCELED";
+    }
 }
