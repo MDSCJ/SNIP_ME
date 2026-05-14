@@ -8,8 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.starc.snipme.model.TimeSlot;
-import com.starc.snipme.repository.TimeSlotRepository;
+import com.starc.snipme.model.*;
+import com.starc.snipme.repository.*;
 
 import com.starc.snipme.service.SalonNotificationService;
 
@@ -18,6 +18,21 @@ public class BookingService {
 
     @Autowired
     private TimeSlotRepository timeSlotRepository;
+
+    @Autowired
+    private BookingRepository bookingRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private SalonRepository salonRepository;
+
+    @Autowired
+    private ServiceItemRepository serviceItemRepository;
+
+    @Autowired
+    private PaymentRepository paymentRepository;
 
     @Autowired
     private SalonNotificationService salonNotificationService;
@@ -65,7 +80,6 @@ public class BookingService {
         // Keep the slot state aligned with TimeSlot model states.
         slot.setStatus("BOOKED");
         slot.setLockedAt(null); // Clear the timer
-        slot.setCustomerID(customerID); // Store who booked this slot
         timeSlotRepository.save(slot);
 
         // --- SALON NOTIFICATION TRIGGER ---
@@ -116,5 +130,49 @@ public class BookingService {
             slot.getSlotID()
         );
         return slot;
+    }
+
+    @Transactional
+    public Booking completeBooking(Long slotID, Long customerID, Long salonID, Long serviceID, String startTimeStr, String orderId, Double amount) {
+        TimeSlot slot;
+        if (slotID != null) {
+            slot = timeSlotRepository.findById(slotID)
+                .orElseThrow(() -> new RuntimeException("Time slot not found."));
+            slot.setStatus("BOOKED");
+            slot.setLockedAt(null);
+        } else {
+            // Virtual slot, create it
+            slot = new TimeSlot();
+            slot.setStartTime(LocalDateTime.parse(startTimeStr));
+            slot.setStatus("BOOKED");
+            slot.setSalon(salonRepository.findById(salonID).orElseThrow());
+            slot = timeSlotRepository.save(slot);
+        }
+
+        User customer = userRepository.findById(customerID).orElseThrow(() -> new RuntimeException("Customer not found"));
+        Salon salon = salonRepository.findById(salonID).orElseThrow(() -> new RuntimeException("Salon not found"));
+        ServiceItem service = serviceItemRepository.findById(serviceID).orElseThrow(() -> new RuntimeException("Service not found"));
+
+        Booking booking = new Booking();
+        booking.setCustomer(customer);
+        booking.setSalon(salon);
+        booking.setService(service);
+        booking.setTimeSlot(slot);
+        booking.setStatus("CONFIRMED");
+        booking.setBookingDate(LocalDateTime.now());
+        
+        booking = bookingRepository.save(booking);
+
+        Payment payment = new Payment(amount, "Success", booking, orderId);
+        paymentRepository.save(payment);
+
+        salonNotificationService.createNotification(
+            salon.getSalonID(), 
+            "New booking confirmed for " + slot.getStartTime(), 
+            "BOOKING_CONFIRMED", 
+            slot.getSlotID()
+        );
+
+        return booking;
     }
 }
