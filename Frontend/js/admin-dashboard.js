@@ -271,7 +271,7 @@
                         "<td>" + (salonId || "") + "</td>" +
                         // message icon + name
                         "<td>" +
-                            "<button class=\"message-btn\" data-id=\"" + (salonId || "") + "\" title=\"Message salon\" style=\"margin-right:8px;border:none;background:transparent;cursor:pointer;color:#6bd;\">📩</button>" +
+                            "<button class=\"message-btn\" data-id=\"" + (salonId || "") + "\" title=\"Message salon\" style=\"margin-right:8px;border:none;background:transparent;cursor:pointer;color:#6bd;\"><i class=\"fas fa-paper-plane\"></i></button>" +
                             (s.name || "-") +
                         "</td>" +
                         "<td>" + (s.details || "-") + "</td>" +

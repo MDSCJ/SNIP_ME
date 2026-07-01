@@ -124,11 +124,53 @@ public class BookingController {
     public ResponseEntity<?> getAllBookings() {
         try {
             List<TimeSlot> allSlots = timeSlotRepository.findAll();
-            
-            // Send the list back to Developer 3's frontend!
-            return ResponseEntity.ok(allSlots);
+
+            java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter.ofPattern("hh:mm a");
+            List<Map<String,Object>> rows = allSlots.stream().map(slot -> {
+                Map<String,Object> row = new HashMap<>();
+                row.put("slotID", slot.getSlotID());
+                row.put("startTime", slot.getStartTime() != null ? slot.getStartTime().toString() : null);
+                row.put("startTimeLabel", slot.getStartTime() != null ? slot.getStartTime().format(fmt) : null);
+                row.put("status", slot.getStatus());
+                row.put("salon", slot.getSalon() != null ? Map.of("salonID", slot.getSalon().getSalonID(), "name", slot.getSalon().getName()) : null);
+
+                String customerName = null;
+                if (slot.getCustomerName() != null && !slot.getCustomerName().isBlank()) customerName = slot.getCustomerName();
+                else if (slot.getCustomer() != null) customerName = slot.getCustomer().getName() != null ? slot.getCustomer().getName() : slot.getCustomer().getEmail();
+                row.put("customerName", customerName);
+                row.put("customerId", slot.getCustomer() != null ? slot.getCustomer().getId() : null);
+
+                String serviceName = null;
+                if (slot.getServiceName() != null && !slot.getServiceName().isBlank()) serviceName = slot.getServiceName();
+                else if (slot.getService() != null) serviceName = slot.getService().getName();
+                row.put("serviceName", serviceName);
+                row.put("serviceId", slot.getService() != null ? slot.getService().getId() : null);
+
+                return row;
+            }).collect(Collectors.toList());
+
+            return ResponseEntity.ok(rows);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Could not load dashboard data.");
+        }
+    }
+
+    @PostMapping("/owner/add")
+    public ResponseEntity<?> ownerAddAppointment(@RequestBody Map<String, Object> payload) {
+        try {
+            Long salonId = payload.get("salonID") == null ? null : Long.parseLong(payload.get("salonID").toString());
+            String customerName = payload.get("customerName") == null ? null : payload.get("customerName").toString();
+            Long serviceId = payload.get("serviceID") == null ? null : Long.parseLong(payload.get("serviceID").toString());
+            String startTime = payload.get("startTime") == null ? null : payload.get("startTime").toString();
+
+            if (salonId == null || startTime == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "salonID and startTime are required"));
+            }
+
+            TimeSlot created = bookingService.createOwnerAppointment(salonId, customerName, serviceId, startTime);
+            return ResponseEntity.ok(created);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", e.getMessage()));
         }
     }
 
