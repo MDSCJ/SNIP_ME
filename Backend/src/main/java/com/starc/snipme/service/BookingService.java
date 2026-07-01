@@ -89,7 +89,7 @@ public class BookingService {
         // 3. Update the TimeSlot status to stop the 5-minute timeout sweeper
         // Keep the slot state aligned with TimeSlot model states.
         slot.setStatus("BOOKED");
-        slot.setLockedAt(null); // Clear the timer
+        slot.setLockedAt(LocalDateTime.now());
         timeSlotRepository.save(slot);
 
         // --- SALON NOTIFICATION TRIGGER ---
@@ -149,12 +149,13 @@ public class BookingService {
             slot = timeSlotRepository.findById(slotID)
                 .orElseThrow(() -> new RuntimeException("Time slot not found."));
             slot.setStatus("BOOKED");
-            slot.setLockedAt(null);
+            slot.setLockedAt(LocalDateTime.now());
         } else {
             // Virtual slot, create it
             slot = new TimeSlot();
             slot.setStartTime(LocalDateTime.parse(startTimeStr));
             slot.setStatus("BOOKED");
+            slot.setLockedAt(LocalDateTime.now());
             slot.setSalon(salonRepository.findById(salonID).orElseThrow());
             slot = timeSlotRepository.save(slot);
         }
@@ -166,6 +167,8 @@ public class BookingService {
         // Wire customer and service to the time_slots table
         slot.setCustomer(customer);
         slot.setService(service);
+        slot.setCustomerName(customer.getName() != null ? customer.getName() : customer.getEmail());
+        slot.setServiceName(service.getName());
         slot = timeSlotRepository.save(slot);
 
         Booking booking = new Booking();
@@ -179,6 +182,7 @@ public class BookingService {
         booking = bookingRepository.save(booking);
 
         Payment payment = new Payment(amount, "Success", booking, orderId);
+        payment.setTimeSlot(slot);
         paymentRepository.save(payment);
 
         salonNotificationService.createNotification(
@@ -196,6 +200,7 @@ public class BookingService {
         TimeSlot slot = new TimeSlot();
         slot.setStartTime(LocalDateTime.parse(startTimeStr));
         slot.setStatus("BOOKED");
+        slot.setLockedAt(LocalDateTime.now());
         slot.setSalon(salonRepository.findById(salonID).orElseThrow(() -> new RuntimeException("Salon not found")));
 
         if (serviceID != null) {

@@ -388,6 +388,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const distanceRange = document.getElementById('distanceRange');
     const distanceValue = document.getElementById('distanceValue');
     const searchBtn = document.querySelector('.btn-search-round');
+    const refreshSearchBtn = document.getElementById('refreshSearchBtn');
     const locationInput = document.getElementById('location');
     const prevPageBtn = document.getElementById('prevPageBtn');
     const nextPageBtn = document.getElementById('nextPageBtn');
@@ -443,37 +444,41 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Get user's current location (prompt only when explicitly requested)
-    function getUserLocation(forcePrompt = false) {
-        const cachedLocation = getCachedLocation();
-        if (cachedLocation && !forcePrompt) {
-            userLocation = cachedLocation;
-            return;
+    function getUserLocation() {
+        userLocation = getCachedLocation();
+    }
+
+    function parseLocationCoordinates(rawLocation) {
+        if (!rawLocation) {
+            return null;
         }
 
-        if (!forcePrompt) {
-            userLocation = DEFAULT_LOCATION;
-            return;
+        const match = rawLocation.trim().match(/^(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)$/);
+        if (!match) {
+            return null;
         }
 
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    userLocation = {
-                        latitude: position.coords.latitude,
-                        longitude: position.coords.longitude
-                    };
-                    cacheLocation(userLocation);
-                    console.log('User location:', userLocation);
-                },
-                (error) => {
-                    console.warn('Geolocation error:', error.message);
-                    userLocation = cachedLocation || DEFAULT_LOCATION;
-                }
-            );
-        } else {
-            userLocation = cachedLocation || DEFAULT_LOCATION;
+        const latitude = Number(match[1]);
+        const longitude = Number(match[2]);
+
+        if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+            return null;
         }
+
+        return { latitude, longitude };
+    }
+
+    function getSearchLocation() {
+        const locationValue = (locationInput?.value || '').trim();
+        const parsedLocation = parseLocationCoordinates(locationValue);
+
+        userLocation = parsedLocation;
+
+        return {
+            latitude: parsedLocation ? parsedLocation.latitude : null,
+            longitude: parsedLocation ? parsedLocation.longitude : null,
+            locationQuery: parsedLocation || !locationValue ? '' : locationValue
+        };
     }
 
     // Update distance display
@@ -481,13 +486,20 @@ document.addEventListener('DOMContentLoaded', () => {
         currentRadius = parseInt(e.target.value);
         distanceValue.textContent = currentRadius;
         e.target.style.setProperty('--value', (currentRadius / 50) * 100 + '%');
-        
-        // Reload search with new radius if results are displayed
-        if (currentSearchResults.length > 0 && userLocation) {
+
+        // Reload search with the new radius when results are already visible.
+        if (currentSearchResults.length > 0) {
             currentPage = 0;
             performSearch();
         }
     });
+
+    if (refreshSearchBtn) {
+        refreshSearchBtn.addEventListener('click', () => {
+            currentPage = 0;
+            performSearch();
+        });
+    }
 
     // Sort by rating
     sortRatingBtn.addEventListener('click', () => {
@@ -495,8 +507,8 @@ document.addEventListener('DOMContentLoaded', () => {
         sortRatingBtn.classList.add('active');
         sortPriceBtn.classList.remove('active');
         currentPage = 0;
-        if (currentSearchResults.length > 0) {
-            displaySearchResults();
+        if (searchResultsSection.style.display === 'block') {
+            performSearch();
         }
     });
 
@@ -506,31 +518,41 @@ document.addEventListener('DOMContentLoaded', () => {
         sortPriceBtn.classList.add('active');
         sortRatingBtn.classList.remove('active');
         currentPage = 0;
-        if (currentSearchResults.length > 0) {
-            displaySearchResults();
+        if (searchResultsSection.style.display === 'block') {
+            performSearch();
         }
     });
 
     // Perform search
     function performSearch() {
-        if (!userLocation) {
-            console.warn('User location not available');
-            alert('Please enable location access to search nearby salons.');
-            return;
-        }
+        const searchLocation = getSearchLocation();
+        const treatmentValue = (treatmentSelect?.value || '').trim();
 
         console.log('Searching with:', {
-            lat: userLocation.latitude,
-            lng: userLocation.longitude,
+            lat: searchLocation.latitude,
+            lng: searchLocation.longitude,
+            treatment: treatmentValue,
+            location: searchLocation.locationQuery,
             radius: currentRadius,
             sortBy: currentSortBy
         });
 
-        const endpoint = apiRoot + '/public/salons/search?latitude=' + userLocation.latitude +
-                        '&longitude=' + userLocation.longitude +
-                        '&radiusKm=' + currentRadius +
-                        '&sortBy=' + currentSortBy +
-                        '&page=' + currentPage;
+        const params = new URLSearchParams();
+        if (Number.isFinite(searchLocation.latitude) && Number.isFinite(searchLocation.longitude)) {
+            params.set('latitude', String(searchLocation.latitude));
+            params.set('longitude', String(searchLocation.longitude));
+            params.set('radiusKm', String(currentRadius));
+        }
+        if (treatmentValue) {
+            params.set('treatment', treatmentValue);
+        }
+        if (searchLocation.locationQuery) {
+            params.set('location', searchLocation.locationQuery);
+        }
+        params.set('sortBy', currentSortBy);
+        params.set('page', String(currentPage));
+
+        const endpoint = apiRoot + '/public/salons/search?' + params.toString();
 
         fetch(endpoint)
             .then(res => res.json())
@@ -541,8 +563,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     searchResultsSection.style.display = 'block';
                     displaySearchResults(data);
                 } else {
+                    currentSearchResults = [];
                     searchResultsSection.style.display = 'block';
-                    searchResultsContainer.innerHTML = '<div style="grid-column: 1/-1; padding: 40px; text-align: center; color: #f4c400;">No salons found within ' + currentRadius + ' km. Try increasing the distance range.</div>';
+                    const hasLocationFilter = Number.isFinite(searchLocation.latitude) && Number.isFinite(searchLocation.longitude);
+                    const hasTreatmentFilter = Boolean(treatmentValue);
+                    const hasTextLocationFilter = Boolean(searchLocation.locationQuery);
+                    const hasNarrowFilters = hasLocationFilter || hasTreatmentFilter || hasTextLocationFilter;
+                    const emptyMessage = hasNarrowFilters
+                        ? 'No salons matched your filters. Try widening the search or increasing the distance range.'
+                        : 'No salons available right now. Try again later.';
+
+                    searchResultsContainer.innerHTML = '<div style="grid-column: 1/-1; padding: 40px; text-align: center; color: #f4c400;">' + emptyMessage + '</div>';
                     pageInfo.innerHTML = '';
                     prevPageBtn.style.display = 'none';
                     nextPageBtn.style.display = 'none';
@@ -550,6 +581,7 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .catch(err => {
                 console.error('Search error:', err);
+                currentSearchResults = [];
                 searchResultsSection.style.display = 'block';
                 searchResultsContainer.innerHTML = '<div style="grid-column: 1/-1; padding: 40px; text-align: center; color: #ff6b6b;">Error searching salons: ' + err.message + '</div>';
             });

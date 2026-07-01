@@ -46,6 +46,7 @@ public class TimeSlot {
     private String status = "AVAILABLE"; 
 
     // Tracks when the 5-minute lock started
+    @Column(name = "locked_at")
     private LocalDateTime lockedAt;
 
     public Salon getSalon() { return salon; }

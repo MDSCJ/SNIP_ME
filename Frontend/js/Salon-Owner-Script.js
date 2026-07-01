@@ -532,6 +532,9 @@ function selectDate(day) {
 
 
     CalenderBuild(); 
+    if (typeof loadTodaySchedule === 'function') {
+        loadTodaySchedule();
+    }
 }
 
 
@@ -737,7 +740,7 @@ function pickFirstNonEmpty(obj, fields) {
             return String(value).trim();
         }
     }
-    return 'NBY';
+    return '';
 }
 
 function showScheduleActionPopup(rowData) {
@@ -797,11 +800,16 @@ function loadTodaySchedule() {
     .then(function (rows) {
         const list = Array.isArray(rows) ? rows : [];
         const slotMap = {};
+        const selectedDate = getSelectedDateObject();
 
         list.forEach(function (slot) {
             const slotSalonId = slot && slot.salon && (slot.salon.salonID || slot.salon.salonId || slot.salon.id);
             if (String(slotSalonId) !== String(salonId)) return;
-            if (!isTodayDate(slot.startTime)) return;
+            const slotDate = new Date(slot && slot.startTime ? slot.startTime : null);
+            if (Number.isNaN(slotDate.getTime())) return;
+            if (slotDate.getFullYear() !== selectedDate.getFullYear()
+                || slotDate.getMonth() !== selectedDate.getMonth()
+                || slotDate.getDate() !== selectedDate.getDate()) return;
 
             const key = getSlotTimeKey(slot.startTime);
             if (!key) return;
@@ -813,25 +821,23 @@ function loadTodaySchedule() {
             const slot = slotMap[w.key] || null;
             const hasBooking = slot && String(slot.status || '').toUpperCase() === 'BOOKED';
 
-            // Prefer server-provided fields (customerName/serviceName), then linked objects
+            const timeLabel = slot && slot.startTimeLabel ? slot.startTimeLabel : w.label;
             const customer = hasBooking
-                ? (slot.customerName || (slot.customer ? (slot.customer.name || slot.customer.email) : null) || 'NBY')
-                : 'NBY';
+                ? (pickFirstNonEmpty(slot, ['customerName']) || (slot.customer ? (slot.customer.name || slot.customer.email) : '') || 'Booked')
+                : 'Available';
 
             const service = hasBooking
-                ? (slot.serviceName || (slot.service ? slot.service.name : null) || 'NBY')
-                : 'NBY';
+                ? (pickFirstNonEmpty(slot, ['serviceName']) || (slot.service ? slot.service.name : '') || 'Booked')
+                : 'Available';
 
             const tr = document.createElement('tr');
             if (index === 0) {
                 tr.id = 'starting-row';
             }
 
-            const actionText = hasBooking ? 'Manage' : 'NBY';
-            // Time badge: prefer server startTimeLabel if present
-            const timeLabel = slot && slot.startTimeLabel ? slot.startTimeLabel : w.label;
+            const actionText = hasBooking ? 'Manage' : 'Open';
             tr.innerHTML =
-                '<td><div class="slot-cell">' + w.label + '<span class="time-badge">' + timeLabel + '</span></div></td>' +
+                '<td><div class="slot-cell"><span class="time-badge">' + timeLabel + '</span></div></td>' +
                 '<td>' + customer + '</td>' +
                 '<td>' + service + '</td>' +
                 '<td><button class="btn-small schedule-action-btn" type="button">' + actionText + '</button></td>';
@@ -839,8 +845,11 @@ function loadTodaySchedule() {
             const actionBtn = tr.querySelector('.schedule-action-btn');
             if (actionBtn) {
                 actionBtn.addEventListener('click', function () {
+                    if (!hasBooking) {
+                        return;
+                    }
                     showScheduleActionPopup({
-                        time: w.label,
+                        time: timeLabel,
                         customer: customer,
                         service: service
                     });
@@ -887,7 +896,7 @@ function toggleModal(id, show) {
     if (show) {
         modal.style.display = 'flex';
 
-        // Load live today schedule every time the modal opens.
+        // Load the schedule for the selected day every time the modal opens.
         if (id === 'daily-modal') {
             loadTodaySchedule().finally(function () {
                 scrollStart();

@@ -91,9 +91,15 @@
             <button class="sort-btn" id="sortPriceBtn" title="Sort by price">
                 💰 By Price
             </button>
-            <div class="range-slider-container">
-                <label for="distanceRange">Distance: <span id="distanceValue">5</span> km</label>
-                <input type="range" id="distanceRange" min="1" max="50" value="5" class="range-slider">
+            <div class="distance-controls">
+                <button type="button" class="refresh-search-btn" id="refreshSearchBtn" title="Refresh search">
+                    <i class="fas fa-rotate-right"></i>
+                    Refresh
+                </button>
+                <div class="range-slider-container">
+                    <label for="distanceRange">Distance: <span id="distanceValue">5</span> km</label>
+                    <input type="range" id="distanceRange" min="1" max="50" value="5" class="range-slider">
+                </div>
             </div>
         </div>
         
