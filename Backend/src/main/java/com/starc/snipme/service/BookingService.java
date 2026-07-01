@@ -46,6 +46,15 @@ public class BookingService {
         return bookingRepository.findByCustomer_IdOrderByBookingDateDesc(customerID);
     }
 
+    /**
+     * Returns the Booking linked to a given TimeSlot, or null if none exists.
+     * Used by the dashboard /all endpoint to get customer/service info.
+     */
+    @Transactional(readOnly = true)
+    public com.starc.snipme.model.Booking getBookingsForSlot(Long slotID) {
+        return bookingRepository.findByTimeSlot_SlotID(slotID).orElse(null);
+    }
+
     // This method perfectly matches the "1.1 InitiateBooking" call in your sequence diagram
     @Transactional
     public TimeSlot initiateBooking(Long slotID, Long customerID) {
@@ -131,6 +140,12 @@ public class BookingService {
         slot.setLockedAt(null);
         timeSlotRepository.save(slot);
 
+        // 4. Mark the linked Booking as CANCELLED (so it shows correctly in customer's history)
+        bookingRepository.findByTimeSlot_SlotID(slotID).ifPresent(booking -> {
+            booking.setStatus("CANCELLED");
+            bookingRepository.save(booking);
+        });
+
         Long salonId = slot.getSalon().getSalonID();
 
         salonNotificationService.createNotification(
@@ -141,6 +156,7 @@ public class BookingService {
         );
         return slot;
     }
+
 
     @Transactional
     public Booking completeBooking(Long slotID, Long customerID, Long salonID, Long serviceID, String startTimeStr, String orderId, Double amount) {
@@ -176,13 +192,6 @@ public class BookingService {
         Salon salon = salonRepository.findById(salonID).orElseThrow(() -> new RuntimeException("Salon not found"));
         ServiceItem service = serviceItemRepository.findById(serviceID).orElseThrow(() -> new RuntimeException("Service not found"));
 
-        // Wire customer and service to the time_slots table
-        slot.setCustomer(customer);
-        slot.setService(service);
-        slot.setCustomerName(customer.getName() != null ? customer.getName() : customer.getEmail());
-        slot.setServiceName(service.getName());
-        slot = timeSlotRepository.save(slot);
-
         Booking booking = new Booking();
         booking.setCustomer(customer);
         booking.setSalon(salon);
@@ -214,17 +223,6 @@ public class BookingService {
         slot.setStatus("BOOKED");
         slot.setLockedAt(LocalDateTime.now());
         slot.setSalon(salonRepository.findById(salonID).orElseThrow(() -> new RuntimeException("Salon not found")));
-
-        if (serviceID != null) {
-            serviceItemRepository.findById(serviceID).ifPresent(s -> {
-                slot.setService(s);
-                slot.setServiceName(s.getName());
-            });
-        }
-
-        if (customerName != null && !customerName.isBlank()) {
-            slot.setCustomerName(customerName.trim());
-        }
 
         slot = timeSlotRepository.save(slot);
 

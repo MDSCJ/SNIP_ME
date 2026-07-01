@@ -1,0 +1,3 @@
+-- Migration disabled: DROP COLUMN IF EXISTS not supported on this MySQL version.
+-- Orphaned columns (customer_id, service_id, customer_name, service_name) are
+-- harmless — Hibernate no longer maps them. Remove them manually via a DB client later.

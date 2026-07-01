@@ -153,17 +153,34 @@ public class BookingController {
                 row.put("lockedAt", slot.getLockedAt() != null ? slot.getLockedAt().toString() : null);
                 row.put("salon", slot.getSalon() != null ? Map.of("salonID", slot.getSalon().getSalonID(), "name", slot.getSalon().getName()) : null);
 
-                String customerName = null;
-                if (slot.getCustomer() != null) customerName = slot.getCustomer().getName() != null ? slot.getCustomer().getName() : slot.getCustomer().getEmail();
-                else if (slot.getCustomerName() != null && !slot.getCustomerName().isBlank()) customerName = slot.getCustomerName();
-                row.put("customerName", customerName);
-                row.put("customerId", slot.getCustomer() != null ? slot.getCustomer().getId() : null);
+                // Read customer / service from the Booking entity (source of truth)
+                com.starc.snipme.model.Booking booking = null;
+                try {
+                    booking = bookingService.getBookingsForSlot(slot.getSlotID());
+                } catch (Exception ignored) {}
 
-                String serviceName = null;
-                if (slot.getService() != null) serviceName = slot.getService().getName();
-                else if (slot.getServiceName() != null && !slot.getServiceName().isBlank()) serviceName = slot.getServiceName();
-                row.put("serviceName", serviceName);
-                row.put("serviceId", slot.getService() != null ? slot.getService().getId() : null);
+                String customerName = null;
+                Long   customerId   = null;
+                String serviceName  = null;
+                Long   serviceId    = null;
+
+                if (booking != null) {
+                    if (booking.getCustomer() != null) {
+                        customerId   = booking.getCustomer().getId();
+                        customerName = booking.getCustomer().getName() != null
+                                        ? booking.getCustomer().getName()
+                                        : booking.getCustomer().getEmail();
+                    }
+                    if (booking.getService() != null) {
+                        serviceId   = booking.getService().getId();
+                        serviceName = booking.getService().getName();
+                    }
+                }
+
+                row.put("customerName", customerName);
+                row.put("customerId",   customerId);
+                row.put("serviceName",  serviceName);
+                row.put("serviceId",    serviceId);
 
                 return row;
             }).collect(Collectors.toList());
