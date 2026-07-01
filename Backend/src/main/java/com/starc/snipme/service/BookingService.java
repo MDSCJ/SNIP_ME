@@ -8,10 +8,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.starc.snipme.model.Booking;
 import com.starc.snipme.model.TimeSlot;
-import com.starc.snipme.repository.BookingRepository;
 import com.starc.snipme.repository.TimeSlotRepository;
+
+import com.starc.snipme.service.SalonNotificationService;
 
 @Service
 public class BookingService {
@@ -20,8 +20,7 @@ public class BookingService {
     private TimeSlotRepository timeSlotRepository;
 
     @Autowired
-    private BookingRepository bookingRepository;
-
+    private SalonNotificationService salonNotificationService;
     // This method perfectly matches the "1.1 InitiateBooking" call in your sequence diagram
     @Transactional
     public TimeSlot initiateBooking(Long slotID, Long customerID) {
@@ -48,8 +47,11 @@ public class BookingService {
     }
 
     @Transactional
-    public Booking confirmBooking(Long slotID, Long customerID) {
-        
+    public TimeSlot confirmBooking(Long slotID, Long customerID) {
+        //null value checking
+        if (slotID == null || customerID == null) {
+        throw new IllegalArgumentException("Slot ID and Customer ID must not be null.");
+        }
         // 1. Find the specific TimeSlot in the database
         TimeSlot slot = timeSlotRepository.findById(Objects.requireNonNull(slotID, "slotID must not be null"))
                 .orElseThrow(() -> new RuntimeException("Time slot not found."));
@@ -60,41 +62,58 @@ public class BookingService {
         }
 
         // 3. Update the TimeSlot status to stop the 5-minute timeout sweeper
-        slot.setStatus("CONFIRMED");
+        // Keep the slot state aligned with TimeSlot model states.
+        slot.setStatus("BOOKED");
         slot.setLockedAt(null); // Clear the timer
         timeSlotRepository.save(slot);
 
-        // 4. Create the official Booking object from your OOD
-        Booking newBooking = new Booking(slot.getStartTime(), slot, customerID);
-        newBooking.confirm(); // Uses the confirm() method from your class design to set status to "CONFIRMED"
+        // --- SALON NOTIFICATION TRIGGER ---
+        // Dynamically retrieve the salon ID from the slot
+        Long salonId = slot.getSalon().getSalonID(); 
+
+        salonNotificationService.createNotification(
+            salonId, 
+            "New booking confirmed for " + slot.getStartTime(), 
+            "BOOKING_CONFIRMED", 
+            slot.getSlotID()
+        );
+
+
+
+        return slot;
+
         
-        // 5. Save the Booking permanently to MySQL
-        return bookingRepository.save(newBooking);
     }
 
     // The Cancellation Logic ---
     @Transactional
-    public Booking cancelBooking(Long bookingID) {
-        
-        // 1. Find the active booking in the database
-        Booking booking = bookingRepository.findById(Objects.requireNonNull(bookingID, "bookingID must not be null"))
-                .orElseThrow(() -> new RuntimeException("Booking not found."));
+    public TimeSlot cancelBooking(Long slotID) {
+        // null value check 
+        if (slotID == null) {
+        throw new IllegalArgumentException("Slot ID must not be null.");
+        }
+        // 1. Find the slot in the database
+        TimeSlot slot = timeSlotRepository.findById(Objects.requireNonNull(slotID, "slotID must not be null"))
+                .orElseThrow(() -> new RuntimeException("Time slot not found."));
 
-        // 2. Prevent canceling an already canceled appointment
-        if ("CANCELED".equals(booking.getStatus())) {
-            throw new RuntimeException("This booking is already canceled.");
+        // 2. Prevent canceling when slot is already open
+        if ("AVAILABLE".equals(slot.getStatus())) {
+            throw new RuntimeException("This slot is already available.");
         }
 
-        // 3. Update the Booking status
-        // This uses the cancel() method you defined in your OOD Customer/Booking class design
-        booking.cancel(); 
-        bookingRepository.save(booking);
-
-        // 4. Free the TimeSlot (ProcessCancellation -> FreeSlot)
-        TimeSlot slot = booking.getTimeSlot();
+        // 3. Free the TimeSlot
         slot.setStatus("AVAILABLE");
+        slot.setLockedAt(null);
         timeSlotRepository.save(slot);
 
-        return booking;
+        Long salonId = slot.getSalon().getSalonID();
+
+        salonNotificationService.createNotification(
+            salonId, 
+            "Booking cancelled for " + slot.getStartTime(), 
+            "BOOKING_CANCELLED", 
+            slot.getSlotID()
+        );
+        return slot;
     }
 }

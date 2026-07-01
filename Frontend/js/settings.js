@@ -213,8 +213,17 @@ document.addEventListener("DOMContentLoaded", function () {
         
         var booking = bookings[index];
         
-        // Call backend to cancel
-        fetch(API_BASE_URL + '/bookings/cancel?bookingID=' + booking.bookingID, {
+        // Call backend to cancel by slot ID (time_slots-only flow)
+        const cancelSlotId = booking.slotID;
+        if (!cancelSlotId) {
+            bookings[index].status = 'CANCELED';
+            localStorage.setItem('userBookings', JSON.stringify(bookings));
+            loadBookings();
+            alert('Booking canceled locally (slot id missing).');
+            return;
+        }
+
+        fetch(API_BASE_URL + '/bookings/cancel?slotID=' + cancelSlotId, {
             method: 'POST'
         })
         .then(function(response) {

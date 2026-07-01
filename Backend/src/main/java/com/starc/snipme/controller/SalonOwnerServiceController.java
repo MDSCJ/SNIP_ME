@@ -47,19 +47,30 @@ public class SalonOwnerServiceController {
     @GetMapping("/by-salon/{salonId}")
     public ResponseEntity<?> getSalonServices(@PathVariable Long salonId) {
         try {
-            List<ServiceItem> services = serviceItemRepository
-                .findByIsActiveTrueOrderByNameAsc();
-            
-            // Filter services for the salon
-            List<ServiceItem> salonServices = services.stream()
-                .filter(s -> s.getSalonId() == null || s.getSalonId().equals(salonId))
-                .toList();
-            
-            if (salonServices.isEmpty()) {
-                return ResponseEntity.ok(Map.of("message", "No services available yet", "services", List.of()));
-            }
-            
-            return ResponseEntity.ok(Map.of("services", salonServices));
+            List<ServiceItem> services = serviceItemRepository.findByIsActiveTrueOrderByNameAsc();
+
+            // Get pricing entries for this salon to determine availability and price
+            List<ServicePrice> pricing = servicePriceRepository.findBySalonId(salonId);
+            java.util.Map<Long, ServicePrice> priceMap = new java.util.HashMap<>();
+            for (ServicePrice p : pricing) priceMap.put(p.getServiceId(), p);
+
+            List<Map<String, Object>> dto = services.stream().map(svc -> {
+                Map<String, Object> m = new java.util.LinkedHashMap<>();
+                m.put("serviceId", svc.getId());
+                m.put("serviceName", svc.getName());
+                m.put("includeInSearch", svc.isIncludeInSearch());
+                ServicePrice sp = priceMap.get(svc.getId());
+                if (sp != null) {
+                    m.put("available", true);
+                    m.put("price", sp.getPrice());
+                    m.put("pricingId", sp.getId());
+                } else {
+                    m.put("available", false);
+                }
+                return m;
+            }).toList();
+
+            return ResponseEntity.ok(Map.of("services", dto));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", "Failed to fetch services: " + e.getMessage()));

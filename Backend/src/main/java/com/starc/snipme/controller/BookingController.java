@@ -1,6 +1,8 @@
 package com.starc.snipme.controller;
 
 import java.util.List;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -10,10 +12,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.starc.snipme.model.Booking;
 import com.starc.snipme.model.TimeSlot;
 import com.starc.snipme.service.BookingService;
-import com.starc.snipme.repository.BookingRepository;
 import com.starc.snipme.repository.TimeSlotRepository;
 
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -23,9 +23,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 @CrossOrigin(origins = "*") // <-- This tells Spring Boot: "Allow HTML/JS files to talk to me!"s
 @RequestMapping("/api/bookings")
 public class BookingController {
-
-    @Autowired
-    private BookingRepository bookingRepository;
 
     @Autowired
     private TimeSlotRepository timeSlotRepository;
@@ -41,6 +38,22 @@ public class BookingController {
             return ResponseEntity.ok(availableSlots);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Could not fetch slots");
+        }
+    }
+
+    @GetMapping("/available-by-salon")
+    public ResponseEntity<?> getAvailableSlotsBySalonAndDate(@RequestParam Long salonId,
+                                                              @RequestParam String date) {
+        try {
+            LocalDate selectedDate = LocalDate.parse(date);
+            LocalDateTime fromTime = selectedDate.atStartOfDay();
+            LocalDateTime toTime = selectedDate.plusDays(1).atStartOfDay();
+
+            List<TimeSlot> availableSlots = timeSlotRepository
+                    .findMergedAvailableSlotsBySalonAndDate(salonId, fromTime, toTime);
+            return ResponseEntity.ok(availableSlots);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Could not fetch salon/date availability");
         }
     }
 
@@ -61,21 +74,21 @@ public class BookingController {
     public ResponseEntity<?> confirmBooking(@RequestParam Long slotID, @RequestParam Long customerID) {
         try {
             // This calls the method YOU wrote earlier to permanently save the appointment!
-            Booking confirmedBooking = bookingService.confirmBooking(slotID, customerID);
+            TimeSlot confirmedSlot = bookingService.confirmBooking(slotID, customerID);
             
             // In a real app, Developer 3's code would also save the Payment object to the database right here.
             
-            return ResponseEntity.ok("Payment Successful! Appointment Confirmed. Booking ID: " + confirmedBooking.getBookingID());
+            return ResponseEntity.ok("Payment Successful! Appointment Confirmed. Slot ID: " + confirmedSlot.getSlotID());
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
     //The Cancellation Endpoint ---
     @PostMapping("/cancel")
-    public ResponseEntity<?> cancelBooking(@RequestParam Long bookingID) {
+    public ResponseEntity<?> cancelBooking(@RequestParam Long slotID) {
         try {
             // Triggers the service logic mapped to your Post-Booking Lifecycle diagram
-            bookingService.cancelBooking(bookingID);
+            bookingService.cancelBooking(slotID);
             
             return ResponseEntity.ok("Appointment canceled successfully. The time slot is now available for other customers.");
             
@@ -85,15 +98,14 @@ public class BookingController {
         }
     }
 
-    // DASHBOARD API: Fetch all confirmed appointments
+    // DASHBOARD API: Fetch all time slots
     @GetMapping("/all")
     public ResponseEntity<?> getAllBookings() {
         try {
-            // Grab every single booking saved in the database
-            List<Booking> allBookings = bookingRepository.findAll();
+            List<TimeSlot> allSlots = timeSlotRepository.findAll();
             
             // Send the list back to Developer 3's frontend!
-            return ResponseEntity.ok(allBookings);
+            return ResponseEntity.ok(allSlots);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Could not load dashboard data.");
         }

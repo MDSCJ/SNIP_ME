@@ -3,6 +3,7 @@ let currentYear = new Date().getFullYear();
 
 const OWNER_NAME_KEY = "snipmeOwnerName";
 const OWNER_SALON_NAME_KEY = "snipmeOwnerSalonName";
+const OWNER_SALON_ID_KEY = "snipmeOwnerSalonId";
 const OWNER_EMAIL_KEY = "snipmeOwnerEmail";
 const OWNER_TOKEN_KEY = "snipmeOwnerToken";
 let ownerProfilePhotoLowQuality = "";
@@ -14,6 +15,66 @@ let ownerSelectedLatLng = null;
 
 // ─── Notifications ────────────────────────────────────
 const NOTIFICATIONS = [];
+let ownerSalonId = null;
+
+function getNotifTypeTag(type) {
+    const t = String(type || '').toUpperCase();
+    if (t.includes('BOOKING')) return 'apt';
+    if (t.includes('SERVICE')) return 'svc';
+    return 'sys';
+}
+
+function toRelativeTime(dateValue) {
+    if (!dateValue) return 'Just now';
+    const dt = new Date(dateValue);
+    if (Number.isNaN(dt.getTime())) return 'Just now';
+    const diffMs = Date.now() - dt.getTime();
+    const mins = Math.floor(diffMs / 60000);
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return mins + 'm ago';
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return hours + 'h ago';
+    const days = Math.floor(hours / 24);
+    return days + 'd ago';
+}
+
+function mapBackendNotification(item) {
+    const typeTag = getNotifTypeTag(item && item.type);
+    const avatarMap = { apt: 'AP', svc: 'SV', sys: 'SY' };
+    return {
+        id: item && item.id,
+        type: typeTag,
+        avatar: avatarMap[typeTag] || 'SY',
+        title: item && item.type ? String(item.type).replaceAll('_', ' ') : 'Notification',
+        sub: item && item.message ? item.message : 'No details',
+        time: toRelativeTime(item && item.createdAt),
+        unread: !(item && item.isRead)
+    };
+}
+
+function reloadNotificationsFromServer() {
+    if (!ownerSalonId || typeof API_BASE_URL === 'undefined') return Promise.resolve();
+    return fetch(API_BASE_URL + '/salon-owner/notifications/' + encodeURIComponent(ownerSalonId), {
+        method: 'GET',
+        headers: getAuthHeaders()
+    })
+    .then(function (res) {
+        if (!res.ok) throw new Error('Failed to fetch notifications (' + res.status + ')');
+        return res.json();
+    })
+    .then(function (rows) {
+        NOTIFICATIONS.length = 0;
+        (Array.isArray(rows) ? rows : []).forEach(function (row) {
+            NOTIFICATIONS.push(mapBackendNotification(row));
+        });
+        renderNotifPanel();
+        renderNotifCenter();
+        updateBadge();
+    })
+    .catch(function (err) {
+        console.warn('Notification sync failed:', err && err.message ? err.message : err);
+    });
+}
 
 function getUnreadCount() {
     return NOTIFICATIONS.filter(n => n.unread).length;
@@ -44,10 +105,32 @@ function buildNotifItem(n, full = false) {
             <div class="notif-time">${n.time}</div>
         </div>`;
     el.addEventListener('click', () => {
-        n.unread = false;
-        updateBadge();
-        renderNotifPanel();
-        renderNotifCenter();
+        if (!n.unread || !n.id) {
+            n.unread = false;
+            updateBadge();
+            renderNotifPanel();
+            renderNotifCenter();
+            return;
+        }
+
+        fetch(API_BASE_URL + '/salon-owner/notifications/' + encodeURIComponent(n.id) + '/read', {
+            method: 'PUT',
+            headers: getAuthHeaders()
+        })
+        .then(function (res) {
+            if (!res.ok) throw new Error('Failed to mark as read');
+            n.unread = false;
+            updateBadge();
+            renderNotifPanel();
+            renderNotifCenter();
+        })
+        .catch(function () {
+            // fallback to local visual state even if API fails
+            n.unread = false;
+            updateBadge();
+            renderNotifPanel();
+            renderNotifCenter();
+        });
     });
     return el;
 }
@@ -117,10 +200,31 @@ function setupNotificationBell() {
     if (markAllReadBtn) {
         markAllReadBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            NOTIFICATIONS.forEach(n => n.unread = false);
-            updateBadge();
-            renderNotifPanel();
-            renderNotifCenter();
+            if (!ownerSalonId) {
+                NOTIFICATIONS.forEach(n => n.unread = false);
+                updateBadge();
+                renderNotifPanel();
+                renderNotifCenter();
+                return;
+            }
+
+            fetch(API_BASE_URL + '/salon-owner/notifications/' + encodeURIComponent(ownerSalonId) + '/mark-all-read', {
+                method: 'PUT',
+                headers: getAuthHeaders()
+            })
+            .then(function (res) {
+                if (!res.ok) throw new Error('Failed to mark all read');
+                NOTIFICATIONS.forEach(n => n.unread = false);
+                updateBadge();
+                renderNotifPanel();
+                renderNotifCenter();
+            })
+            .catch(function () {
+                NOTIFICATIONS.forEach(n => n.unread = false);
+                updateBadge();
+                renderNotifPanel();
+                renderNotifCenter();
+            });
         });
     }
 
@@ -139,10 +243,29 @@ function setupNotificationBell() {
 
     if (clearAllBtn) {
         clearAllBtn.addEventListener('click', () => {
-            NOTIFICATIONS.length = 0;
-            updateBadge();
-            renderNotifPanel();
-            renderNotifCenter();
+            if (!ownerSalonId) {
+                NOTIFICATIONS.length = 0;
+                updateBadge();
+                renderNotifPanel();
+                renderNotifCenter();
+                return;
+            }
+
+            const jobs = NOTIFICATIONS
+                .filter(function (n) { return !!n.id; })
+                .map(function (n) {
+                    return fetch(API_BASE_URL + '/salon-owner/notifications/' + encodeURIComponent(n.id), {
+                        method: 'DELETE',
+                        headers: getAuthHeaders()
+                    }).catch(function () { return null; });
+                });
+
+            Promise.all(jobs).finally(function () {
+                NOTIFICATIONS.length = 0;
+                updateBadge();
+                renderNotifPanel();
+                renderNotifCenter();
+            });
         });
     }
 
@@ -501,13 +624,208 @@ function saveAppointment() {
     if (!customer || !time) return alert("Fill all fields to save the event!.");
 
     const isTaken = appointments.some(app => app.date === currentSelectedDay && app.month === currentMonth && app.time === time);
-    
+
     if (holidays.includes(currentSelectedDay)) return alert("Cannot book on a Holiday.");
     if (isTaken) return alert("This slot is already booked!");
 
     appointments.push({ date: currentSelectedDay, month: currentMonth, customer, time });
     alert(`✅ Success: ${customer} at ${time}`);
     toggleModal('event-modal', false);
+}
+
+function to12HourLabel(hour, minute) {
+    const h = Number(hour);
+    const m = Number(minute);
+    if (!Number.isFinite(h) || !Number.isFinite(m)) return 'N/A';
+    const suffix = h >= 12 ? 'PM' : 'AM';
+    const hour12 = (h % 12) || 12;
+    return String(hour12).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ' ' + suffix;
+}
+
+function parseTimeParts(timeString, fallbackHour, fallbackMinute) {
+    const safeHour = Number.isFinite(fallbackHour) ? fallbackHour : 7;
+    const safeMinute = Number.isFinite(fallbackMinute) ? fallbackMinute : 0;
+    if (!timeString || typeof timeString !== 'string') {
+        return { hour: safeHour, minute: safeMinute };
+    }
+
+    const parts = timeString.trim().split(':');
+    if (parts.length < 2) {
+        return { hour: safeHour, minute: safeMinute };
+    }
+
+    const hour = Number(parts[0]);
+    const minute = Number(parts[1]);
+    if (!Number.isFinite(hour) || !Number.isFinite(minute)) {
+        return { hour: safeHour, minute: safeMinute };
+    }
+
+    return { hour: hour, minute: minute };
+}
+
+function getWorkingHourKeys() {
+    const startInput = document.getElementById('salonStartTime');
+    const endInput = document.getElementById('salonEndTime');
+    const startParts = parseTimeParts(startInput ? startInput.value : '', 7, 0);
+    const endParts = parseTimeParts(endInput ? endInput.value : '', 20, 0);
+
+    const startMinutes = (startParts.hour * 60) + startParts.minute;
+    const endMinutes = (endParts.hour * 60) + endParts.minute;
+    if (endMinutes <= startMinutes) {
+        return [];
+    }
+
+    const keys = [];
+    for (let m = startMinutes; m < endMinutes; m += 60) {
+        const hour = Math.floor(m / 60);
+        const minute = m % 60;
+        keys.push({
+            key: String(hour).padStart(2, '0') + ':' + String(minute).padStart(2, '0'),
+            label: to12HourLabel(hour, minute)
+        });
+    }
+    return keys;
+}
+
+function getSlotTimeKey(startTimeValue) {
+    if (!startTimeValue) return null;
+    const dt = new Date(startTimeValue);
+    if (Number.isNaN(dt.getTime())) return null;
+    return String(dt.getHours()).padStart(2, '0') + ':' + String(dt.getMinutes()).padStart(2, '0');
+}
+
+function isTodayDate(dateValue) {
+    const dt = new Date(dateValue);
+    if (Number.isNaN(dt.getTime())) return false;
+    const now = new Date();
+    return dt.getFullYear() === now.getFullYear()
+        && dt.getMonth() === now.getMonth()
+        && dt.getDate() === now.getDate();
+}
+
+function pickFirstNonEmpty(obj, fields) {
+    for (let i = 0; i < fields.length; i += 1) {
+        const value = obj ? obj[fields[i]] : null;
+        if (value !== null && value !== undefined && String(value).trim() !== '') {
+            return String(value).trim();
+        }
+    }
+    return 'NBY';
+}
+
+function showScheduleActionPopup(rowData) {
+    const title = 'Time: ' + rowData.time + '\nCustomer: ' + rowData.customer + '\nService: ' + rowData.service + '\n\nPress OK to confirm user arrival.\nPress Cancel for cancel booking.';
+    const confirmArrival = window.confirm(title);
+    if (confirmArrival) {
+        alert('confirm user arrival');
+        return;
+    }
+
+    const cancelBooking = window.confirm('cancel booking');
+    if (cancelBooking) {
+        alert('cancel booking');
+    }
+}
+
+function loadTodaySchedule() {
+    const scheduleBody = document.getElementById('schedule-list');
+    if (!scheduleBody) return Promise.resolve();
+
+    const salonId = ownerSalonId || localStorage.getItem(OWNER_SALON_ID_KEY);
+    const workingHours = getWorkingHourKeys();
+
+    if (!salonId) {
+        scheduleBody.innerHTML = '<tr><td colspan="4" style="text-align:center; opacity:0.8;">Salon not linked to owner account.</td></tr>';
+        return Promise.resolve();
+    }
+
+    if (!workingHours.length) {
+        scheduleBody.innerHTML = '<tr><td colspan="4" style="text-align:center; opacity:0.8;">Set opening/closing times in profile first.</td></tr>';
+        return Promise.resolve();
+    }
+
+    scheduleBody.innerHTML = '<tr><td colspan="4" style="text-align:center; opacity:0.8;">Loading schedule...</td></tr>';
+
+    const bookingsUrl = ((typeof API_BASE_URL === 'string' && API_BASE_URL)
+        ? API_BASE_URL
+        : ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+            ? 'http://localhost:8080/api'
+            : 'https://snip-me.onrender.com/api')) + '/bookings/all';
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(function () {
+        controller.abort();
+    }, 12000);
+
+    return fetch(bookingsUrl, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+        signal: controller.signal
+    })
+    .then(function (res) {
+        clearTimeout(timeoutId);
+        if (!res.ok) throw new Error('Failed to load schedule (' + res.status + ')');
+        return res.json();
+    })
+    .then(function (rows) {
+        const list = Array.isArray(rows) ? rows : [];
+        const slotMap = {};
+
+        list.forEach(function (slot) {
+            const slotSalonId = slot && slot.salon && (slot.salon.salonID || slot.salon.salonId || slot.salon.id);
+            if (String(slotSalonId) !== String(salonId)) return;
+            if (!isTodayDate(slot.startTime)) return;
+
+            const key = getSlotTimeKey(slot.startTime);
+            if (!key) return;
+            slotMap[key] = slot;
+        });
+
+        const fragment = document.createDocumentFragment();
+        workingHours.forEach(function (w, index) {
+            const slot = slotMap[w.key] || null;
+            const hasBooking = slot && String(slot.status || '').toUpperCase() === 'BOOKED';
+            const customer = hasBooking
+                ? pickFirstNonEmpty(slot, ['customerName', 'customer', 'customerEmail', 'customerId', 'customerID', 'bookedBy'])
+                : 'NBY';
+            const service = hasBooking
+                ? pickFirstNonEmpty(slot, ['serviceName', 'service', 'serviceType', 'serviceTitle'])
+                : 'NBY';
+
+            const tr = document.createElement('tr');
+            if (index === 0) {
+                tr.id = 'starting-row';
+            }
+
+            const actionText = hasBooking ? 'Manage' : 'NBY';
+            tr.innerHTML =
+                '<td>' + w.label + '</td>' +
+                '<td>' + customer + '</td>' +
+                '<td>' + service + '</td>' +
+                '<td><button class="btn-small schedule-action-btn" type="button">' + actionText + '</button></td>';
+
+            const actionBtn = tr.querySelector('.schedule-action-btn');
+            if (actionBtn) {
+                actionBtn.addEventListener('click', function () {
+                    showScheduleActionPopup({
+                        time: w.label,
+                        customer: customer,
+                        service: service
+                    });
+                });
+            }
+
+            fragment.appendChild(tr);
+        });
+
+        scheduleBody.innerHTML = '';
+        scheduleBody.appendChild(fragment);
+    })
+    .catch(function (error) {
+        clearTimeout(timeoutId);
+        console.error('Failed to load today schedule:', error);
+        scheduleBody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#d66;">Could not load schedule.</td></tr>';
+    });
 }
 
 
@@ -533,12 +851,15 @@ function scrollStart() {
 function toggleModal(id, show) {
     const modal = document.getElementById(id);
     if (!modal) return;
-    //TO DO : modify this function 001.....
+
     if (show) {
         modal.style.display = 'flex';
-        //trigging scroll if opening the view schedule
+
+        // Load live today schedule every time the modal opens.
         if (id === 'daily-modal') {
-            scrollStart();
+            loadTodaySchedule().finally(function () {
+                scrollStart();
+            });
         }
     } else {
         modal.style.display = 'none';
@@ -906,6 +1227,12 @@ function populateOwnerProfile(profile) {
         localStorage.setItem(OWNER_SALON_NAME_KEY, salonName);
         applyOwnerBranding();
     }
+
+    const sid = profile && (profile.salonId || profile.salonID || profile.id);
+    if (sid) {
+        ownerSalonId = sid;
+        localStorage.setItem(OWNER_SALON_ID_KEY, String(sid));
+    }
 }
 
 function loadOwnerProfile() {
@@ -924,6 +1251,7 @@ function loadOwnerProfile() {
         })
         .then(function (data) {
             populateOwnerProfile(data || {});
+            reloadNotificationsFromServer();
         })
         .catch(function (error) {
             console.warn('Failed to load owner profile:', error.message || error);
@@ -1038,6 +1366,7 @@ function setupOwnerProfilePanel() {
 
 // Initializing on load
 document.addEventListener('DOMContentLoaded', () => {
+    ownerSalonId = localStorage.getItem(OWNER_SALON_ID_KEY) || null;
     setupOwnerLocationPicker();
     setupOwnerProfilePanel();
     setupServicesSection();
@@ -1048,6 +1377,8 @@ document.addEventListener('DOMContentLoaded', () => {
     CalenderBuild(); 
     selectDate(realToday); 
     startLiveClock();
+    reloadNotificationsFromServer();
+    setInterval(reloadNotificationsFromServer, 30000);
 });
 
 // Sidebar navigation logic

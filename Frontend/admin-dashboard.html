@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/admin-dashboard.css">
+    <link rel="stylesheet" href="css/heading-shadows.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body class="dark-theme">
@@ -117,6 +118,25 @@
                 </div>
                 <div class="notifications-list" id="notificationsList">
                     <p style="text-align: center; color: #999; padding: 20px;">No notifications</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Message Modal (Admin -> Salon) -->
+        <div id="messageModal" class="modal" style="display: none;">
+            <div class="modal-content message-modal">
+                <div class="modal-header">
+                    <h2>Send Message to Salon</h2>
+                    <button class="modal-close" id="messageModalClose" type="button">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p id="messageModalSalonName" style="font-weight: 600; margin-bottom: 8px;"></p>
+                    <textarea id="messageText" placeholder="Write a message to this salon..." style="width:100%;min-height:120px;padding:8px;box-sizing:border-box;"></textarea>
+                    <div style="margin-top:8px;display:flex;gap:8px;justify-content:flex-end;">
+                        <button id="messageSendBtn" class="btn-primary">Send</button>
+                        <button id="messageCancelBtn" class="ghost-btn">Cancel</button>
+                    </div>
+                    <p id="messageStatus" style="margin-top:8px;color:#9bd;display:none;"></p>
                 </div>
             </div>
         </div>

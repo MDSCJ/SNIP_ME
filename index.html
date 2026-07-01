@@ -6,6 +6,7 @@
     <title>SNIP ME | Book Your Style</title>
     <link rel="stylesheet" href="Frontend/css/style.css">
     <link rel="stylesheet" href="Frontend/css/home.css">
+    <link rel="stylesheet" href="Frontend/css/heading-shadows.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/scrollreveal"></script>
@@ -284,6 +285,9 @@
                     return;
                 }
 
+                // Prevent today from being selected
+                var today = new Date();
+                today.setHours(0, 0, 0, 0);
                 var tomorrow = new Date();
                 tomorrow.setDate(tomorrow.getDate() + 1);
                 var minDate = tomorrow.getFullYear() + '-' +
@@ -349,5 +353,6 @@
 <script src="Frontend/js/main.js"></script>
 <script src="Frontend/js/customer_session.js"></script>
 <script src="Frontend/js/devtools-warning.js"></script> 
+<script src="Frontend/js/auth_session.js"></script>
 </body>
 </html>
