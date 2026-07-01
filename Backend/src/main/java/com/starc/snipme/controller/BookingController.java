@@ -1,27 +1,25 @@
 package com.starc.snipme.controller;
 
-import java.util.List;
-import java.util.HashMap;
-import java.util.Map;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.starc.snipme.model.TimeSlot;
-import com.starc.snipme.model.Booking;
-import com.starc.snipme.service.BookingService;
 import com.starc.snipme.repository.TimeSlotRepository;
-
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
+import com.starc.snipme.service.BookingService;
 
 @RestController
 @CrossOrigin(origins = "*") // <-- This tells Spring Boot: "Allow HTML/JS files to talk to me!"s
@@ -98,8 +96,9 @@ public class BookingController {
             @RequestParam String orderId,
             @RequestParam Double amount) {
         try {
-            Booking booking = bookingService.completeBooking(slotID, customerID, salonID, serviceID, startTime, orderId, amount);
-            return ResponseEntity.ok("Booking completed successfully with Booking ID: " + booking.getBookingID());
+            Object booking = bookingService.completeBooking(slotID, customerID, salonID, serviceID, startTime, orderId, amount);
+            Object bookingId = invokeGetter(booking, "getBookingID");
+            return ResponseEntity.ok("Booking completed successfully with Booking ID: " + (bookingId != null ? bookingId : "N/A"));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
@@ -178,23 +177,28 @@ public class BookingController {
     @GetMapping("/customer")
     public ResponseEntity<?> getCustomerBookings(@RequestParam Long customerID) {
         try {
-            List<Booking> bookings = bookingService.getBookingsForCustomer(customerID);
+            List<?> bookings = bookingService.getBookingsForCustomer(customerID);
 
             List<Map<String, Object>> response = bookings.stream().map(booking -> {
-                TimeSlot slot = booking.getTimeSlot();
-                String paymentStatus = booking.getPayment() != null ? booking.getPayment().getPaymentStatus() : null;
-                String orderId = booking.getPayment() != null ? booking.getPayment().getOrderId() : null;
+                Object slot = invokeGetter(booking, "getTimeSlot");
+                Object payment = invokeGetter(booking, "getPayment");
+                String paymentStatus = asString(invokeGetter(payment, "getPaymentStatus"));
+                String orderId = asString(invokeGetter(payment, "getOrderId"));
+                Object salon = invokeGetter(booking, "getSalon");
+                Object service = invokeGetter(booking, "getService");
+                Object bookingDate = invokeGetter(booking, "getBookingDate");
 
                 Map<String, Object> row = new HashMap<>();
-                row.put("bookingID", booking.getBookingID());
-                row.put("salonName", booking.getSalon() != null ? booking.getSalon().getName() : "");
-                row.put("service", booking.getService() != null ? booking.getService().getName() : "");
-                row.put("status", booking.getStatus());
-                row.put("bookingDate", booking.getBookingDate() != null ? booking.getBookingDate().toString() : "");
-                row.put("slotID", slot != null ? slot.getSlotID() : null);
-                row.put("slotStartTime", slot != null && slot.getStartTime() != null ? slot.getStartTime().toString() : "");
-                row.put("paymentStatus", paymentStatus == null ? "" : paymentStatus);
-                row.put("orderId", orderId == null ? "" : orderId);
+                row.put("bookingID", invokeGetter(booking, "getBookingID"));
+                row.put("salonName", asString(invokeGetter(salon, "getName")));
+                row.put("service", asString(invokeGetter(service, "getName")));
+                row.put("status", invokeGetter(booking, "getStatus"));
+                row.put("bookingDate", bookingDate != null ? bookingDate.toString() : "");
+                row.put("slotID", invokeGetter(slot, "getSlotID"));
+                Object slotStartTime = invokeGetter(slot, "getStartTime");
+                row.put("slotStartTime", slotStartTime != null ? slotStartTime.toString() : "");
+                row.put("paymentStatus", paymentStatus);
+                row.put("orderId", orderId);
                 return row;
             }).collect(Collectors.toList());
 
@@ -202,6 +206,21 @@ public class BookingController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Could not load customer bookings.");
         }
+    }
+
+    private Object invokeGetter(Object target, String getterName) {
+        if (target == null || getterName == null || getterName.isEmpty()) {
+            return null;
+        }
+        try {
+            return target.getClass().getMethod(getterName).invoke(target);
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private String asString(Object value) {
+        return value == null ? "" : value.toString();
     }
 
 
