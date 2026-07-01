@@ -437,6 +437,8 @@ function createGeneratedSlotElement(slot) {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'time-slot';
+    // Stamp startTime so the poller can identify this button
+    button.dataset.startTime = slot.startTime;
 
     const inner = document.createElement('div');
     inner.className = 'slot-inner';
@@ -646,6 +648,19 @@ function confirmBookingInBackend() {
     .then(function (res) { return res.text(); })
     .then(function (data) {
         console.log('Backend confirmed:', data);
+        // Handle race condition: backend signals slot already taken
+        if (data.includes('SLOT_ALREADY_BOOKED')) {
+            hideProcessingOverlay();
+            resetConfirmBtn();
+            flashError('This slot was just booked by someone else. Please select another time slot.');
+            setTimeout(function () {
+                goToStep(2);
+                hideGateway();
+                bookingState.selectedSlot = null;
+                loadAvailableSlots();
+            }, 3000);
+            return;
+        }
         const match = data.match(/Booking ID:\s*(\d+)/i);
         if (match) {
             bookingState.bookingID = 'BOOK-' + match[1];
@@ -816,6 +831,12 @@ function finishBooking() {
 function goToStep(n) {
     document.querySelectorAll('.step-content').forEach(function (c) { c.classList.remove('active'); });
     document.querySelectorAll('.step').forEach(function (s) { s.classList.remove('active'); });
+    // Start real-time slot polling only on step 2; stop it otherwise
+    if (n === 2) {
+        startSlotPoller();
+    } else {
+        stopSlotPoller();
+    }
     if (n === 4) {
         document.getElementById('successContent').classList.add('active');
     } else {
@@ -827,3 +848,79 @@ function goToPreviousStep(n) { if (n > 1) goToStep(n - 1); }
 function goBack()       { window.history.back(); }
 function goToSettings() { window.location.href = 'settings.html?tab=bookings'; }
 function goHome()       { window.location.href = '../index.html'; }
+
+// ─────────────────────────────────────────────────────────
+// REAL-TIME SLOT POLLING (concurrency protection)
+// Polls /bookings/taken-slots every 5 s while user is on
+// step 2. Greys out any slot that just got booked/locked
+// by another user without requiring a full page refresh.
+// ─────────────────────────────────────────────────────────
+var _slotPollTimer = null;
+
+function startSlotPoller() {
+    stopSlotPoller(); // clear any previous timer
+    _slotPollTimer = setInterval(function () {
+        if (!bookingState.salonId || !bookingState.selectedDate) return;
+        fetch(API_BASE_URL + '/bookings/taken-slots'
+            + '?salonId=' + encodeURIComponent(bookingState.salonId)
+            + '&date='    + encodeURIComponent(bookingState.selectedDate))
+        .then(function (r) { return r.ok ? r.json() : []; })
+        .then(function (takenTimes) {
+            applyTakenSlots(takenTimes);
+        })
+        .catch(function () { /* ignore network errors silently */ });
+    }, 5000);
+}
+
+function stopSlotPoller() {
+    if (_slotPollTimer) {
+        clearInterval(_slotPollTimer);
+        _slotPollTimer = null;
+    }
+}
+
+/**
+ * Given an array of ISO startTime strings that are now BOOKED/LOCKED,
+ * find matching slot buttons and disable them visually.
+ * If the user had selected one of these, deselect it and warn them.
+ */
+function applyTakenSlots(takenTimes) {
+    if (!takenTimes || takenTimes.length === 0) return;
+    var takenSet = new Set(takenTimes);
+    var selectedInvalidated = false;
+
+    document.querySelectorAll('#timeSlotsGrid .time-slot').forEach(function (btn) {
+        // Each button stores its startTime in data-start-time (set in createGeneratedSlotElement)
+        var startTime = btn.dataset.startTime;
+        if (!startTime) return;
+        if (takenSet.has(startTime) && !btn.classList.contains('taken')) {
+            // Mark as taken now
+            btn.classList.remove('available', 'virtual-available', 'selected');
+            btn.classList.add('taken');
+            btn.disabled = true;
+            btn.setAttribute('aria-disabled', 'true');
+            // Add booked badge if not already there
+            if (!btn.querySelector('.slot-badge')) {
+                var badge = document.createElement('span');
+                badge.className = 'slot-badge';
+                badge.textContent = 'Booked';
+                btn.appendChild(badge);
+            }
+            // Check if this is the slot the user selected
+            if (bookingState.selectedSlot && bookingState.selectedSlot.startTime === startTime) {
+                selectedInvalidated = true;
+            }
+        }
+    });
+
+    if (selectedInvalidated) {
+        bookingState.selectedSlot = null;
+        document.getElementById('nextBtn2').disabled = true;
+        // Show a subtle banner instead of an alert
+        var banner = document.getElementById('slotTakenBanner');
+        if (banner) {
+            banner.style.display = 'block';
+            setTimeout(function () { banner.style.display = 'none'; }, 5000);
+        }
+    }
+}

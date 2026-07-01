@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -115,6 +117,23 @@ public class BookingController {
         } catch (RuntimeException e) {
             // Returns a 400 Bad Request if the booking doesn't exist or is already canceled
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
+    // ─── Real-time slot status polling ───────────────────────────────────────
+    // Frontend calls this every few seconds while user is on Step 2.
+    // Returns the list of ISO startTime strings that are BOOKED or LOCKED.
+    @GetMapping("/taken-slots")
+    public ResponseEntity<?> getTakenSlots(@RequestParam Long salonId,
+                                           @RequestParam String date) {
+        try {
+            LocalDate selectedDate = LocalDate.parse(date);
+            LocalDateTime fromTime = selectedDate.atStartOfDay();
+            LocalDateTime toTime   = selectedDate.plusDays(1).atStartOfDay();
+            Set<String> takenTimes = bookingService.getUnavailableStartTimes(salonId, fromTime, toTime);
+            return ResponseEntity.ok(takenTimes);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Could not fetch slot status");
         }
     }
 
