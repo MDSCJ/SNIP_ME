@@ -1,8 +1,12 @@
 package com.starc.snipme.controller;
 
+import com.starc.snipme.model.Payment;
+import com.starc.snipme.repository.PaymentRepository;
+import com.starc.snipme.service.BookingService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -15,6 +19,9 @@ import java.util.Map;
 @RequestMapping("/api/payment")
 public class PaymentController {
 
+    private final BookingService bookingService;
+    private final PaymentRepository paymentRepository;
+
     // ── PayHere Sandbox Credentials ───────────────────────────
     private static final String MERCHANT_ID = "1235274";
 
@@ -26,6 +33,11 @@ public class PaymentController {
 
     private static final String SECRET_GITHUB =
         "MjczNjUwNTQzOTUxNjQzNTIxMTY1NzMyODMzNDE4NjQ2MDE1NA=";
+
+    public PaymentController(BookingService bookingService, PaymentRepository paymentRepository) {
+        this.bookingService = bookingService;
+        this.paymentRepository = paymentRepository;
+    }
 
     // ── GET /api/payment/hash ─────────────────────────────────
     // Called by booking.js — detects which domain the request
@@ -75,6 +87,7 @@ public class PaymentController {
     // ── POST /api/payment/notify ──────────────────────────────
     // PayHere calls this after payment is processed
     @PostMapping("/notify")
+    @Transactional
     public ResponseEntity<String> paymentNotify(
             @RequestParam(required = false) String merchant_id,
             @RequestParam(required = false) String order_id,
@@ -90,6 +103,28 @@ public class PaymentController {
         System.out.println("Status     : " + status_code);
         System.out.println("Amount     : " + payhere_amount);
         System.out.println("======================");
+
+        if (order_id != null && "2".equals(status_code)) {
+            paymentRepository.findByOrderId(order_id).ifPresent(payment -> {
+                if (!"Success".equalsIgnoreCase(payment.getPaymentStatus())) {
+                    payment.setPaymentStatus("Success");
+                    paymentRepository.save(payment);
+                }
+
+                if (payment.getBooking() != null
+                        && payment.getBooking().getTimeSlot() != null
+                        && "LOCKED".equalsIgnoreCase(payment.getBooking().getTimeSlot().getStatus())) {
+                    try {
+                        bookingService.confirmBooking(
+                            payment.getBooking().getTimeSlot().getSlotID(),
+                            payment.getBooking().getCustomer().getId()
+                        );
+                    } catch (Exception confirmError) {
+                        System.err.println("Payment notify confirmation skipped: " + confirmError.getMessage());
+                    }
+                }
+            });
+        }
 
         return ResponseEntity.ok("OK");
     }

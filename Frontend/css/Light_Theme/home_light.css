@@ -746,6 +746,13 @@ body.modal-open {
     flex-wrap: wrap;
 }
 
+.distance-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
 .sort-btn {
     padding: 8px 16px;
     border: 2px solid var(--accent-yellow);
@@ -768,6 +775,26 @@ body.modal-open {
     display: flex;
     align-items: center;
     gap: 12px;
+}
+
+.refresh-search-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border: 2px solid var(--accent-yellow);
+    background: transparent;
+    color: #444;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.refresh-search-btn:hover {
+    background: var(--accent-yellow);
+    color: #000;
 }
 
 .range-slider-container label {

@@ -20,6 +20,10 @@ public class Payment {
     @JoinColumn (name = "booking_id", nullable = false)
     private Booking booking;
 
+    @OneToOne
+    @JoinColumn(name = "slot_id", nullable = false)
+    private TimeSlot timeSlot;
+
     private String orderId;
 
     //Default constructor dor Spring Boot
@@ -43,6 +47,8 @@ public class Payment {
     public void setTransactionDate(LocalDateTime transactionDate){this.transactionDate = transactionDate;}
     public Booking getBooking(){return booking;}
     public void setBooking(Booking booking){this.booking = booking;}
+    public TimeSlot getTimeSlot(){return timeSlot;}
+    public void setTimeSlot(TimeSlot timeSlot){this.timeSlot = timeSlot;}
     public String getOrderId(){return orderId;}
     public void setOrderId(String orderId){this.orderId = orderId;}
 }

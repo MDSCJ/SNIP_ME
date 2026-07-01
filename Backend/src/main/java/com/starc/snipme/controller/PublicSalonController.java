@@ -5,7 +5,9 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.starc.snipme.model.Salon;
+import com.starc.snipme.model.ServiceItem;
 import com.starc.snipme.model.ServicePrice;
 import com.starc.snipme.repository.SalonRepository;
 import com.starc.snipme.repository.ServiceItemRepository;
@@ -81,26 +84,32 @@ public class PublicSalonController {
             @RequestParam(required = false) Double latitude,
             @RequestParam(required = false) Double longitude,
             @RequestParam(defaultValue = "5") Double radiusKm,
+            @RequestParam(required = false) String treatment,
+            @RequestParam(required = false) String location,
             @RequestParam(defaultValue = "rating") String sortBy,
             @RequestParam(defaultValue = "0") int page) {
         try {
             List<Salon> allSalons = salonRepository.findByIsActiveTrueOrderByRateDesc();
             DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("h:mm a");
+            String normalizedTreatment = treatment == null ? "" : treatment.trim();
+            String normalizedLocation = location == null ? "" : location.trim();
+
+            Optional<ServiceItem> treatmentService = normalizedTreatment.isBlank()
+                ? Optional.empty()
+                : serviceItemRepository.findByNameIgnoreCase(normalizedTreatment);
+
+            Set<Long> treatmentSalonIds = treatmentService
+                .map(service -> servicePriceRepository.findByServiceId(service.getId()).stream()
+                    .map(ServicePrice::getSalonId)
+                    .collect(Collectors.toSet()))
+                .orElse(Set.of());
 
             List<Salon> filteredSalons = allSalons;
-            if (latitude != null && longitude != null) {
-                filteredSalons = allSalons.stream()
-                    .filter(salon -> {
-                        if (salon.getLatitude() != null && salon.getLongitude() != null) {
-                            double distance = calculateDistance(latitude, longitude,
-                                                              salon.getLatitude(),
-                                                              salon.getLongitude());
-                            return distance <= radiusKm;
-                        }
-                        return salon.getCity() != null && !salon.getCity().isEmpty();
-                    })
-                    .collect(Collectors.toList());
-            }
+            filteredSalons = filteredSalons.stream()
+                .filter(salon -> matchesTreatmentFilter(salon, normalizedTreatment, treatmentService, treatmentSalonIds))
+                .filter(salon -> matchesLocationFilter(salon, normalizedLocation))
+                .filter(salon -> matchesDistanceFilter(salon, latitude, longitude, radiusKm))
+                .collect(Collectors.toList());
 
             if ("price".equalsIgnoreCase(sortBy)) {
                 filteredSalons.sort(Comparator.comparingDouble(s -> getAverageSalonPrice(s)));
@@ -168,6 +177,60 @@ public class PublicSalonController {
 
     private double getAverageSalonPrice(Salon salon) {
         return 0.0;
+    }
+
+    private boolean matchesTreatmentFilter(Salon salon,
+                                           String treatment,
+                                           Optional<ServiceItem> treatmentService,
+                                           Set<Long> treatmentSalonIds) {
+        if (treatment == null || treatment.isBlank()) {
+            return true;
+        }
+
+        if (treatmentService.isPresent()) {
+            Long salonId = salon.getSalonID();
+            return salonId != null && treatmentSalonIds.contains(salonId);
+        }
+
+        return containsIgnoreCase(salon.getName(), treatment)
+                || containsIgnoreCase(salon.getDetails(), treatment)
+                || containsIgnoreCase(salon.getAddress(), treatment)
+                || containsIgnoreCase(salon.getCity(), treatment);
+    }
+
+    private boolean matchesLocationFilter(Salon salon, String location) {
+        if (location == null || location.isBlank()) {
+            return true;
+        }
+
+        return containsIgnoreCase(salon.getName(), location)
+                || containsIgnoreCase(salon.getDetails(), location)
+                || containsIgnoreCase(salon.getAddress(), location)
+                || containsIgnoreCase(salon.getCity(), location)
+                || containsIgnoreCase(salon.getEmail(), location)
+                || containsIgnoreCase(salon.getPhoneNumber(), location);
+    }
+
+    private boolean matchesDistanceFilter(Salon salon,
+                                          Double latitude,
+                                          Double longitude,
+                                          Double radiusKm) {
+        if (latitude == null || longitude == null) {
+            return true;
+        }
+
+        if (salon.getLatitude() != null && salon.getLongitude() != null) {
+            double distance = calculateDistance(latitude, longitude,
+                                               salon.getLatitude(),
+                                               salon.getLongitude());
+            return distance <= radiusKm;
+        }
+
+        return salon.getCity() != null && !salon.getCity().isBlank();
+    }
+
+    private boolean containsIgnoreCase(String value, String query) {
+        return value != null && query != null && value.toLowerCase().contains(query.toLowerCase());
     }
 
     // ════════════════════════════════════════════════════

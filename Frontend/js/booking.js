@@ -92,8 +92,14 @@ function setStep1NextState(isEnabled) {
 document.addEventListener('DOMContentLoaded', function () {
 
     bookingState.customerID = localStorage.getItem('customerID')
+                           || localStorage.getItem('snipmeCustomerUserId')
                            || sessionStorage.getItem('customerID')
-                           || '1';
+                           || sessionStorage.getItem('snipmeCustomerUserId')
+                           || null;
+
+    if (!bookingState.customerID) {
+        console.warn('No customer ID found in session storage. Booking completion will be blocked until the customer logs in again.');
+    }
 
     const params = new URLSearchParams(window.location.search);
     bookingState.salonId = params.get('salonId')
@@ -572,6 +578,9 @@ function setupPayHereHandlers() {
 
     payhere.onCompleted = function onCompleted(orderId) {
         console.log('PayHere completed. OrderID:', orderId);
+        if (orderId) {
+            bookingState.orderId = orderId;
+        }
         confirmBookingInBackend();
     };
 
@@ -613,6 +622,13 @@ function confirmBookingInBackend() {
     const orderId    = bookingState.orderId;
     const amount     = getAmountValue();
 
+    if (!customerID) {
+        hideProcessingOverlay();
+        resetConfirmBtn();
+        flashError('Please log in again before confirming the booking.');
+        return;
+    }
+
     let url = API_BASE_URL + '/bookings/complete?customerID=' + customerID
             + '&salonID=' + salonID
             + '&serviceID=' + serviceID
@@ -638,7 +654,9 @@ function confirmBookingInBackend() {
     })
     .catch(function (err) {
         console.error('Backend confirm error:', err);
-        finishBooking(); // Payment done — still show success
+        hideProcessingOverlay();
+        resetConfirmBtn();
+        flashError('Payment succeeded, but the booking save failed. Please try again or contact support.');
     });
 }
 

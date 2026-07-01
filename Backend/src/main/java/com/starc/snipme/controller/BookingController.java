@@ -132,17 +132,18 @@ public class BookingController {
                 row.put("startTime", slot.getStartTime() != null ? slot.getStartTime().toString() : null);
                 row.put("startTimeLabel", slot.getStartTime() != null ? slot.getStartTime().format(fmt) : null);
                 row.put("status", slot.getStatus());
+                row.put("lockedAt", slot.getLockedAt() != null ? slot.getLockedAt().toString() : null);
                 row.put("salon", slot.getSalon() != null ? Map.of("salonID", slot.getSalon().getSalonID(), "name", slot.getSalon().getName()) : null);
 
                 String customerName = null;
-                if (slot.getCustomerName() != null && !slot.getCustomerName().isBlank()) customerName = slot.getCustomerName();
-                else if (slot.getCustomer() != null) customerName = slot.getCustomer().getName() != null ? slot.getCustomer().getName() : slot.getCustomer().getEmail();
+                if (slot.getCustomer() != null) customerName = slot.getCustomer().getName() != null ? slot.getCustomer().getName() : slot.getCustomer().getEmail();
+                else if (slot.getCustomerName() != null && !slot.getCustomerName().isBlank()) customerName = slot.getCustomerName();
                 row.put("customerName", customerName);
                 row.put("customerId", slot.getCustomer() != null ? slot.getCustomer().getId() : null);
 
                 String serviceName = null;
-                if (slot.getServiceName() != null && !slot.getServiceName().isBlank()) serviceName = slot.getServiceName();
-                else if (slot.getService() != null) serviceName = slot.getService().getName();
+                if (slot.getService() != null) serviceName = slot.getService().getName();
+                else if (slot.getServiceName() != null && !slot.getServiceName().isBlank()) serviceName = slot.getServiceName();
                 row.put("serviceName", serviceName);
                 row.put("serviceId", slot.getService() != null ? slot.getService().getId() : null);
 
