@@ -342,13 +342,15 @@ function loadAvailableSlots() {
 
         all.forEach(function (s) {
             try {
-                // s.startTime expected like "2026-04-28T09:00:00"
-                const key = s.startTime;
-                if (!key) return;
+                // s.startTime expected like "2026-04-28T09:00:00" (may have fractional seconds)
+                var rawKey = s.startTime;
+                if (!rawKey) return;
+                // Normalise to "YYYY-MM-DDTHH:mm:ss" (drop fractional seconds)
+                var key = rawKey.length > 19 ? rawKey.substring(0, 19) : rawKey;
                 // ensure salon filter
                 if (!s.salon || !s.salon.salonID) return;
                 if (String(s.salon.salonID) !== String(bookingState.salonId)) return;
-                const datePart = key.split('T')[0];
+                var datePart = key.split('T')[0];
                 if (datePart !== bookingState.selectedDate) return;
                 if (s.status && s.status !== 'AVAILABLE') occupied[key] = s;
                 if (s.status === 'AVAILABLE') availableMap[key] = s;
@@ -859,7 +861,9 @@ var _slotPollTimer = null;
 
 function startSlotPoller() {
     stopSlotPoller(); // clear any previous timer
-    _slotPollTimer = setInterval(function () {
+
+    // Run immediately so already-booked slots are greyed out as soon as step 2 loads
+    function pollNow() {
         if (!bookingState.salonId || !bookingState.selectedDate) return;
         fetch(API_BASE_URL + '/bookings/taken-slots'
             + '?salonId=' + encodeURIComponent(bookingState.salonId)
@@ -869,7 +873,10 @@ function startSlotPoller() {
             applyTakenSlots(takenTimes);
         })
         .catch(function () { /* ignore network errors silently */ });
-    }, 5000);
+    }
+
+    pollNow(); // immediate first call
+    _slotPollTimer = setInterval(pollNow, 5000);
 }
 
 function stopSlotPoller() {

@@ -177,6 +177,16 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    function formatSlotTime(rawDate) {
+        if (!rawDate) return '-';
+        var dt = new Date(rawDate);
+        if (isNaN(dt.getTime())) return '-';
+        var hh = dt.getHours();
+        var mm = String(dt.getMinutes()).padStart(2, '0');
+        var hh2 = (hh + 1) % 24;
+        return String(hh).padStart(2, '0') + ':' + mm + ' - ' + String(hh2).padStart(2, '0') + ':' + mm;
+    }
+
     function loadBookings() {
         var bookingsContainer = document.getElementById('bookingsContainer');
         var customerId = getCustomerIdFromSession();
@@ -201,19 +211,35 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
-            var bookingsHTML = '<div class="bookings-list">';
-            dbBookings.forEach(function(booking, index) {
-                var formattedDate = formatBookingDate(booking.slotStartTime || booking.bookingDate);
-                var status = String(booking.status || '').toUpperCase();
-                var statusClass = status === 'CANCELED' || status === 'CANCELLED' ? 'status-canceled' : 'status-confirmed';
-                var paymentText = booking.paymentStatus ? ('Online Payment (' + booking.paymentStatus + ')') : 'Online Payment';
+            // Split into upcoming (today or future) and past
+            var todayStart = new Date();
+            todayStart.setHours(0, 0, 0, 0);
 
-                bookingsHTML += `
+            var upcoming = [];
+            var past     = [];
+
+            dbBookings.forEach(function(booking, index) {
+                var slotDate = booking.slotStartTime ? new Date(booking.slotStartTime) : null;
+                // If no slot date, treat as upcoming so it's always visible
+                if (!slotDate || isNaN(slotDate.getTime()) || slotDate >= todayStart) {
+                    upcoming.push({ booking: booking, index: index });
+                } else {
+                    past.push({ booking: booking, index: index });
+                }
+            });
+
+            function buildCard(booking, index) {
+                var formattedDate = formatBookingDate(booking.slotStartTime || booking.bookingDate);
+                var status        = String(booking.status || '').toUpperCase();
+                var statusClass   = (status === 'CANCELED' || status === 'CANCELLED') ? 'status-canceled' : 'status-confirmed';
+                var paymentText   = booking.paymentStatus ? ('Online Payment (' + booking.paymentStatus + ')') : 'Online Payment';
+                return `
                     <div class="booking-card ${statusClass}">
                         <div class="booking-info">
                             <h3>${booking.salonName || '-'}</h3>
                             <p><strong>Service:</strong> ${booking.service || '-'}</p>
                             <p><strong>Date:</strong> ${formattedDate}</p>
+                            <p><strong>Time:</strong> ${formatSlotTime(booking.slotStartTime)}</p>
                             <p><strong>Payment Method:</strong> ${paymentText}</p>
                             <p><strong>Status:</strong> <span class="status-badge">${status || '-'}</span></p>
                         </div>
@@ -221,20 +247,63 @@ document.addEventListener("DOMContentLoaded", function () {
                             ${status === 'CONFIRMED' ? `
                                 <button onclick="cancelBooking(${index})" class="btn-cancel">Cancel Booking</button>
                             ` : `
-                                <p class="booking-canceled">This booking has been canceled</p>
+                                <p class="booking-canceled">This booking has been ${status === 'CANCELLED' || status === 'CANCELED' ? 'canceled' : status.toLowerCase()}</p>
                             `}
                         </div>
                     </div>
                 `;
-            });
-            bookingsHTML += '</div>';
-            bookingsContainer.innerHTML = bookingsHTML;
+            }
+
+            var html = '<div class="bookings-list">';
+
+            // ── Upcoming bookings ──────────────────────────────
+            if (upcoming.length === 0) {
+                html += '<p class="no-bookings" style="margin-bottom:12px;">No upcoming bookings.</p>';
+            } else {
+                upcoming.forEach(function(item) {
+                    html += buildCard(item.booking, item.index);
+                });
+            }
+
+            // ── Past bookings (collapsed) ──────────────────────
+            if (past.length > 0) {
+                html += `
+                    <button id="showPastBtn" onclick="togglePastBookings()" class="btn-secondary" style="margin:16px 0 8px;width:100%;padding:10px;">
+                        📅 Show Past Bookings (${past.length})
+                    </button>
+                    <div id="pastBookingsSection" style="display:none;">
+                        <p style="color:var(--text-muted,#aaa);font-size:0.85rem;margin-bottom:8px;">Past appointments</p>
+                `;
+                past.forEach(function(item) {
+                    html += buildCard(item.booking, item.index);
+                });
+                html += '</div>';
+            }
+
+            html += '</div>';
+            bookingsContainer.innerHTML = html;
         })
         .catch(function(error) {
             console.error('Error loading bookings from database:', error);
             renderNoBookings(bookingsContainer);
         });
     }
+
+    window.togglePastBookings = function() {
+        var section = document.getElementById('pastBookingsSection');
+        var btn     = document.getElementById('showPastBtn');
+        if (!section || !btn) return;
+        if (section.style.display === 'none') {
+            section.style.display = 'block';
+            btn.textContent = '📅 Hide Past Bookings';
+        } else {
+            section.style.display = 'none';
+            // Restore the count label
+            var count = section.querySelectorAll('.booking-card').length;
+            btn.textContent = '📅 Show Past Bookings (' + count + ')';
+        }
+    };
+
 
     window.cancelBooking = function(index) {
         if (!dbBookings[index]) return;
