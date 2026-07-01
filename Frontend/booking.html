@@ -116,9 +116,23 @@
         <div class="slots-container">
             <h3>Available Time Slots</h3>
             <p id="salonNameStep2"></p>
+            <div id="slotTakenBanner" style="
+                display:none;
+                background:rgba(255,80,80,0.15);
+                border:1px solid rgba(255,80,80,0.5);
+                color:#ff8080;
+                padding:10px 14px;
+                border-radius:8px;
+                margin-bottom:12px;
+                font-size:0.9rem;
+                text-align:center;
+            ">
+                ⚠️ Your selected slot was just booked by someone else. Please choose another time.
+            </div>
             <div class="time-slots-grid" id="timeSlotsGrid">
                 <p class="loading">Loading available slots...</p>
             </div>
+
             <div class="form-actions">
                 <button type="button" class="btn-secondary" onclick="goToPreviousStep(2)">← Back</button>
                 <button type="button" class="btn-primary" id="nextBtn2" onclick="proceedToPayment()" disabled>Next →</button>

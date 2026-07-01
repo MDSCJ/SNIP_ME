@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -11,8 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.starc.snipme.model.*;
 import com.starc.snipme.repository.*;
-
-import com.starc.snipme.service.SalonNotificationService;
 
 @Service
 public class BookingService {
@@ -146,14 +146,26 @@ public class BookingService {
     public Booking completeBooking(Long slotID, Long customerID, Long salonID, Long serviceID, String startTimeStr, String orderId, Double amount) {
         TimeSlot slot;
         if (slotID != null) {
+            // Existing DB slot — use pessimistic lock to guard concurrent confirmations
             slot = timeSlotRepository.findById(slotID)
                 .orElseThrow(() -> new RuntimeException("Time slot not found."));
+            if ("BOOKED".equals(slot.getStatus())) {
+                throw new RuntimeException("SLOT_ALREADY_BOOKED: This slot was just confirmed by another customer.");
+            }
             slot.setStatus("BOOKED");
             slot.setLockedAt(LocalDateTime.now());
         } else {
-            // Virtual slot, create it
+            // Virtual slot — check for a concurrent booking at the same salon + startTime
+            LocalDateTime startTime = LocalDateTime.parse(startTimeStr);
+            boolean alreadyTaken = timeSlotRepository
+                .findConflictingSlot(salonID, startTime)
+                .isPresent();
+            if (alreadyTaken) {
+                throw new RuntimeException("SLOT_ALREADY_BOOKED: Another customer just booked this time slot.");
+            }
+            // Safe to create
             slot = new TimeSlot();
-            slot.setStartTime(LocalDateTime.parse(startTimeStr));
+            slot.setStartTime(startTime);
             slot.setStatus("BOOKED");
             slot.setLockedAt(LocalDateTime.now());
             slot.setSalon(salonRepository.findById(salonID).orElseThrow());
@@ -227,5 +239,19 @@ public class BookingService {
         } catch (Exception ignored) {}
 
         return slot;
+    }
+
+    /**
+     * Returns the set of startTime strings (ISO format) that are BOOKED or LOCKED
+     * for a given salon on a given date — used by the frontend polling endpoint.
+     */
+    @Transactional(readOnly = true)
+    public Set<String> getUnavailableStartTimes(Long salonID, LocalDateTime fromTime, LocalDateTime toTime) {
+        return timeSlotRepository
+            .findUnavailableSlotsBySalonAndDateRange(salonID, fromTime, toTime)
+            .stream()
+            .map(t -> t.getStartTime() != null ? t.getStartTime().toString() : null)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet());
     }
 }
