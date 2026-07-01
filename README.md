@@ -239,7 +239,10 @@ Each folder has its own `.gitignore` for technology-specific rules.
 - Verify MySQL username/password in `application-secrets.properties`
 - Check MySQL is running: `mysql -u root -p`
 - Ensure database name is `defaultdb`
-
+- try freeup port 8080:
+```bash
+netstat -ano | findstr :8080
+taskkill /PID <PID> /F```
 ---
 
 ## PayHere Payment Testing
@@ -298,7 +301,9 @@ The application uses **PayHere Sandbox** for payment processing. Use the followi
 4. Never commit sensitive files
 
 ---
-
+if it already use the port ,
+try ... netstat -ano | findstr :8080
+and ... taskkill /PID <PID> /F
 ## License
 
 SNIP ME © 2026 All rights reserved.
