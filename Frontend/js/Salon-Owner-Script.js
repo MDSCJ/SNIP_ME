@@ -623,14 +623,41 @@ function saveAppointment() {
 
     if (!customer || !time) return alert("Fill all fields to save the event!.");
 
-    const isTaken = appointments.some(app => app.date === currentSelectedDay && app.month === currentMonth && app.time === time);
-
     if (holidays.includes(currentSelectedDay)) return alert("Cannot book on a Holiday.");
-    if (isTaken) return alert("This slot is already booked!");
 
-    appointments.push({ date: currentSelectedDay, month: currentMonth, customer, time });
-    alert(`✅ Success: ${customer} at ${time}`);
-    toggleModal('event-modal', false);
+    // Build ISO startTime using selected date and time
+    const mm = String(currentMonth + 1).padStart(2, '0');
+    const dd = String(currentSelectedDay).padStart(2, '0');
+    const hhmm = time;
+    const iso = `${currentYear}-${mm}-${dd}T${hhmm}:00`;
+
+    const baseApi = (typeof API_BASE_URL === 'string' && API_BASE_URL) ? API_BASE_URL : ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:8080/api' : 'https://snip-me.onrender.com/api');
+
+    const payload = {
+        salonID: ownerSalonId,
+        customerName: customer,
+        startTime: iso
+    };
+
+    fetch(baseApi + '/bookings/owner/add', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+    })
+    .then(function (res) {
+        if (!res.ok) return res.json().then(j=>{throw new Error(j && j.error ? j.error : 'Failed to create appointment')});
+        return res.json();
+    })
+    .then(function (data) {
+        alert('✅ Appointment created');
+        toggleModal('event-modal', false);
+        // reload schedule
+        loadTodaySchedule();
+    })
+    .catch(function (err) {
+        console.error('Failed to create appointment:', err);
+        alert('Could not create appointment: ' + (err.message || err));
+    });
 }
 
 function to12HourLabel(hour, minute) {
@@ -785,11 +812,14 @@ function loadTodaySchedule() {
         workingHours.forEach(function (w, index) {
             const slot = slotMap[w.key] || null;
             const hasBooking = slot && String(slot.status || '').toUpperCase() === 'BOOKED';
+
+            // Prefer server-provided fields (customerName/serviceName), then linked objects
             const customer = hasBooking
-                ? pickFirstNonEmpty(slot, ['customerName', 'customer', 'customerEmail', 'customerId', 'customerID', 'bookedBy'])
+                ? (slot.customerName || (slot.customer ? (slot.customer.name || slot.customer.email) : null) || 'NBY')
                 : 'NBY';
+
             const service = hasBooking
-                ? pickFirstNonEmpty(slot, ['serviceName', 'service', 'serviceType', 'serviceTitle'])
+                ? (slot.serviceName || (slot.service ? slot.service.name : null) || 'NBY')
                 : 'NBY';
 
             const tr = document.createElement('tr');
@@ -798,8 +828,10 @@ function loadTodaySchedule() {
             }
 
             const actionText = hasBooking ? 'Manage' : 'NBY';
+            // Time badge: prefer server startTimeLabel if present
+            const timeLabel = slot && slot.startTimeLabel ? slot.startTimeLabel : w.label;
             tr.innerHTML =
-                '<td>' + w.label + '</td>' +
+                '<td><div class="slot-cell">' + w.label + '<span class="time-badge">' + timeLabel + '</span></div></td>' +
                 '<td>' + customer + '</td>' +
                 '<td>' + service + '</td>' +
                 '<td><button class="btn-small schedule-action-btn" type="button">' + actionText + '</button></td>';

@@ -26,6 +26,21 @@ public class TimeSlot {
     @JoinColumn(name = "salon_id", nullable = false)
     private Salon salon;
     //--------------------------------------------------------------------
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "customer_id")
+    private User customer;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "service_id")
+    private com.starc.snipme.model.ServiceItem service;
+    
+    // Optional human-readable names when an appointment is created by owner (no user record)
+    @Column(name = "customer_name")
+    private String customerName;
+
+    @Column(name = "service_name")
+    private String serviceName;
+    //--------------------------------------------------------------------
     // States: "AVAILABLE", "LOCKED", "BOOKED"
     @Column(nullable = false)
     private String status = "AVAILABLE"; 
@@ -33,11 +48,20 @@ public class TimeSlot {
     // Tracks when the 5-minute lock started
     private LocalDateTime lockedAt;
 
-    // Booking handles customer and service references now 
-
-    // --- Getters and Setters ---
     public Salon getSalon() { return salon; }
     public void setSalon(Salon salon) { this.salon = salon; }
+    
+    public User getCustomer() { return customer; }
+    public void setCustomer(User customer) { this.customer = customer; }
+
+    public com.starc.snipme.model.ServiceItem getService() { return service; }
+    public void setService(com.starc.snipme.model.ServiceItem service) { this.service = service; }
+    
+    public String getCustomerName() { return customerName; }
+    public void setCustomerName(String customerName) { this.customerName = customerName; }
+
+    public String getServiceName() { return serviceName; }
+    public void setServiceName(String serviceName) { this.serviceName = serviceName; }
     
     public Long getSlotID() { return slotID; }
     public void setSlotID(Long slotID) { this.slotID = slotID; }

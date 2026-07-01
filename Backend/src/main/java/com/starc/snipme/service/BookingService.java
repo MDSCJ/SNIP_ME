@@ -163,6 +163,11 @@ public class BookingService {
         Salon salon = salonRepository.findById(salonID).orElseThrow(() -> new RuntimeException("Salon not found"));
         ServiceItem service = serviceItemRepository.findById(serviceID).orElseThrow(() -> new RuntimeException("Service not found"));
 
+        // Wire customer and service to the time_slots table
+        slot.setCustomer(customer);
+        slot.setService(service);
+        slot = timeSlotRepository.save(slot);
+
         Booking booking = new Booking();
         booking.setCustomer(customer);
         booking.setSalon(salon);
@@ -184,5 +189,38 @@ public class BookingService {
         );
 
         return booking;
+    }
+
+    @Transactional
+    public TimeSlot createOwnerAppointment(Long salonID, String customerName, Long serviceID, String startTimeStr) {
+        TimeSlot slot = new TimeSlot();
+        slot.setStartTime(LocalDateTime.parse(startTimeStr));
+        slot.setStatus("BOOKED");
+        slot.setSalon(salonRepository.findById(salonID).orElseThrow(() -> new RuntimeException("Salon not found")));
+
+        if (serviceID != null) {
+            serviceItemRepository.findById(serviceID).ifPresent(s -> {
+                slot.setService(s);
+                slot.setServiceName(s.getName());
+            });
+        }
+
+        if (customerName != null && !customerName.isBlank()) {
+            slot.setCustomerName(customerName.trim());
+        }
+
+        slot = timeSlotRepository.save(slot);
+
+        // Notify salon owner about manual appointment
+        try {
+            salonNotificationService.createNotification(
+                slot.getSalon().getSalonID(),
+                "Owner created appointment for " + slot.getStartTime(),
+                "OWNER_APPOINTMENT",
+                slot.getSlotID()
+            );
+        } catch (Exception ignored) {}
+
+        return slot;
     }
 }

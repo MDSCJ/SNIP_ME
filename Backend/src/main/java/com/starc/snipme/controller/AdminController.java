@@ -148,7 +148,7 @@ public class AdminController {
     }
 
     @PutMapping("/users/{email}")
-    public ResponseEntity<?> updateUser(@PathVariable("email") String email,
+    public ResponseEntity<?>  updateUser(@PathVariable("email") String email,
                                         @RequestBody Map<String, String> payload,
                                         Authentication authentication) {
         if (!isAdmin(authentication)) {
@@ -158,15 +158,10 @@ public class AdminController {
         return userRepository.findByEmailIgnoreCase(email)
                 .map(user -> {
                     String name = payload.get("name");
-                    String phone = payload.get("phoneNumber");
                     String userType = payload.get("userType");
 
                     if (name != null) {
                         user.setName(name.isBlank() ? null : name.trim());
-                    }
-
-                    if (phone != null) {
-                        user.setPhoneNumber(phone.isBlank() ? null : phone.trim());
                     }
 
                     if (userType != null && !userType.isBlank()) {
