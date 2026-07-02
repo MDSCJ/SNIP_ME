@@ -119,6 +119,7 @@
             <div class="time-slots-grid" id="timeSlotsGrid">
                 <p class="loading">Loading available slots...</p>
             </div>
+            <p id="slotHoldMessage" style="margin-top:12px; min-height: 1.2em; color:#f1c40f; font-weight:600;"></p>
             <div class="form-actions">
                 <button type="button" class="btn-secondary" onclick="goToPreviousStep(2)">← Back</button>
                 <button type="button" class="btn-primary" id="nextBtn2" onclick="proceedToPayment()" disabled>Next →</button>
@@ -242,29 +243,30 @@
                 <div class="pg-fields">
                     <div class="pg-field-group">
                         <label for="pgCardName">Cardholder Name</label>
-                        <input type="text" id="pgCardName" placeholder="Name on card" autocomplete="cc-name">
+                        <input type="text" id="pgCardName" value="Test Customer" placeholder="Name on card" autocomplete="cc-name">
                         <small class="field-error" id="nameError"></small>
                     </div>
                     <div class="pg-field-group">
                         <label for="pgCardNumber">Card Number</label>
                         <div class="pg-input-wrap">
-                            <input type="text" id="pgCardNumber" placeholder="1111 2222 3333 4444" maxlength="19" autocomplete="cc-number" inputmode="numeric">
+                            <input type="text" id="pgCardNumber" value="4111 1111 1111 1111" placeholder="1111 2222 3333 4444" maxlength="19" autocomplete="cc-number" inputmode="numeric">
                             <span class="pg-card-chip">
                                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="4" width="12" height="8" rx="1.5" stroke="#aaa" stroke-width="1.2"/><line x1="5" y1="4" x2="5" y2="12" stroke="#aaa" stroke-width="1"/><line x1="11" y1="4" x2="11" y2="12" stroke="#aaa" stroke-width="1"/><line x1="2" y1="8" x2="14" y2="8" stroke="#aaa" stroke-width="1"/></svg>
                             </span>
                         </div>
                         <small class="field-error" id="numberError"></small>
+                        <small style="color:#9ad0ff;margin-top:6px;display:block;">Demo Visa card prefilled: 4111 1111 1111 1111</small>
                     </div>
                     <div class="pg-field-row">
                         <div class="pg-field-group">
                             <label for="pgExpiry">Expiration</label>
-                            <input type="text" id="pgExpiry" placeholder="MM/YY" maxlength="5" autocomplete="cc-exp" inputmode="numeric">
+                            <input type="text" id="pgExpiry" value="12/30" placeholder="MM/YY" maxlength="5" autocomplete="cc-exp" inputmode="numeric">
                             <small class="field-error" id="expiryError"></small>
                         </div>
                         <div class="pg-field-group">
                             <label for="pgCVV">CVV</label>
                             <div class="pg-input-wrap">
-                                <input type="password" id="pgCVV" placeholder="•••" maxlength="4" autocomplete="cc-csc" inputmode="numeric">
+                                <input type="password" id="pgCVV" value="123" placeholder="•••" maxlength="4" autocomplete="cc-csc" inputmode="numeric">
                                 <span class="pg-cvv-tip" title="3-digit code on back of card">
                                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="#aaa" stroke-width="1.2"/><text x="4.5" y="11" font-family="Arial" font-size="8" font-weight="bold" fill="#aaa">?</text></svg>
                                 </span>

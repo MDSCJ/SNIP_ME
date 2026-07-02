@@ -49,8 +49,16 @@ public class SecurityConfig {
             
             // 3. Configure URL permissions
             .authorizeHttpRequests(auth -> auth
-                // Allow anyone to access Auth endpoints and the Database console
-                .requestMatchers("/api/auth/**", "/api/public/**", "/h2-console/**", "/api/bookings/**", "/error").permitAll()                // Everything else requires a valid JWT
+                // Allow public booking, payment, salon service, auth, and debug endpoints
+                .requestMatchers(
+                    "/api/auth/**",
+                    "/api/public/**",
+                    "/h2-console/**",
+                    "/api/bookings/**",
+                    "/api/payment/**",
+                    "/api/salon-owner/services/**",
+                    "/error"
+                ).permitAll()
                 .anyRequest().authenticated()
             )
             

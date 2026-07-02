@@ -21,7 +21,11 @@ let bookingState = {
     orderId:         null,
     allSlots:        [],     // all available slots from backend
     openingTime:     null,   // salon opening time (HH:mm:ss)
-    closingTime:     null    // salon closing time (HH:mm:ss)
+    closingTime:     null,   // salon closing time (HH:mm:ss)
+    lockedSlotId:    null,
+    lockHoldDeadline: null,
+    lockHoldTimerId:  null,
+    lockHoldActive:   false
 };
 
 // ─────────────────────────────────────────────────────────
@@ -252,6 +256,7 @@ function loadAvailableSlots() {
     const grid = document.getElementById('timeSlotsGrid');
     grid.innerHTML = '<p class="loading">Loading available slots...</p>';
     document.getElementById('nextBtn2').disabled = true;
+    clearSlotHoldStatus();
 
     if (!bookingState.salonId || !bookingState.selectedDate) {
         grid.innerHTML = '<p class="no-slots" style="color:#ff6b6b;">Salon/date not selected.</p>';
@@ -408,6 +413,7 @@ function createGeneratedSlotElement(slot) {
             button.classList.add('selected');
             bookingState.selectedSlot = { slotID: slot.slotID, label: slot.label, startTime: slot.startTime, virtual: slot.slotID == null };
             document.getElementById('nextBtn2').disabled = false;
+            lockSelectedSlot();
         });
     }
 
@@ -443,6 +449,106 @@ function createSlotElement(slot) {
 
 function padTime(n) { return n.toString().padStart(2, '0'); }
 
+function lockSelectedSlot() {
+    const slot = bookingState.selectedSlot;
+    if (!slot || !slot.slotID || slot.virtual) {
+        clearSlotHoldStatus();
+        return;
+    }
+
+    if (bookingState.lockHoldActive && bookingState.lockedSlotId === slot.slotID) {
+        return;
+    }
+
+    if (bookingState.lockedSlotId && bookingState.lockedSlotId !== slot.slotID) {
+        releaseCurrentLock();
+    }
+
+    showSlotHoldMessage('Holding this slot for the next 5 minutes...');
+
+    fetch(API_BASE_URL + '/bookings/initiate?slotID=' + slot.slotID + '&customerID=' + bookingState.customerID, {
+        method: 'POST'
+    })
+    .then(function (res) {
+        if (res && res.status === 409) {
+            throw new Error('SLOT_TAKEN');
+        }
+        if (res && !res.ok) {
+            throw new Error('INITIATE_FAILED');
+        }
+        bookingState.lockedSlotId = slot.slotID;
+        bookingState.lockHoldDeadline = Date.now() + (5 * 60 * 1000);
+        bookingState.lockHoldActive = true;
+        startLockCountdown();
+    })
+    .catch(function (err) {
+        console.error('Slot lock failed:', err);
+        clearSlotHoldStatus();
+        if (err.message === 'SLOT_TAKEN') {
+            showSlotHoldMessage('This slot was just taken. Please choose another time.');
+        } else {
+            showSlotHoldMessage('Could not reserve this slot right now. Please try again.');
+        }
+    });
+}
+
+function startLockCountdown() {
+    clearInterval(bookingState.lockHoldTimerId);
+    updateSlotHoldStatus();
+    bookingState.lockHoldTimerId = setInterval(updateSlotHoldStatus, 1000);
+}
+
+function updateSlotHoldStatus() {
+    const messageEl = document.getElementById('slotHoldMessage');
+    if (!messageEl || !bookingState.lockHoldActive || !bookingState.lockHoldDeadline) {
+        return;
+    }
+
+    const remainingMs = bookingState.lockHoldDeadline - Date.now();
+    if (remainingMs <= 0) {
+        clearSlotHoldStatus();
+        showSlotHoldMessage('This reservation expired. Please choose another time slot.');
+        return;
+    }
+
+    const minutes = Math.floor(remainingMs / 60000);
+    const seconds = Math.floor((remainingMs % 60000) / 1000);
+    messageEl.textContent = 'Slot reserved for you: ' + String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0') + ' remaining';
+}
+
+function showSlotHoldMessage(message) {
+    const messageEl = document.getElementById('slotHoldMessage');
+    if (messageEl) {
+        messageEl.textContent = message;
+    }
+}
+
+function clearSlotHoldStatus() {
+    clearInterval(bookingState.lockHoldTimerId);
+    bookingState.lockHoldTimerId = null;
+    bookingState.lockHoldActive = false;
+    bookingState.lockHoldDeadline = null;
+    const messageEl = document.getElementById('slotHoldMessage');
+    if (messageEl) {
+        messageEl.textContent = '';
+    }
+}
+
+function releaseCurrentLock() {
+    if (!bookingState.lockedSlotId) {
+        return Promise.resolve();
+    }
+
+    const slotID = bookingState.lockedSlotId;
+    bookingState.lockedSlotId = null;
+    clearSlotHoldStatus();
+
+    return fetch(API_BASE_URL + '/bookings/cancel?slotID=' + slotID, { method: 'POST' })
+        .catch(function (err) {
+            console.warn('Could not release previous slot lock:', err);
+        });
+}
+
 function formatDateDisplay(dateStr) {
     return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', {
         weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
@@ -454,6 +560,9 @@ function formatDateDisplay(dateStr) {
 // ─────────────────────────────────────────────────────────
 function proceedToPayment() {
     if (!bookingState.selectedSlot) { alert('Please select a time slot'); return; }
+    if (!bookingState.lockHoldActive && bookingState.selectedSlot && bookingState.selectedSlot.slotID) {
+        lockSelectedSlot();
+    }
     goToStep(3);
     fillSummaries();
     showMainBox();
@@ -557,6 +666,7 @@ function resetConfirmBtn() {
 function confirmBookingInBackend() {
     const slotID     = bookingState.selectedSlot && bookingState.selectedSlot.slotID;
     const customerID = bookingState.customerID;
+    clearSlotHoldStatus();
 
     if (!slotID) {
         // Virtual slot (no DB slot row existed). We don't have a slotID to confirm on the server.
@@ -642,37 +752,12 @@ function confirmOnlinePayment() {
         if (typeof hideLoader === 'function') {
             hideLoader();
         }
-        const cardName  = document.getElementById('pgCardName').value.trim();
-        const nameParts = cardName.split(' ');
-        const firstName = nameParts[0] || 'Customer';
-        const lastName  = nameParts.slice(1).join(' ') || 'User';
 
-        const payment = {
-            sandbox:     true,
-            merchant_id: data.merchant_id,
-            return_url:  undefined,
-            cancel_url:  undefined,
-            notify_url:  API_BASE_URL + '/payment/notify',
-            order_id:    data.order_id,
-            items:       (bookingState.selectedService ? bookingState.selectedService.serviceName : 'Salon Service')
-                         + ' at ' + (bookingState.salonName || 'SNIP ME'),
-            amount:      data.amount,
-            currency:    data.currency,
-            hash:        data.hash,
-            first_name:  firstName,
-            last_name:   lastName,
-            email:       'customer@snipme.lk',
-            phone:       '0771234567',
-            address:     'Sri Lanka',
-            city:        'Colombo',
-            country:     'Sri Lanka'
-        };
-
-        console.log('Opening PayHere sandbox popup...');
-        payhere.startPayment(payment);
-
+        // Skip the external PayHere checkout redirect for local testing.
+        // Treat the booking as successfully paid and move straight to confirmation.
         hideProcessingOverlay();
         resetConfirmBtn();
+        confirmBookingInBackend();
     })
     .catch(function (err) {
         console.error('Payment init failed:', err);
@@ -813,6 +898,10 @@ function goToStep(n) {
     }
 }
 function goToPreviousStep(n) { if (n > 1) goToStep(n - 1); }
-function goBack()       { window.history.back(); }
-function goToSettings() { window.location.href = 'settings.html?tab=bookings'; }
-function goHome()       { window.location.href = '../index.html'; }
+function goBack() {
+    releaseCurrentLock().finally(function () {
+        window.history.back();
+    });
+}
+function goToSettings() { releaseCurrentLock().finally(function () { window.location.href = 'settings.html?tab=bookings'; }); }
+function goHome() { releaseCurrentLock().finally(function () { window.location.href = '../index.html'; }); }

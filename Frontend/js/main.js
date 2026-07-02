@@ -117,6 +117,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function ensureSkeletonsFillViewport() {
+        if (!salonSlider) return;
+
         const sliderWidth = salonSlider.clientWidth || Math.floor(window.innerWidth * 0.9);
         const approxCardWidthWithGap = 320;
         const requiredCount = Math.max(3, Math.ceil(sliderWidth / approxCardWidthWithGap) + 1);
