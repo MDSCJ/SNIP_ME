@@ -35,6 +35,18 @@ public class TimeSlot {
     @Column(name = "locked_at")
     private LocalDateTime lockedAt;
 
+    @Column(name = "customer_id")
+    private Long customerId;
+
+    @Column(name = "service_id")
+    private Long serviceId;
+
+    @Column(name = "customer_name")
+    private String customerName;
+
+    @Column(name = "service_name")
+    private String serviceName;
+
     // ── Getters / Setters ─────────────────────────────────
     public Long getSlotID() { return slotID; }
     public void setSlotID(Long slotID) { this.slotID = slotID; }
@@ -50,5 +62,17 @@ public class TimeSlot {
 
     public LocalDateTime getLockedAt() { return lockedAt; }
     public void setLockedAt(LocalDateTime lockedAt) { this.lockedAt = lockedAt; }
+
+    public Long getCustomerId() { return customerId; }
+    public void setCustomerId(Long customerId) { this.customerId = customerId; }
+
+    public Long getServiceId() { return serviceId; }
+    public void setServiceId(Long serviceId) { this.serviceId = serviceId; }
+
+    public String getCustomerName() { return customerName; }
+    public void setCustomerName(String customerName) { this.customerName = customerName; }
+
+    public String getServiceName() { return serviceName; }
+    public void setServiceName(String serviceName) { this.serviceName = serviceName; }
 
 }

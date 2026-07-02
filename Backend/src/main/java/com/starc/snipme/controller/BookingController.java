@@ -213,34 +213,62 @@ public class BookingController {
     @GetMapping("/customer")
     public ResponseEntity<?> getCustomerBookings(@RequestParam Long customerID) {
         try {
-            List<?> bookings = bookingService.getBookingsForCustomer(customerID);
+            List<com.starc.snipme.model.Booking> bookings = bookingService.getBookingsForCustomer(customerID);
 
-            List<Map<String, Object>> response = bookings.stream().map(booking -> {
-                Object slot = invokeGetter(booking, "getTimeSlot");
-                Object payment = invokeGetter(booking, "getPayment");
-                String paymentStatus = asString(invokeGetter(payment, "getPaymentStatus"));
-                String orderId = asString(invokeGetter(payment, "getOrderId"));
-                Object salon = invokeGetter(booking, "getSalon");
-                Object service = invokeGetter(booking, "getService");
-                Object bookingDate = invokeGetter(booking, "getBookingDate");
-
+            List<Map<String, Object>> response = bookings.stream().map(b -> {
                 Map<String, Object> row = new HashMap<>();
-                row.put("bookingID", invokeGetter(booking, "getBookingID"));
-                row.put("salonName", asString(invokeGetter(salon, "getName")));
-                row.put("service", asString(invokeGetter(service, "getName")));
-                row.put("status", invokeGetter(booking, "getStatus"));
-                row.put("bookingDate", bookingDate != null ? bookingDate.toString() : "");
-                row.put("slotID", invokeGetter(slot, "getSlotID"));
-                Object slotStartTime = invokeGetter(slot, "getStartTime");
-                row.put("slotStartTime", slotStartTime != null ? slotStartTime.toString() : "");
-                row.put("paymentStatus", paymentStatus);
-                row.put("orderId", orderId);
+                row.put("bookingID", b.getBookingID());
+                row.put("status", b.getStatus());
+                row.put("bookingDate", b.getBookingDate() != null ? b.getBookingDate().toString() : "");
+
+                if (b.getTimeSlot() != null) {
+                    row.put("slotID", b.getTimeSlot().getSlotID());
+                    row.put("slotStartTime", b.getTimeSlot().getStartTime() != null ? b.getTimeSlot().getStartTime().toString() : "");
+                } else {
+                    row.put("slotID", null);
+                    row.put("slotStartTime", "");
+                }
+
+                if (b.getSalon() != null) {
+                    row.put("salonName", b.getSalon().getName());
+                    row.put("salonId", b.getSalon().getSalonID());
+                } else {
+                    row.put("salonName", "");
+                    row.put("salonId", null);
+                }
+
+                if (b.getService() != null) {
+                    row.put("service", b.getService().getName());
+                    row.put("serviceId", b.getService().getId());
+                } else {
+                    row.put("service", "");
+                    row.put("serviceId", null);
+                }
+
+                if (b.getCustomer() != null) {
+                    row.put("customerId", b.getCustomer().getId());
+                    row.put("customerName", b.getCustomer().getName() != null ? b.getCustomer().getName() : b.getCustomer().getEmail());
+                } else {
+                    row.put("customerId", null);
+                    row.put("customerName", "");
+                }
+
+                if (b.getPayment() != null) {
+                    row.put("paymentStatus", b.getPayment().getPaymentStatus());
+                    row.put("orderId", b.getPayment().getOrderId());
+                } else {
+                    row.put("paymentStatus", "");
+                    row.put("orderId", "");
+                }
+
                 return row;
             }).collect(Collectors.toList());
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Could not load customer bookings.");
+            // Log and return an empty list so the frontend shows no bookings instead of an error page
+            System.err.println("Error loading customer bookings: " + e.getMessage());
+            return ResponseEntity.ok(java.util.Collections.emptyList());
         }
     }
 

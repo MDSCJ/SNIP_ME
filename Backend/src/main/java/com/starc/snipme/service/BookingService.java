@@ -101,6 +101,20 @@ public class BookingService {
         slot.setLockedAt(LocalDateTime.now());
         timeSlotRepository.save(slot);
 
+        bookingRepository.findByTimeSlot_SlotID(slotID).ifPresent(booking -> {
+            if (booking.getCustomer() != null && booking.getService() != null) {
+                timeSlotRepository.updateSlotBookingMetadata(
+                    slot.getSlotID(),
+                    slot.getStatus(),
+                    slot.getLockedAt(),
+                    booking.getCustomer().getId(),
+                    booking.getService().getId(),
+                    booking.getCustomer().getName(),
+                    booking.getService().getName()
+                );
+            }
+        });
+
         // --- SALON NOTIFICATION TRIGGER ---
         // Dynamically retrieve the salon ID from the slot
         Long salonId = slot.getSalon().getSalonID(); 
@@ -111,12 +125,7 @@ public class BookingService {
             "BOOKING_CONFIRMED", 
             slot.getSlotID()
         );
-
-
-
         return slot;
-
-        
     }
 
     // The Cancellation Logic ---
@@ -139,6 +148,7 @@ public class BookingService {
         slot.setStatus("AVAILABLE");
         slot.setLockedAt(null);
         timeSlotRepository.save(slot);
+        timeSlotRepository.clearSlotBookingMetadata(slotID, "AVAILABLE");
 
         // 4. Mark the linked Booking as CANCELLED (so it shows correctly in customer's history)
         bookingRepository.findByTimeSlot_SlotID(slotID).ifPresent(booking -> {
@@ -170,6 +180,7 @@ public class BookingService {
             }
             slot.setStatus("BOOKED");
             slot.setLockedAt(LocalDateTime.now());
+            slot = timeSlotRepository.save(slot);
         } else {
             // Virtual slot — check for a concurrent booking at the same salon + startTime
             LocalDateTime startTime = LocalDateTime.parse(startTimeStr);
@@ -205,6 +216,16 @@ public class BookingService {
         Payment payment = new Payment(amount, "Success", booking, orderId);
         payment.setTimeSlot(slot);
         paymentRepository.save(payment);
+
+        timeSlotRepository.updateSlotBookingMetadata(
+            slot.getSlotID(),
+            slot.getStatus(),
+            slot.getLockedAt(),
+            customerID,
+            serviceID,
+            customer.getName(),
+            service.getName()
+        );
 
         salonNotificationService.createNotification(
             salon.getSalonID(), 

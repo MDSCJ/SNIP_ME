@@ -15,6 +15,80 @@
     max-width: 580px;
 }
 
+.settings-topbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 24px;
+}
+
+.toggle-block {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255,255,255,0.08);
+    min-width: 220px;
+}
+
+.toggle-title {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.toggle-text {
+    font-size: 0.85rem;
+    color: var(--text-muted, #ccc);
+    opacity: 0.95;
+}
+
+.toggle-switch {
+    position: relative;
+    width: 52px;
+    height: 28px;
+    display: inline-block;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-switch .slider {
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    background: #424242;
+    transition: background 0.25s ease;
+}
+
+.toggle-switch .slider::before {
+    content: '';
+    position: absolute;
+    left: 3px;
+    top: 3px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #fff;
+    transition: transform 0.25s ease;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.25);
+}
+
+.toggle-switch input:checked + .slider {
+    background: var(--accent-yellow);
+}
+
+.toggle-switch input:checked + .slider::before {
+    transform: translateX(24px);
+}
+
 .settings-title {
     font-size: 2rem;
     font-weight: 700;
@@ -26,8 +100,8 @@
 
 /* Card */
 .settings-card {
-    background: #1e1e1e;
-    border: 1px solid #2d2d2d;
+    background: var(--card-bg, #1e1e1e);
+    border: 1px solid var(--panel-border, #2d2d2d);
     border-radius: 14px;
     padding: 28px 30px;
     margin-bottom: 24px;
@@ -36,14 +110,90 @@
 .settings-card h2 {
     font-size: 1.15rem;
     font-weight: 700;
-    color: #fff;
+    color: var(--text-main);
     margin: 0 0 6px;
 }
 
 .settings-desc {
     font-size: 0.85rem;
-    color: #7b8290;
+    color: var(--text-muted, #7b8290);
     margin: 0 0 22px;
+}
+
+.field-group label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-muted, #ccc);
+    margin-bottom: 6px;
+}
+
+.field-group input {
+    width: 100%;
+    padding: 13px 16px;
+    background: var(--input-bg, #121212);
+    border: 1px solid var(--panel-border, #3a3a3a);
+    border-radius: 9px;
+    color: var(--text-main);
+    font-size: 0.95rem;
+    box-sizing: border-box;
+    outline: none;
+    transition: border-color 0.2s;
+    margin: 0;
+}
+
+body.light-theme .settings-section {
+    background: #f2ede4;
+}
+
+body.light-theme .settings-card {
+    background: rgba(255,255,255,0.96);
+    border-color: #d8d2c7;
+}
+
+body.light-theme .settings-title {
+    color: #b27e22;
+    border-bottom-color: #d8d2c7;
+}
+
+body.light-theme .settings-desc,
+body.light-theme .field-group label,
+body.light-theme .booking-info p {
+    color: #6d5f50;
+}
+
+body.light-theme .field-group input {
+    background: #fbf7f0;
+    border-color: #d8d2c7;
+    color: #1f1f1f;
+}
+
+body.light-theme .tab-btn {
+    color: #5d513f;
+}
+
+body.light-theme .tab-btn.active {
+    color: #b27e22;
+    border-bottom-color: #b27e22;
+}
+
+body.light-theme .booking-card {
+    background: #ffffff;
+    border: 1px solid #e6ddd1;
+    border-left-color: #b27e22;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+}
+
+body.light-theme .booking-card.status-canceled {
+    border-left-color: #c0392b;
+}
+
+body.light-theme .booking-info h3 {
+    color: #2c2c2c;
+}
+
+body.light-theme .booking-info p {
+    color: #6e6152;
 }
 
 /* Fields */

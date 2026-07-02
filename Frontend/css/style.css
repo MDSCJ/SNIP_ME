@@ -6,6 +6,16 @@
     --nav-bg: #111;
 }
 
+body.light-theme {
+    --bg-dark: #f7f3eb;
+    --accent-yellow: #b27e22;
+    --text-main: #1f1f1f;
+    --nav-bg: #ffffff;
+    --card-bg: rgba(255,255,255,0.96);
+    --panel-border: #d8d2c7;
+    --text-muted: #6d5f50;
+}
+
 body {
     margin: 0;
     padding: 0;

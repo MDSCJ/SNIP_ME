@@ -8,6 +8,7 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -42,6 +43,23 @@ public interface TimeSlotRepository extends JpaRepository<TimeSlot, Long> {
                     @Param("salonId") Long salonId,
                     @Param("fromTime") LocalDateTime fromTime,
                     @Param("toTime") LocalDateTime toTime);
+
+    @Modifying
+    @Query(value = "UPDATE time_slots SET status = :status, locked_at = :lockedAt, customer_id = :customerId, service_id = :serviceId, customer_name = :customerName, service_name = :serviceName WHERE slotid = :slotID", nativeQuery = true)
+    int updateSlotBookingMetadata(
+            @Param("slotID") Long slotID,
+            @Param("status") String status,
+            @Param("lockedAt") LocalDateTime lockedAt,
+            @Param("customerId") Long customerId,
+            @Param("serviceId") Long serviceId,
+            @Param("customerName") String customerName,
+            @Param("serviceName") String serviceName);
+
+    @Modifying
+    @Query(value = "UPDATE time_slots SET status = :status, locked_at = NULL, customer_id = NULL, service_id = NULL, customer_name = NULL, service_name = NULL WHERE slotid = :slotID", nativeQuery = true)
+    int clearSlotBookingMetadata(
+            @Param("slotID") Long slotID,
+            @Param("status") String status);
 
     // 4. Concurrency guard for virtual slots: PESSIMISTIC_WRITE lock to detect
     //    a concurrent booking at the same salon + startTime (BOOKED or LOCKED)

@@ -1,5 +1,23 @@
 // js/main.js
 
+const GLASS_MODE_KEY = 'snipmeGlassMode';
+
+function getSavedGlassMode() {
+    return localStorage.getItem(GLASS_MODE_KEY) === 'true';
+}
+
+function setGlassMode(enabled) {
+    document.body.classList.toggle('glass-theme', enabled);
+    localStorage.setItem(GLASS_MODE_KEY, enabled ? 'true' : 'false');
+}
+
+function initGlobalTheme() {
+    setGlassMode(getSavedGlassMode());
+    window.setGlassMode = setGlassMode;
+}
+
+initGlobalTheme();
+
 document.addEventListener('DOMContentLoaded', () => {
     
     // --- 1. Active Tab Highlighter ---

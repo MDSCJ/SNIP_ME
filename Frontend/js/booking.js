@@ -340,20 +340,39 @@ function loadAvailableSlots() {
         const occupied = {}; // times that are NOT AVAILABLE
         const availableMap = {}; // times that are AVAILABLE with slotID
 
+        function normalizeSlotKey(rawKey) {
+            if (!rawKey || typeof rawKey !== 'string') return '';
+            // Remove fractional seconds and timezone suffixes.
+            let key = rawKey.replace(/\.\d+/, '');
+            key = key.replace(/Z$/, '');
+            key = key.replace(/([+-]\d{2}:?\d{2})$/, '');
+            if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(key)) {
+                key += ':00';
+            }
+            return key;
+        }
+
         all.forEach(function (s) {
             try {
-                // s.startTime expected like "2026-04-28T09:00:00" (may have fractional seconds)
                 var rawKey = s.startTime;
                 if (!rawKey) return;
-                // Normalise to "YYYY-MM-DDTHH:mm:ss" (drop fractional seconds)
-                var key = rawKey.length > 19 ? rawKey.substring(0, 19) : rawKey;
-                // ensure salon filter
-                if (!s.salon || !s.salon.salonID) return;
-                if (String(s.salon.salonID) !== String(bookingState.salonId)) return;
+                var key = normalizeSlotKey(rawKey);
+                if (!key) return;
+
+                var salonObj = s.salon || {};
+                var salonId = salonObj.salonID || salonObj.salonId || salonObj.id;
+                if (!salonId) return;
+                if (String(salonId) !== String(bookingState.salonId)) return;
+
                 var datePart = key.split('T')[0];
                 if (datePart !== bookingState.selectedDate) return;
-                if (s.status && s.status !== 'AVAILABLE') occupied[key] = s;
-                if (s.status === 'AVAILABLE') availableMap[key] = s;
+
+                var status = String(s.status || '').toUpperCase();
+                if (status !== 'AVAILABLE') {
+                    occupied[key] = s;
+                } else {
+                    availableMap[key] = s;
+                }
             } catch (e) { /* ignore malformed items */ }
         });
 
@@ -405,17 +424,17 @@ function filterAndDisplayGeneratedSlots(availableMap, occupiedMap, selectedDate)
         const isoLocal = selectedDate + 'T' + hh + ':' + mm + ':00';
         const label = hh + ':' + mm + ' - ' + padTime((t.getHours()+1)%24) + ':' + mm;
 
-        // If there is an AVAILABLE slot row in DB for this time, prefer that slotID
-        if (availableMap[isoLocal]) {
-            const s = availableMap[isoLocal];
-            grid.appendChild(createGeneratedSlotElement({ slotID: s.slotID, label: label, startTime: isoLocal, state: 'available' }));
+        // If DB shows occupied/locked/booked → show as taken first
+        if (occupiedMap[isoLocal]) {
+            grid.appendChild(createGeneratedSlotElement({ slotID: occupiedMap[isoLocal].slotID, label: label, startTime: isoLocal, state: 'taken' }));
             any = true;
             continue;
         }
 
-        // If DB shows occupied/locked/booked → show as taken
-        if (occupiedMap[isoLocal]) {
-            grid.appendChild(createGeneratedSlotElement({ slotID: occupiedMap[isoLocal].slotID, label: label, startTime: isoLocal, state: 'taken' }));
+        // If there is an AVAILABLE slot row in DB for this time, prefer that slotID
+        if (availableMap[isoLocal]) {
+            const s = availableMap[isoLocal];
+            grid.appendChild(createGeneratedSlotElement({ slotID: s.slotID, label: label, startTime: isoLocal, state: 'available' }));
             any = true;
             continue;
         }

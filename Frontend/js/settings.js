@@ -120,7 +120,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // ========= 4. Tab Navigation =========
+    // ========= 3. Tab Navigation =========
     var tabBtns = document.querySelectorAll('.tab-btn');
     tabBtns.forEach(function(btn) {
         btn.addEventListener('click', function() {
@@ -196,6 +196,8 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
+        bookingsContainer.innerHTML = '<p class="loading-text">Refreshing your bookings...</p>';
+
         fetch(API_BASE_URL + '/bookings/customer?customerID=' + encodeURIComponent(customerId), {
             method: 'GET'
         })
@@ -230,8 +232,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
             function buildCard(booking, index) {
                 var formattedDate = formatBookingDate(booking.slotStartTime || booking.bookingDate);
-                var status        = String(booking.status || '').toUpperCase();
-                var statusClass   = (status === 'CANCELED' || status === 'CANCELLED') ? 'status-canceled' : 'status-confirmed';
+                var status        = String(booking.status || '');
+                var statusNormalized = status.toUpperCase();
+                var statusClass   = (statusNormalized === 'CANCELED' || statusNormalized === 'CANCELLED') ? 'status-canceled' : 'status-confirmed';
                 var paymentText   = booking.paymentStatus ? ('Online Payment (' + booking.paymentStatus + ')') : 'Online Payment';
                 return `
                     <div class="booking-card ${statusClass}">
@@ -244,8 +247,8 @@ document.addEventListener("DOMContentLoaded", function () {
                             <p><strong>Status:</strong> <span class="status-badge">${status || '-'}</span></p>
                         </div>
                         <div class="booking-actions">
-                            ${status === 'CONFIRMED' ? `
-                                <button onclick="cancelBooking(${index})" class="btn-cancel">Cancel Booking</button>
+                            ${statusNormalized === 'CONFIRMED' || statusNormalized === 'BOOKED' ? `
+                                <button type="button" onclick="cancelBooking(${index})" class="btn-cancel">Cancel Booking</button>
                             ` : `
                                 <p class="booking-canceled">This booking has been ${status === 'CANCELLED' || status === 'CANCELED' ? 'canceled' : status.toLowerCase()}</p>
                             `}
@@ -337,5 +340,10 @@ document.addEventListener("DOMContentLoaded", function () {
     // Load bookings on page if bookings tab is active
     if (window.location.search.includes('tab=bookings')) {
         document.querySelector('[data-tab="bookings"]').click();
+    }
+
+    // If the bookings tab is already active, refresh the bookings list immediately.
+    if (document.querySelector('.tab-btn.active')?.getAttribute('data-tab') === 'bookings') {
+        loadBookings();
     }
 });
