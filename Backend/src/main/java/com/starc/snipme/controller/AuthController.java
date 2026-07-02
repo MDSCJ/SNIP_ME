@@ -40,13 +40,14 @@ public class AuthController {
     private final EmailService emailService;
     private final LoginSessionTracker loginSessionTracker;
 
-    public AuthController(UserRepository userRepository, SalonRepository salonRepository, PasswordEncoder passwordEncoder,
-                          JwtUtils jwtUtils, EmailService emailService, LoginSessionTracker loginSessionTracker) {
-        this.userRepository  = userRepository;
+    public AuthController(UserRepository userRepository, SalonRepository salonRepository,
+            PasswordEncoder passwordEncoder,
+            JwtUtils jwtUtils, EmailService emailService, LoginSessionTracker loginSessionTracker) {
+        this.userRepository = userRepository;
         this.salonRepository = salonRepository;
         this.passwordEncoder = passwordEncoder;
-        this.jwtUtils        = jwtUtils;
-        this.emailService    = emailService;
+        this.jwtUtils = jwtUtils;
+        this.emailService = emailService;
         this.loginSessionTracker = loginSessionTracker;
     }
 
@@ -77,7 +78,8 @@ public class AuthController {
         if (adminEmail != null && adminEmail.equalsIgnoreCase(normalizedEmail)) {
             roleStr = "ADMIN";
         } else if ("ADMIN".equals(roleStr)) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Admin role is reserved for the system admin email."));
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Admin role is reserved for the system admin email."));
         }
 
         if (("CUSTOMER".equals(roleStr) || "SALON_OWNER".equals(roleStr))
@@ -86,11 +88,13 @@ public class AuthController {
         }
 
         if ("SALON_OWNER".equals(roleStr) && normalizedSalonName.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Salon name is required for salon owner accounts."));
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Salon name is required for salon owner accounts."));
         }
 
         if ("SALON_OWNER".equals(roleStr) && normalizedSalonDetails.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Salon details are required for salon owner accounts."));
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Salon details are required for salon owner accounts."));
         }
 
         User user = new User();
@@ -120,8 +124,8 @@ public class AuthController {
         String normalizedEmail = authRequest.getEmail() == null ? "" : authRequest.getEmail().trim().toLowerCase();
 
         if (adminEmail != null && adminEmail.equalsIgnoreCase(normalizedEmail)
-            && adminPassword != null && !adminPassword.isBlank()
-            && adminPassword.equals(authRequest.getPassword())) {
+                && adminPassword != null && !adminPassword.isBlank()
+                && adminPassword.equals(authRequest.getPassword())) {
             String token = jwtUtils.generateToken(normalizedEmail);
             loginSessionTracker.markLogin(normalizedEmail, "ADMIN");
             return ResponseEntity.ok(new AuthResponse(token, "Admin", "", normalizedEmail, "ADMIN", null, null));
@@ -148,7 +152,8 @@ public class AuthController {
             }
 
             loginSessionTracker.markLogin(user.getEmail(), safeUserType);
-            return ResponseEntity.ok(new AuthResponse(token, safeName, safePhone, user.getEmail(), safeUserType, user.getId(), safeSalonName));
+            return ResponseEntity.ok(new AuthResponse(token, safeName, safePhone, user.getEmail(), safeUserType,
+                    user.getId(), safeSalonName));
         }
 
         return ResponseEntity.status(401).body(Map.of("error", "Invalid email or password"));
@@ -228,8 +233,8 @@ public class AuthController {
         response.put("startTime", salon.getOpeningTime() == null ? "" : salon.getOpeningTime().toString());
         response.put("endTime", salon.getClosingTime() == null ? "" : salon.getClosingTime().toString());
         response.put("location", salon.getLatitude() != null && salon.getLongitude() != null
-            ? salon.getLatitude() + ", " + salon.getLongitude()
-            : "");
+                ? salon.getLatitude() + ", " + salon.getLongitude()
+                : "");
         response.put("contact", salon.getPhoneNumber() == null ? "" : salon.getPhoneNumber());
         response.put("photoLowQuality", salon.getPhotoLowQuality() == null ? "" : salon.getPhotoLowQuality());
         response.put("holidays", salon.getHolidays() == null ? "" : salon.getHolidays());
@@ -318,8 +323,8 @@ public class AuthController {
         response.put("startTime", salon.getOpeningTime() == null ? "" : salon.getOpeningTime().toString());
         response.put("endTime", salon.getClosingTime() == null ? "" : salon.getClosingTime().toString());
         response.put("location", salon.getLatitude() != null && salon.getLongitude() != null
-            ? salon.getLatitude() + ", " + salon.getLongitude()
-            : "");
+                ? salon.getLatitude() + ", " + salon.getLongitude()
+                : "");
         response.put("contact", salon.getPhoneNumber() == null ? "" : salon.getPhoneNumber());
         response.put("photoLowQuality", salon.getPhotoLowQuality() == null ? "" : salon.getPhotoLowQuality());
         response.put("holidays", salon.getHolidays() == null ? "" : salon.getHolidays());
@@ -332,7 +337,7 @@ public class AuthController {
     public ResponseEntity<?> updateOwnerHolidays(@RequestBody Map<String, String> body) {
         String email = body.get("email");
         logger.info("updateOwnerHolidays called for email: {}", email);
-        
+
         if (email == null || email.isBlank()) {
             logger.warn("updateOwnerHolidays: missing email");
             return ResponseEntity.badRequest().body(Map.of("error", "Email is required."));
@@ -354,22 +359,21 @@ public class AuthController {
 
         Salon salon = resolveSalonForUser(user).orElseGet(Salon::new);
         String holidays = body.getOrDefault("holidays", "").trim();
-        
+
         logger.info("updateOwnerHolidays: received holidays '{}' for user {}", holidays, normalizedEmail);
         logger.info("updateOwnerHolidays: salon ID before save: {}", salon.getSalonID());
 
         salon.setOwnerUserId(user.getId());
         salon.setEmail(user.getEmail());
         salon.setHolidays(holidays);
-        
+
         Salon savedSalon = salonRepository.save(salon);
-        logger.info("updateOwnerHolidays: saved successfully. Salon ID: {}, stored holidays: '{}'", 
-                   savedSalon.getSalonID(), savedSalon.getHolidays());
+        logger.info("updateOwnerHolidays: saved successfully. Salon ID: {}, stored holidays: '{}'",
+                savedSalon.getSalonID(), savedSalon.getHolidays());
 
         return ResponseEntity.ok(Map.of(
                 "message", "Holidays updated successfully.",
-                "holidays", savedSalon.getHolidays() == null ? "" : savedSalon.getHolidays()
-        ));
+                "holidays", savedSalon.getHolidays() == null ? "" : savedSalon.getHolidays()));
     }
 
     @PostMapping("/forgot-password")
@@ -386,7 +390,8 @@ public class AuthController {
         // Always respond the same way to prevent user-enumeration
         if (userOpt.isEmpty()) {
             logger.info("Forgot-password requested for non-existing account: {}", normalizedEmail);
-            return ResponseEntity.ok(Map.of("message", "If that email is registered, a temporary password has been sent."));
+            return ResponseEntity
+                    .ok(Map.of("message", "If that email is registered, a temporary password has been sent."));
         }
 
         String tempPassword = generateTempPassword();

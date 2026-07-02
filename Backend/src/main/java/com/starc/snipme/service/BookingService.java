@@ -55,36 +55,39 @@ public class BookingService {
         return bookingRepository.findByTimeSlot_SlotID(slotID).orElse(null);
     }
 
-    // This method perfectly matches the "1.1 InitiateBooking" call in your sequence diagram
+    // This method perfectly matches the "1.1 InitiateBooking" call in your sequence
+    // diagram
     @Transactional
     public TimeSlot initiateBooking(Long slotID, Long customerID) {
-        
+
         // 1. TryLockSlot: Triggers the PESSIMISTIC_WRITE lock we built earlier
         Optional<TimeSlot> optionalSlot = timeSlotRepository.lockSlotForBooking(slotID);
 
         if (optionalSlot.isPresent()) {
             TimeSlot slot = optionalSlot.get();
-            
+
             // 2. Return Lock Success (State -> Locked/Reserved)
-            slot.setStatus("LOCKED"); 
+            slot.setStatus("LOCKED");
             slot.setLockedAt(LocalDateTime.now()); // Starts the 5-minute timeout timer
-            
-            // Note: In a full implementation, you would also create and save a new Booking object here, 
+
+            // Note: In a full implementation, you would also create and save a new Booking
+            // object here,
             // linking it to the customerID before requesting payment.
-            
-            return timeSlotRepository.save(slot); 
+
+            return timeSlotRepository.save(slot);
         } else {
             // 3. Return Lock Failed (Slot Unavailable)
-            // Throws an error if another user A already locked it while user B was looking at the screen
-            throw new RuntimeException("Slot already taken. Please reselect."); 
+            // Throws an error if another user A already locked it while user B was looking
+            // at the screen
+            throw new RuntimeException("Slot already taken. Please reselect.");
         }
     }
 
     @Transactional
     public TimeSlot confirmBooking(Long slotID, Long customerID) {
-        //null value checking
+        // null value checking
         if (slotID == null || customerID == null) {
-        throw new IllegalArgumentException("Slot ID and Customer ID must not be null.");
+            throw new IllegalArgumentException("Slot ID and Customer ID must not be null.");
         }
         // 1. Find the specific TimeSlot in the database
         TimeSlot slot = timeSlotRepository.findById(Objects.requireNonNull(slotID, "slotID must not be null"))
@@ -104,36 +107,34 @@ public class BookingService {
         bookingRepository.findByTimeSlot_SlotID(slotID).ifPresent(booking -> {
             if (booking.getCustomer() != null && booking.getService() != null) {
                 timeSlotRepository.updateSlotBookingMetadata(
-                    slot.getSlotID(),
-                    slot.getStatus(),
-                    slot.getLockedAt(),
-                    booking.getCustomer().getId(),
-                    booking.getService().getId(),
-                    booking.getCustomer().getName(),
-                    booking.getService().getName()
-                );
+                        slot.getSlotID(),
+                        slot.getStatus(),
+                        slot.getLockedAt(),
+                        booking.getCustomer().getId(),
+                        booking.getService().getId(),
+                        booking.getCustomer().getName(),
+                        booking.getService().getName());
             }
         });
 
         // --- SALON NOTIFICATION TRIGGER ---
         // Dynamically retrieve the salon ID from the slot
-        Long salonId = slot.getSalon().getSalonID(); 
+        Long salonId = slot.getSalon().getSalonID();
 
         salonNotificationService.createNotification(
-            salonId, 
-            "New booking confirmed for " + slot.getStartTime(), 
-            "BOOKING_CONFIRMED", 
-            slot.getSlotID()
-        );
+                salonId,
+                "New booking confirmed for " + slot.getStartTime(),
+                "BOOKING_CONFIRMED",
+                slot.getSlotID());
         return slot;
     }
 
     // The Cancellation Logic ---
     @Transactional
     public TimeSlot cancelBooking(Long slotID) {
-        // null value check 
+        // null value check
         if (slotID == null) {
-        throw new IllegalArgumentException("Slot ID must not be null.");
+            throw new IllegalArgumentException("Slot ID must not be null.");
         }
         // 1. Find the slot in the database
         TimeSlot slot = timeSlotRepository.findById(Objects.requireNonNull(slotID, "slotID must not be null"))
@@ -150,7 +151,8 @@ public class BookingService {
         timeSlotRepository.save(slot);
         timeSlotRepository.clearSlotBookingMetadata(slotID, "AVAILABLE");
 
-        // 4. Mark the linked Booking as CANCELLED (so it shows correctly in customer's history)
+        // 4. Mark the linked Booking as CANCELLED (so it shows correctly in customer's
+        // history)
         bookingRepository.findByTimeSlot_SlotID(slotID).ifPresent(booking -> {
             booking.setStatus("CANCELLED");
             bookingRepository.save(booking);
@@ -159,22 +161,21 @@ public class BookingService {
         Long salonId = slot.getSalon().getSalonID();
 
         salonNotificationService.createNotification(
-            salonId, 
-            "Booking cancelled for " + slot.getStartTime(), 
-            "BOOKING_CANCELLED", 
-            slot.getSlotID()
-        );
+                salonId,
+                "Booking cancelled for " + slot.getStartTime(),
+                "BOOKING_CANCELLED",
+                slot.getSlotID());
         return slot;
     }
 
-
     @Transactional
-    public Booking completeBooking(Long slotID, Long customerID, Long salonID, Long serviceID, String startTimeStr, String orderId, Double amount) {
+    public Booking completeBooking(Long slotID, Long customerID, Long salonID, Long serviceID, String startTimeStr,
+            String orderId, Double amount) {
         TimeSlot slot;
         if (slotID != null) {
             // Existing DB slot — use pessimistic lock to guard concurrent confirmations
             slot = timeSlotRepository.findById(slotID)
-                .orElseThrow(() -> new RuntimeException("Time slot not found."));
+                    .orElseThrow(() -> new RuntimeException("Time slot not found."));
             if ("BOOKED".equals(slot.getStatus())) {
                 throw new RuntimeException("SLOT_ALREADY_BOOKED: This slot was just confirmed by another customer.");
             }
@@ -185,8 +186,8 @@ public class BookingService {
             // Virtual slot — check for a concurrent booking at the same salon + startTime
             LocalDateTime startTime = LocalDateTime.parse(startTimeStr);
             boolean alreadyTaken = timeSlotRepository
-                .findConflictingSlot(salonID, startTime)
-                .isPresent();
+                    .findConflictingSlot(salonID, startTime)
+                    .isPresent();
             if (alreadyTaken) {
                 throw new RuntimeException("SLOT_ALREADY_BOOKED: Another customer just booked this time slot.");
             }
@@ -199,9 +200,11 @@ public class BookingService {
             slot = timeSlotRepository.save(slot);
         }
 
-        User customer = userRepository.findById(customerID).orElseThrow(() -> new RuntimeException("Customer not found"));
+        User customer = userRepository.findById(customerID)
+                .orElseThrow(() -> new RuntimeException("Customer not found"));
         Salon salon = salonRepository.findById(salonID).orElseThrow(() -> new RuntimeException("Salon not found"));
-        ServiceItem service = serviceItemRepository.findById(serviceID).orElseThrow(() -> new RuntimeException("Service not found"));
+        ServiceItem service = serviceItemRepository.findById(serviceID)
+                .orElseThrow(() -> new RuntimeException("Service not found"));
 
         Booking booking = new Booking();
         booking.setCustomer(customer);
@@ -210,7 +213,7 @@ public class BookingService {
         booking.setTimeSlot(slot);
         booking.setStatus("CONFIRMED");
         booking.setBookingDate(LocalDateTime.now());
-        
+
         booking = bookingRepository.save(booking);
 
         Payment payment = new Payment(amount, "Success", booking, orderId);
@@ -218,21 +221,19 @@ public class BookingService {
         paymentRepository.save(payment);
 
         timeSlotRepository.updateSlotBookingMetadata(
-            slot.getSlotID(),
-            slot.getStatus(),
-            slot.getLockedAt(),
-            customerID,
-            serviceID,
-            customer.getName(),
-            service.getName()
-        );
+                slot.getSlotID(),
+                slot.getStatus(),
+                slot.getLockedAt(),
+                customerID,
+                serviceID,
+                customer.getName(),
+                service.getName());
 
         salonNotificationService.createNotification(
-            salon.getSalonID(), 
-            "New booking confirmed for " + slot.getStartTime(), 
-            "BOOKING_CONFIRMED", 
-            slot.getSlotID()
-        );
+                salon.getSalonID(),
+                "New booking confirmed for " + slot.getStartTime(),
+                "BOOKING_CONFIRMED",
+                slot.getSlotID());
 
         return booking;
     }
@@ -250,12 +251,12 @@ public class BookingService {
         // Notify salon owner about manual appointment
         try {
             salonNotificationService.createNotification(
-                slot.getSalon().getSalonID(),
-                "Owner created appointment for " + slot.getStartTime(),
-                "OWNER_APPOINTMENT",
-                slot.getSlotID()
-            );
-        } catch (Exception ignored) {}
+                    slot.getSalon().getSalonID(),
+                    "Owner created appointment for " + slot.getStartTime(),
+                    "OWNER_APPOINTMENT",
+                    slot.getSlotID());
+        } catch (Exception ignored) {
+        }
 
         return slot;
     }
@@ -267,10 +268,10 @@ public class BookingService {
     @Transactional(readOnly = true)
     public Set<String> getUnavailableStartTimes(Long salonID, LocalDateTime fromTime, LocalDateTime toTime) {
         return timeSlotRepository
-            .findUnavailableSlotsBySalonAndDateRange(salonID, fromTime, toTime)
-            .stream()
-            .map(t -> t.getStartTime() != null ? t.getStartTime().toString() : null)
-            .filter(Objects::nonNull)
-            .collect(Collectors.toSet());
+                .findUnavailableSlotsBySalonAndDateRange(salonID, fromTime, toTime)
+                .stream()
+                .map(t -> t.getStartTime() != null ? t.getStartTime().toString() : null)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
     }
 }

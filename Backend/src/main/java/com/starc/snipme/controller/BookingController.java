@@ -52,7 +52,7 @@ public class BookingController {
 
     @GetMapping("/available-by-salon")
     public ResponseEntity<?> getAvailableSlotsBySalonAndDate(@RequestParam Long salonId,
-                                                              @RequestParam String date) {
+            @RequestParam String date) {
         try {
             LocalDate selectedDate = LocalDate.parse(date);
             LocalDateTime fromTime = selectedDate.atStartOfDay();
@@ -71,7 +71,8 @@ public class BookingController {
     public ResponseEntity<?> initiateBooking(@RequestParam Long slotID, @RequestParam Long customerID) {
         try {
             TimeSlot lockedSlot = bookingService.initiateBooking(slotID, customerID);
-            return ResponseEntity.ok("Slot held successfully. Proceed to payment for Slot ID: " + lockedSlot.getSlotID());
+            return ResponseEntity
+                    .ok("Slot held successfully. Proceed to payment for Slot ID: " + lockedSlot.getSlotID());
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
         }
@@ -84,10 +85,12 @@ public class BookingController {
         try {
             // This calls the method YOU wrote earlier to permanently save the appointment!
             TimeSlot confirmedSlot = bookingService.confirmBooking(slotID, customerID);
-            
-            // In a real app, Developer 3's code would also save the Payment object to the database right here.
-            
-            return ResponseEntity.ok("Payment Successful! Appointment Confirmed. Slot ID: " + confirmedSlot.getSlotID());
+
+            // In a real app, Developer 3's code would also save the Payment object to the
+            // database right here.
+
+            return ResponseEntity
+                    .ok("Payment Successful! Appointment Confirmed. Slot ID: " + confirmedSlot.getSlotID());
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
@@ -103,22 +106,26 @@ public class BookingController {
             @RequestParam String orderId,
             @RequestParam Double amount) {
         try {
-            Object booking = bookingService.completeBooking(slotID, customerID, salonID, serviceID, startTime, orderId, amount);
+            Object booking = bookingService.completeBooking(slotID, customerID, salonID, serviceID, startTime, orderId,
+                    amount);
             Object bookingId = invokeGetter(booking, "getBookingID");
-            return ResponseEntity.ok("Booking completed successfully with Booking ID: " + (bookingId != null ? bookingId : "N/A"));
+            return ResponseEntity
+                    .ok("Booking completed successfully with Booking ID: " + (bookingId != null ? bookingId : "N/A"));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
-    //The Cancellation Endpoint ---
+
+    // The Cancellation Endpoint ---
     @PostMapping("/cancel")
     public ResponseEntity<?> cancelBooking(@RequestParam Long slotID) {
         try {
             // Triggers the service logic mapped to your Post-Booking Lifecycle diagram
             bookingService.cancelBooking(slotID);
-            
-            return ResponseEntity.ok("Appointment canceled successfully. The time slot is now available for other customers.");
-            
+
+            return ResponseEntity
+                    .ok("Appointment canceled successfully. The time slot is now available for other customers.");
+
         } catch (RuntimeException e) {
             // Returns a 400 Bad Request if the booking doesn't exist or is already canceled
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
@@ -130,11 +137,11 @@ public class BookingController {
     // Returns the list of ISO startTime strings that are BOOKED or LOCKED.
     @GetMapping("/taken-slots")
     public ResponseEntity<?> getTakenSlots(@RequestParam Long salonId,
-                                           @RequestParam String date) {
+            @RequestParam String date) {
         try {
             LocalDate selectedDate = LocalDate.parse(date);
             LocalDateTime fromTime = selectedDate.atStartOfDay();
-            LocalDateTime toTime   = selectedDate.plusDays(1).atStartOfDay();
+            LocalDateTime toTime = selectedDate.plusDays(1).atStartOfDay();
             Set<String> takenTimes = bookingService.getUnavailableStartTimes(salonId, fromTime, toTime);
             return ResponseEntity.ok(takenTimes);
         } catch (Exception e) {
@@ -149,43 +156,47 @@ public class BookingController {
             List<TimeSlot> allSlots = timeSlotRepository.findAll();
 
             java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter.ofPattern("hh:mm a");
-            List<Map<String,Object>> rows = allSlots.stream().map(slot -> {
-                Map<String,Object> row = new HashMap<>();
+            List<Map<String, Object>> rows = allSlots.stream().map(slot -> {
+                Map<String, Object> row = new HashMap<>();
                 row.put("slotID", slot.getSlotID());
                 row.put("startTime", slot.getStartTime() != null ? slot.getStartTime().toString() : null);
                 row.put("startTimeLabel", slot.getStartTime() != null ? slot.getStartTime().format(fmt) : null);
                 row.put("status", slot.getStatus());
                 row.put("lockedAt", slot.getLockedAt() != null ? slot.getLockedAt().toString() : null);
-                row.put("salon", slot.getSalon() != null ? Map.of("salonID", slot.getSalon().getSalonID(), "name", slot.getSalon().getName()) : null);
+                row.put("salon",
+                        slot.getSalon() != null
+                                ? Map.of("salonID", slot.getSalon().getSalonID(), "name", slot.getSalon().getName())
+                                : null);
 
                 // Read customer / service from the Booking entity (source of truth)
                 com.starc.snipme.model.Booking booking = null;
                 try {
                     booking = bookingService.getBookingsForSlot(slot.getSlotID());
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
 
                 String customerName = null;
-                Long   customerId   = null;
-                String serviceName  = null;
-                Long   serviceId    = null;
+                Long customerId = null;
+                String serviceName = null;
+                Long serviceId = null;
 
                 if (booking != null) {
                     if (booking.getCustomer() != null) {
-                        customerId   = booking.getCustomer().getId();
+                        customerId = booking.getCustomer().getId();
                         customerName = booking.getCustomer().getName() != null
-                                        ? booking.getCustomer().getName()
-                                        : booking.getCustomer().getEmail();
+                                ? booking.getCustomer().getName()
+                                : booking.getCustomer().getEmail();
                     }
                     if (booking.getService() != null) {
-                        serviceId   = booking.getService().getId();
+                        serviceId = booking.getService().getId();
                         serviceName = booking.getService().getName();
                     }
                 }
 
                 row.put("customerName", customerName);
-                row.put("customerId",   customerId);
-                row.put("serviceName",  serviceName);
-                row.put("serviceId",    serviceId);
+                row.put("customerId", customerId);
+                row.put("serviceName", serviceName);
+                row.put("serviceId", serviceId);
 
                 return row;
             }).collect(Collectors.toList());
@@ -201,7 +212,8 @@ public class BookingController {
         try {
             Long salonId = payload.get("salonID") == null ? null : Long.parseLong(payload.get("salonID").toString());
             String customerName = payload.get("customerName") == null ? null : payload.get("customerName").toString();
-            Long serviceId = payload.get("serviceID") == null ? null : Long.parseLong(payload.get("serviceID").toString());
+            Long serviceId = payload.get("serviceID") == null ? null
+                    : Long.parseLong(payload.get("serviceID").toString());
             String startTime = payload.get("startTime") == null ? null : payload.get("startTime").toString();
 
             if (salonId == null || startTime == null) {
@@ -217,7 +229,7 @@ public class BookingController {
 
     @GetMapping("/customer")
     public ResponseEntity<?> getCustomerBookings(@RequestParam(required = false) Long customerID,
-                                                 @RequestParam(required = false) String email) {
+            @RequestParam(required = false) String email) {
         try {
             Long resolvedCustomerId = customerID;
             if (resolvedCustomerId == null && email != null && !email.isBlank()) {
@@ -240,7 +252,8 @@ public class BookingController {
 
                 if (b.getTimeSlot() != null) {
                     row.put("slotID", b.getTimeSlot().getSlotID());
-                    row.put("slotStartTime", b.getTimeSlot().getStartTime() != null ? b.getTimeSlot().getStartTime().toString() : "");
+                    row.put("slotStartTime",
+                            b.getTimeSlot().getStartTime() != null ? b.getTimeSlot().getStartTime().toString() : "");
                 } else {
                     row.put("slotID", null);
                     row.put("slotStartTime", "");
@@ -264,7 +277,8 @@ public class BookingController {
 
                 if (b.getCustomer() != null) {
                     row.put("customerId", b.getCustomer().getId());
-                    row.put("customerName", b.getCustomer().getName() != null ? b.getCustomer().getName() : b.getCustomer().getEmail());
+                    row.put("customerName",
+                            b.getCustomer().getName() != null ? b.getCustomer().getName() : b.getCustomer().getEmail());
                 } else {
                     row.put("customerId", null);
                     row.put("customerName", "");
@@ -283,7 +297,8 @@ public class BookingController {
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            // Log and return an empty list so the frontend shows no bookings instead of an error page
+            // Log and return an empty list so the frontend shows no bookings instead of an
+            // error page
             System.err.println("Error loading customer bookings: " + e.getMessage());
             return ResponseEntity.ok(java.util.Collections.emptyList());
         }
@@ -303,6 +318,5 @@ public class BookingController {
     private String asString(Object value) {
         return value == null ? "" : value.toString();
     }
-
 
 }

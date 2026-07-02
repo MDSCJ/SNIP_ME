@@ -29,7 +29,6 @@ import com.starc.snipme.repository.ServicePriceRepository;
 @RequestMapping("/api/public/salons")
 public class PublicSalonController {
 
-    
     private final SalonRepository salonRepository;
 
     // ── NEW: two repos for booking page ──────────────────
@@ -44,7 +43,6 @@ public class PublicSalonController {
         this.salonRepository = salonRepository;
     }
 
-    
     @GetMapping("/trending")
     public ResponseEntity<?> getTrendingSalons() {
         try {
@@ -55,29 +53,28 @@ public class PublicSalonController {
 
             for (Salon salon : trendingSalons) {
                 Map<String, Object> salonMap = Map.ofEntries(
-                    Map.entry("id", salon.getSalonID()),
-                    Map.entry("name", salon.getName()),
-                    Map.entry("description", salon.getDetails() != null ? salon.getDetails() : ""),
-                    Map.entry("photo", salon.getPhotoLowQuality() != null ? salon.getPhotoLowQuality() : ""),
-                    Map.entry("address", salon.getAddress() != null ? salon.getAddress() : ""),
-                    Map.entry("city", salon.getCity() != null ? salon.getCity() : ""),
-                    Map.entry("rating", salon.getRate()),
-                    Map.entry("numberOfRatings", salon.getNOfRatings()),
-                    Map.entry("openingTime", salon.getOpeningTime() != null ? salon.getOpeningTime().format(timeFormatter) : ""),
-                    Map.entry("closingTime", salon.getClosingTime() != null ? salon.getClosingTime().format(timeFormatter) : "")
-                );
+                        Map.entry("id", salon.getSalonID()),
+                        Map.entry("name", salon.getName()),
+                        Map.entry("description", salon.getDetails() != null ? salon.getDetails() : ""),
+                        Map.entry("photo", salon.getPhotoLowQuality() != null ? salon.getPhotoLowQuality() : ""),
+                        Map.entry("address", salon.getAddress() != null ? salon.getAddress() : ""),
+                        Map.entry("city", salon.getCity() != null ? salon.getCity() : ""),
+                        Map.entry("rating", salon.getRate()),
+                        Map.entry("numberOfRatings", salon.getNOfRatings()),
+                        Map.entry("openingTime",
+                                salon.getOpeningTime() != null ? salon.getOpeningTime().format(timeFormatter) : ""),
+                        Map.entry("closingTime",
+                                salon.getClosingTime() != null ? salon.getClosingTime().format(timeFormatter) : ""));
                 salonDTOs.add(salonMap);
             }
 
             return ResponseEntity.ok(salonDTOs);
         } catch (Exception e) {
             return ResponseEntity.status(500).body(Map.of(
-                "error", "Failed to fetch trending salons",
-                "message", e.getMessage()
-            ));
+                    "error", "Failed to fetch trending salons",
+                    "message", e.getMessage()));
         }
     }
-
 
     @GetMapping("/search")
     public ResponseEntity<?> searchSalons(
@@ -95,21 +92,22 @@ public class PublicSalonController {
             String normalizedLocation = location == null ? "" : location.trim();
 
             Optional<ServiceItem> treatmentService = normalizedTreatment.isBlank()
-                ? Optional.empty()
-                : serviceItemRepository.findByNameIgnoreCase(normalizedTreatment);
+                    ? Optional.empty()
+                    : serviceItemRepository.findByNameIgnoreCase(normalizedTreatment);
 
             Set<Long> treatmentSalonIds = treatmentService
-                .map(service -> servicePriceRepository.findByServiceId(service.getId()).stream()
-                    .map(ServicePrice::getSalonId)
-                    .collect(Collectors.toSet()))
-                .orElse(Set.of());
+                    .map(service -> servicePriceRepository.findByServiceId(service.getId()).stream()
+                            .map(ServicePrice::getSalonId)
+                            .collect(Collectors.toSet()))
+                    .orElse(Set.of());
 
             List<Salon> filteredSalons = allSalons;
             filteredSalons = filteredSalons.stream()
-                .filter(salon -> matchesTreatmentFilter(salon, normalizedTreatment, treatmentService, treatmentSalonIds))
-                .filter(salon -> matchesLocationFilter(salon, normalizedLocation))
-                .filter(salon -> matchesDistanceFilter(salon, latitude, longitude, radiusKm))
-                .collect(Collectors.toList());
+                    .filter(salon -> matchesTreatmentFilter(salon, normalizedTreatment, treatmentService,
+                            treatmentSalonIds))
+                    .filter(salon -> matchesLocationFilter(salon, normalizedLocation))
+                    .filter(salon -> matchesDistanceFilter(salon, latitude, longitude, radiusKm))
+                    .collect(Collectors.toList());
 
             if ("price".equalsIgnoreCase(sortBy)) {
                 filteredSalons.sort(Comparator.comparingDouble(s -> getAverageSalonPrice(s)));
@@ -119,7 +117,7 @@ public class PublicSalonController {
 
             int pageSize = 10;
             int startIdx = page * pageSize;
-            int endIdx   = Math.min(startIdx + pageSize, filteredSalons.size());
+            int endIdx = Math.min(startIdx + pageSize, filteredSalons.size());
 
             List<Salon> paginatedSalons = filteredSalons.subList(startIdx, endIdx);
 
@@ -129,49 +127,48 @@ public class PublicSalonController {
                 if (salon.getLatitude() != null && salon.getLongitude() != null
                         && latitude != null && longitude != null) {
                     distance = calculateDistance(latitude, longitude,
-                                                 salon.getLatitude(), salon.getLongitude());
+                            salon.getLatitude(), salon.getLongitude());
                 }
 
                 Map<String, Object> salonMap = Map.ofEntries(
-                    Map.entry("id", salon.getSalonID()),
-                    Map.entry("name", salon.getName()),
-                    Map.entry("description", salon.getDetails() != null ? salon.getDetails() : ""),
-                    Map.entry("photo", salon.getPhotoLowQuality() != null ? salon.getPhotoLowQuality() : ""),
-                    Map.entry("address", salon.getAddress() != null ? salon.getAddress() : ""),
-                    Map.entry("city", salon.getCity() != null ? salon.getCity() : ""),
-                    Map.entry("rating", salon.getRate()),
-                    Map.entry("numberOfRatings", salon.getNOfRatings()),
-                    Map.entry("openingTime", salon.getOpeningTime() != null ? salon.getOpeningTime().format(timeFormatter) : ""),
-                    Map.entry("closingTime", salon.getClosingTime() != null ? salon.getClosingTime().format(timeFormatter) : ""),
-                    Map.entry("latitude", salon.getLatitude()),
-                    Map.entry("longitude", salon.getLongitude()),
-                    Map.entry("distance", distance)
-                );
+                        Map.entry("id", salon.getSalonID()),
+                        Map.entry("name", salon.getName()),
+                        Map.entry("description", salon.getDetails() != null ? salon.getDetails() : ""),
+                        Map.entry("photo", salon.getPhotoLowQuality() != null ? salon.getPhotoLowQuality() : ""),
+                        Map.entry("address", salon.getAddress() != null ? salon.getAddress() : ""),
+                        Map.entry("city", salon.getCity() != null ? salon.getCity() : ""),
+                        Map.entry("rating", salon.getRate()),
+                        Map.entry("numberOfRatings", salon.getNOfRatings()),
+                        Map.entry("openingTime",
+                                salon.getOpeningTime() != null ? salon.getOpeningTime().format(timeFormatter) : ""),
+                        Map.entry("closingTime",
+                                salon.getClosingTime() != null ? salon.getClosingTime().format(timeFormatter) : ""),
+                        Map.entry("latitude", salon.getLatitude()),
+                        Map.entry("longitude", salon.getLongitude()),
+                        Map.entry("distance", distance));
                 salonDTOs.add(salonMap);
             }
 
             return ResponseEntity.ok(Map.of(
-                "salons", salonDTOs,
-                "totalCount", filteredSalons.size(),
-                "hasMore", endIdx < filteredSalons.size(),
-                "currentPage", page
-            ));
+                    "salons", salonDTOs,
+                    "totalCount", filteredSalons.size(),
+                    "hasMore", endIdx < filteredSalons.size(),
+                    "currentPage", page));
         } catch (Exception e) {
             return ResponseEntity.status(500).body(Map.of(
-                "error", "Failed to search salons",
-                "message", e.getMessage()
-            ));
+                    "error", "Failed to search salons",
+                    "message", e.getMessage()));
         }
     }
 
-    
     private double calculateDistance(double lat1, double lon1, Double lat2, Double lon2) {
-        if (lat2 == null || lon2 == null) return Double.MAX_VALUE;
+        if (lat2 == null || lon2 == null)
+            return Double.MAX_VALUE;
         double latDiff = lat2 - lat1;
         double lonDiff = lon2 - lon1;
-        double avgLat  = (lat1 + lat2) / 2.0;
-        double latKm   = latDiff * 111.0;
-        double lonKm   = lonDiff * 111.0 * Math.cos(Math.toRadians(avgLat));
+        double avgLat = (lat1 + lat2) / 2.0;
+        double latKm = latDiff * 111.0;
+        double lonKm = lonDiff * 111.0 * Math.cos(Math.toRadians(avgLat));
         return Math.sqrt(latKm * latKm + lonKm * lonKm);
     }
 
@@ -180,9 +177,9 @@ public class PublicSalonController {
     }
 
     private boolean matchesTreatmentFilter(Salon salon,
-                                           String treatment,
-                                           Optional<ServiceItem> treatmentService,
-                                           Set<Long> treatmentSalonIds) {
+            String treatment,
+            Optional<ServiceItem> treatmentService,
+            Set<Long> treatmentSalonIds) {
         if (treatment == null || treatment.isBlank()) {
             return true;
         }
@@ -212,17 +209,17 @@ public class PublicSalonController {
     }
 
     private boolean matchesDistanceFilter(Salon salon,
-                                          Double latitude,
-                                          Double longitude,
-                                          Double radiusKm) {
+            Double latitude,
+            Double longitude,
+            Double radiusKm) {
         if (latitude == null || longitude == null) {
             return true;
         }
 
         if (salon.getLatitude() != null && salon.getLongitude() != null) {
             double distance = calculateDistance(latitude, longitude,
-                                               salon.getLatitude(),
-                                               salon.getLongitude());
+                    salon.getLatitude(),
+                    salon.getLongitude());
             return distance <= radiusKm;
         }
 
@@ -240,22 +237,22 @@ public class PublicSalonController {
     @GetMapping("/{id}")
     public ResponseEntity<?> getSalonById(@PathVariable Long id) {
         return salonRepository.findById(id)
-            .map(salon -> {
-                Map<String, Object> res = new HashMap<>();
-                res.put("salonID",     salon.getSalonID());
-                res.put("name",        salon.getName());
-                res.put("details",     salon.getDetails() != null ? salon.getDetails() : "Professional salon services");
-                res.put("address",     salon.getAddress()     != null ? salon.getAddress()     : "");
-                res.put("city",        salon.getCity()        != null ? salon.getCity()        : "");
-                res.put("phoneNumber", salon.getPhoneNumber() != null ? salon.getPhoneNumber() : "");
-                res.put("email",       salon.getEmail()       != null ? salon.getEmail()       : "");
-                res.put("rate",        salon.getRate());
-                res.put("openingTime", salon.getOpeningTime() != null ? salon.getOpeningTime().toString() : "");
-                res.put("closingTime", salon.getClosingTime() != null ? salon.getClosingTime().toString() : "");
-                res.put("holidays",    salon.getHolidays()    != null ? salon.getHolidays()    : "[]");
-                return ResponseEntity.ok((Object) res);
-            })
-            .orElse(ResponseEntity.notFound().build());
+                .map(salon -> {
+                    Map<String, Object> res = new HashMap<>();
+                    res.put("salonID", salon.getSalonID());
+                    res.put("name", salon.getName());
+                    res.put("details", salon.getDetails() != null ? salon.getDetails() : "Professional salon services");
+                    res.put("address", salon.getAddress() != null ? salon.getAddress() : "");
+                    res.put("city", salon.getCity() != null ? salon.getCity() : "");
+                    res.put("phoneNumber", salon.getPhoneNumber() != null ? salon.getPhoneNumber() : "");
+                    res.put("email", salon.getEmail() != null ? salon.getEmail() : "");
+                    res.put("rate", salon.getRate());
+                    res.put("openingTime", salon.getOpeningTime() != null ? salon.getOpeningTime().toString() : "");
+                    res.put("closingTime", salon.getClosingTime() != null ? salon.getClosingTime().toString() : "");
+                    res.put("holidays", salon.getHolidays() != null ? salon.getHolidays() : "[]");
+                    return ResponseEntity.ok((Object) res);
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 
     // ════════════════════════════════════════════════════
@@ -271,9 +268,9 @@ public class PublicSalonController {
             serviceItemRepository.findById(sp.getServiceId()).ifPresent(service -> {
                 if (service.isActive()) {
                     Map<String, Object> item = new HashMap<>();
-                    item.put("serviceId",   service.getId());
+                    item.put("serviceId", service.getId());
                     item.put("serviceName", service.getName());
-                    item.put("price",       sp.getPrice());
+                    item.put("price", sp.getPrice());
                     result.add(item);
                 }
             });

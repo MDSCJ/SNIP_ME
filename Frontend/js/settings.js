@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", function () {
     var LOGIN_FLAG_KEY = "snipmeCustomerLoggedIn";
-    var USERNAME_KEY   = "snipmeCustomerUsername";
-    var PASSWORD_KEY   = "snipmeCustomerPassword";
+    var USERNAME_KEY = "snipmeCustomerUsername";
+    var PASSWORD_KEY = "snipmeCustomerPassword";
 
     var isLoggedIn = localStorage.getItem(LOGIN_FLAG_KEY) === "true";
 
@@ -61,18 +61,18 @@ document.addEventListener("DOMContentLoaded", function () {
         changePasswordForm.addEventListener("submit", function (e) {
             e.preventDefault();
 
-            var currentInput    = document.getElementById("currentPassword");
-            var newPwInput      = document.getElementById("newPassword");
-            var confirmPwInput  = document.getElementById("confirmNewPassword");
+            var currentInput = document.getElementById("currentPassword");
+            var newPwInput = document.getElementById("newPassword");
+            var confirmPwInput = document.getElementById("confirmNewPassword");
 
-            var newPw    = newPwInput    ? newPwInput.value.trim()    : "";
-            var confirmPw= confirmPwInput? confirmPwInput.value.trim(): "";
+            var newPw = newPwInput ? newPwInput.value.trim() : "";
+            var confirmPw = confirmPwInput ? confirmPwInput.value.trim() : "";
 
             // Only verify current password when NOT logged in
             if (!isLoggedIn && currentInput) {
                 var enteredCurrent = currentInput.value.trim();
-                var storedEncoded  = localStorage.getItem(PASSWORD_KEY) || "";
-                var storedDecoded  = storedEncoded ? atob(storedEncoded) : "";
+                var storedEncoded = localStorage.getItem(PASSWORD_KEY) || "";
+                var storedDecoded = storedEncoded ? atob(storedEncoded) : "";
                 if (!enteredCurrent || enteredCurrent !== storedDecoded) {
                     showMsg("passwordMsg", "Current password is incorrect.", true);
                     return;
@@ -95,7 +95,7 @@ document.addEventListener("DOMContentLoaded", function () {
             localStorage.setItem(PASSWORD_KEY, btoa(newPw));
             showMsg("passwordMsg", "Password updated successfully!", false);
 
-            if (newPwInput)     newPwInput.value     = "";
+            if (newPwInput) newPwInput.value = "";
             if (confirmPwInput) confirmPwInput.value = "";
         });
     }
@@ -122,22 +122,22 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // ========= 3. Tab Navigation =========
     var tabBtns = document.querySelectorAll('.tab-btn');
-    tabBtns.forEach(function(btn) {
-        btn.addEventListener('click', function() {
+    tabBtns.forEach(function (btn) {
+        btn.addEventListener('click', function () {
             var tabName = this.getAttribute('data-tab');
-            
+
             // Remove active class from all tabs and buttons
-            document.querySelectorAll('.tab-btn').forEach(function(b) {
+            document.querySelectorAll('.tab-btn').forEach(function (b) {
                 b.classList.remove('active');
             });
-            document.querySelectorAll('.tab-content').forEach(function(content) {
+            document.querySelectorAll('.tab-content').forEach(function (content) {
                 content.classList.remove('active');
             });
-            
+
             // Add active class to clicked tab and content
             this.classList.add('active');
             document.getElementById(tabName + '-tab').classList.add('active');
-            
+
             // Load bookings if switching to bookings tab
             if (tabName === 'bookings') {
                 loadBookings();
@@ -220,42 +220,42 @@ document.addEventListener("DOMContentLoaded", function () {
         fetch(bookingsUrl, {
             method: 'GET'
         })
-        .then(function(response) {
-            if (!response.ok) throw new Error('Failed to load bookings');
-            return response.json();
-        })
-        .then(function(bookings) {
-            dbBookings = Array.isArray(bookings) ? bookings : [];
+            .then(function (response) {
+                if (!response.ok) throw new Error('Failed to load bookings');
+                return response.json();
+            })
+            .then(function (bookings) {
+                dbBookings = Array.isArray(bookings) ? bookings : [];
 
-            if (dbBookings.length === 0) {
-                renderNoBookings(bookingsContainer);
-                return;
-            }
-
-            // Split into upcoming (today or future) and past
-            var todayStart = new Date();
-            todayStart.setHours(0, 0, 0, 0);
-
-            var upcoming = [];
-            var past     = [];
-
-            dbBookings.forEach(function(booking, index) {
-                var slotDate = booking.slotStartTime ? new Date(booking.slotStartTime) : null;
-                // If no slot date, treat as upcoming so it's always visible
-                if (!slotDate || isNaN(slotDate.getTime()) || slotDate >= todayStart) {
-                    upcoming.push({ booking: booking, index: index });
-                } else {
-                    past.push({ booking: booking, index: index });
+                if (dbBookings.length === 0) {
+                    renderNoBookings(bookingsContainer);
+                    return;
                 }
-            });
 
-            function buildCard(booking, index) {
-                var formattedDate = formatBookingDate(booking.slotStartTime || booking.bookingDate);
-                var status        = String(booking.status || '');
-                var statusNormalized = status.toUpperCase();
-                var statusClass   = (statusNormalized === 'CANCELED' || statusNormalized === 'CANCELLED') ? 'status-canceled' : 'status-confirmed';
-                var paymentText   = booking.paymentStatus ? ('Online Payment (' + booking.paymentStatus + ')') : 'Online Payment';
-                return `
+                // Split into upcoming (today or future) and past
+                var todayStart = new Date();
+                todayStart.setHours(0, 0, 0, 0);
+
+                var upcoming = [];
+                var past = [];
+
+                dbBookings.forEach(function (booking, index) {
+                    var slotDate = booking.slotStartTime ? new Date(booking.slotStartTime) : null;
+                    // If no slot date, treat as upcoming so it's always visible
+                    if (!slotDate || isNaN(slotDate.getTime()) || slotDate >= todayStart) {
+                        upcoming.push({ booking: booking, index: index });
+                    } else {
+                        past.push({ booking: booking, index: index });
+                    }
+                });
+
+                function buildCard(booking, index) {
+                    var formattedDate = formatBookingDate(booking.slotStartTime || booking.bookingDate);
+                    var status = String(booking.status || '');
+                    var statusNormalized = status.toUpperCase();
+                    var statusClass = (statusNormalized === 'CANCELED' || statusNormalized === 'CANCELLED') ? 'status-canceled' : 'status-confirmed';
+                    var paymentText = booking.paymentStatus ? ('Online Payment (' + booking.paymentStatus + ')') : 'Online Payment';
+                    return `
                     <div class="booking-card ${statusClass}">
                         <div class="booking-info">
                             <h3>${booking.salonName || '-'}</h3>
@@ -274,46 +274,46 @@ document.addEventListener("DOMContentLoaded", function () {
                         </div>
                     </div>
                 `;
-            }
+                }
 
-            var html = '<div class="bookings-list">';
+                var html = '<div class="bookings-list">';
 
-            // ── Upcoming bookings ──────────────────────────────
-            if (upcoming.length === 0) {
-                html += '<p class="no-bookings" style="margin-bottom:12px;">No upcoming bookings.</p>';
-            } else {
-                upcoming.forEach(function(item) {
-                    html += buildCard(item.booking, item.index);
-                });
-            }
+                // ── Upcoming bookings ──────────────────────────────
+                if (upcoming.length === 0) {
+                    html += '<p class="no-bookings" style="margin-bottom:12px;">No upcoming bookings.</p>';
+                } else {
+                    upcoming.forEach(function (item) {
+                        html += buildCard(item.booking, item.index);
+                    });
+                }
 
-            // ── Past bookings (collapsed) ──────────────────────
-            if (past.length > 0) {
-                html += `
+                // ── Past bookings (collapsed) ──────────────────────
+                if (past.length > 0) {
+                    html += `
                     <button id="showPastBtn" onclick="togglePastBookings()" class="btn-secondary" style="margin:16px 0 8px;width:100%;padding:10px;">
                         📅 Show Past Bookings (${past.length})
                     </button>
                     <div id="pastBookingsSection" style="display:none;">
                         <p style="color:var(--text-muted,#aaa);font-size:0.85rem;margin-bottom:8px;">Past appointments</p>
                 `;
-                past.forEach(function(item) {
-                    html += buildCard(item.booking, item.index);
-                });
-                html += '</div>';
-            }
+                    past.forEach(function (item) {
+                        html += buildCard(item.booking, item.index);
+                    });
+                    html += '</div>';
+                }
 
-            html += '</div>';
-            bookingsContainer.innerHTML = html;
-        })
-        .catch(function(error) {
-            console.error('Error loading bookings from database:', error);
-            renderNoBookings(bookingsContainer);
-        });
+                html += '</div>';
+                bookingsContainer.innerHTML = html;
+            })
+            .catch(function (error) {
+                console.error('Error loading bookings from database:', error);
+                renderNoBookings(bookingsContainer);
+            });
     }
 
-    window.togglePastBookings = function() {
+    window.togglePastBookings = function () {
         var section = document.getElementById('pastBookingsSection');
-        var btn     = document.getElementById('showPastBtn');
+        var btn = document.getElementById('showPastBtn');
         if (!section || !btn) return;
         if (section.style.display === 'none') {
             section.style.display = 'block';
@@ -327,7 +327,7 @@ document.addEventListener("DOMContentLoaded", function () {
     };
 
 
-    window.cancelBooking = function(index) {
+    window.cancelBooking = function (index) {
         if (!dbBookings[index]) return;
 
         var confirmed = confirm('Are you sure you want to cancel this booking?');
@@ -342,18 +342,18 @@ document.addEventListener("DOMContentLoaded", function () {
         fetch(API_BASE_URL + '/bookings/cancel?slotID=' + encodeURIComponent(cancelSlotId), {
             method: 'POST'
         })
-        .then(function(response) {
-            if (response.ok) {
-                loadBookings();
-                alert('Booking canceled successfully!');
-            } else {
-                alert('Failed to cancel booking. Please try again.');
-            }
-        })
-        .catch(function(error) {
-            console.error('Error canceling booking:', error);
-            alert('Failed to cancel booking due to network/backend error.');
-        });
+            .then(function (response) {
+                if (response.ok) {
+                    loadBookings();
+                    alert('Booking canceled successfully!');
+                } else {
+                    alert('Failed to cancel booking. Please try again.');
+                }
+            })
+            .catch(function (error) {
+                console.error('Error canceling booking:', error);
+                alert('Failed to cancel booking due to network/backend error.');
+            });
     };
 
     // Load bookings on page if bookings tab is active

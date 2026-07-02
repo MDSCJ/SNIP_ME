@@ -26,13 +26,11 @@ public class PaymentController {
     private static final String MERCHANT_ID = "1235274";
 
     // Secret for localhost (your existing one)
-    private static final String SECRET_LOCALHOST =
-        "Mjg2ODM5NDc3OTU4ODM2Njg4NTM5NDc2MDU0MDk3NzI1NTE4MDg=";
+    private static final String SECRET_LOCALHOST = "Mjg2ODM5NDc3OTU4ODM2Njg4NTM5NDc2MDU0MDk3NzI1NTE4MDg=";
 
     // Secret for mdscj.github.io
 
-    private static final String SECRET_GITHUB =
-        "MjczNjUwNTQzOTUxNjQzNTIxMTY1NzMyODMzNDE4NjQ2MDE1NA=";
+    private static final String SECRET_GITHUB = "MjczNjUwNTQzOTUxNjQzNTIxMTY1NzMyODMzNDE4NjQ2MDE1NA=";
 
     public PaymentController(BookingService bookingService, PaymentRepository paymentRepository) {
         this.bookingService = bookingService;
@@ -64,17 +62,18 @@ public class PaymentController {
                 secret = SECRET_LOCALHOST;
             }
 
-            // Generate hash: MD5(merchant_id + order_id + amount + currency + MD5(secret).toUpperCase())
+            // Generate hash: MD5(merchant_id + order_id + amount + currency +
+            // MD5(secret).toUpperCase())
             String hashedSecret = md5(secret).toUpperCase();
-            String rawString    = MERCHANT_ID + orderId + amount + currency + hashedSecret;
-            String hash         = md5(rawString).toUpperCase();
+            String rawString = MERCHANT_ID + orderId + amount + currency + hashedSecret;
+            String hash = md5(rawString).toUpperCase();
 
             Map<String, String> response = new HashMap<>();
             response.put("merchant_id", MERCHANT_ID);
-            response.put("order_id",    orderId);
-            response.put("amount",      amount);
-            response.put("currency",    currency);
-            response.put("hash",        hash);
+            response.put("order_id", orderId);
+            response.put("amount", amount);
+            response.put("currency", currency);
+            response.put("hash", hash);
 
             return ResponseEntity.ok(response);
 
@@ -116,9 +115,8 @@ public class PaymentController {
                         && "LOCKED".equalsIgnoreCase(payment.getBooking().getTimeSlot().getStatus())) {
                     try {
                         bookingService.confirmBooking(
-                            payment.getBooking().getTimeSlot().getSlotID(),
-                            payment.getBooking().getCustomer().getId()
-                        );
+                                payment.getBooking().getTimeSlot().getSlotID(),
+                                payment.getBooking().getCustomer().getId());
                     } catch (Exception confirmError) {
                         System.err.println("Payment notify confirmation skipped: " + confirmError.getMessage());
                     }
@@ -131,11 +129,12 @@ public class PaymentController {
 
     // ── MD5 helper ────────────────────────────────────────────
     private String md5(String input) throws Exception {
-        MessageDigest md  = MessageDigest.getInstance("MD5");
-        byte[] digest     = md.digest(input.getBytes(StandardCharsets.UTF_8));
+        MessageDigest md = MessageDigest.getInstance("MD5");
+        byte[] digest = md.digest(input.getBytes(StandardCharsets.UTF_8));
         BigInteger number = new BigInteger(1, digest);
-        String hash       = number.toString(16);
-        while (hash.length() < 32) hash = "0" + hash;
+        String hash = number.toString(16);
+        while (hash.length() < 32)
+            hash = "0" + hash;
         return hash;
     }
 }
