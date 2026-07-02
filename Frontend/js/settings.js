@@ -157,6 +157,12 @@ document.addEventListener("DOMContentLoaded", function () {
             || sessionStorage.getItem('customerID');
     }
 
+    function getCustomerEmailFromSession() {
+        return localStorage.getItem('snipmeCustomerEmail')
+            || localStorage.getItem('email')
+            || '';
+    }
+
     function renderNoBookings(bookingsContainer) {
         bookingsContainer.innerHTML = `
             <div class="no-bookings-wrap">
@@ -190,15 +196,28 @@ document.addEventListener("DOMContentLoaded", function () {
     function loadBookings() {
         var bookingsContainer = document.getElementById('bookingsContainer');
         var customerId = getCustomerIdFromSession();
+        var customerEmail = getCustomerEmailFromSession();
 
-        if (!customerId) {
+        if (!customerId && !customerEmail) {
             renderNoBookings(bookingsContainer);
             return;
         }
 
         bookingsContainer.innerHTML = '<p class="loading-text">Refreshing your bookings...</p>';
 
-        fetch(API_BASE_URL + '/bookings/customer?customerID=' + encodeURIComponent(customerId), {
+        var bookingsUrl = API_BASE_URL + '/bookings/customer';
+        var queryParts = [];
+        if (customerId) {
+            queryParts.push('customerID=' + encodeURIComponent(customerId));
+        }
+        if (customerEmail) {
+            queryParts.push('email=' + encodeURIComponent(customerEmail));
+        }
+        if (queryParts.length > 0) {
+            bookingsUrl += '?' + queryParts.join('&');
+        }
+
+        fetch(bookingsUrl, {
             method: 'GET'
         })
         .then(function(response) {

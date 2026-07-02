@@ -20,7 +20,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.starc.snipme.model.TimeSlot;
+import com.starc.snipme.model.User;
 import com.starc.snipme.repository.TimeSlotRepository;
+import com.starc.snipme.repository.UserRepository;
 import com.starc.snipme.service.BookingService;
 
 @RestController
@@ -33,6 +35,9 @@ public class BookingController {
 
     @Autowired
     private BookingService bookingService;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @GetMapping("/available")
     public ResponseEntity<?> getAvailableSlots() {
@@ -211,9 +216,21 @@ public class BookingController {
     }
 
     @GetMapping("/customer")
-    public ResponseEntity<?> getCustomerBookings(@RequestParam Long customerID) {
+    public ResponseEntity<?> getCustomerBookings(@RequestParam(required = false) Long customerID,
+                                                 @RequestParam(required = false) String email) {
         try {
-            List<com.starc.snipme.model.Booking> bookings = bookingService.getBookingsForCustomer(customerID);
+            Long resolvedCustomerId = customerID;
+            if (resolvedCustomerId == null && email != null && !email.isBlank()) {
+                resolvedCustomerId = userRepository.findByEmailIgnoreCase(email.trim().toLowerCase())
+                        .map(User::getId)
+                        .orElse(null);
+            }
+
+            if (resolvedCustomerId == null) {
+                return ResponseEntity.ok(java.util.Collections.emptyList());
+            }
+
+            List<com.starc.snipme.model.Booking> bookings = bookingService.getBookingsForCustomer(resolvedCustomerId);
 
             List<Map<String, Object>> response = bookings.stream().map(b -> {
                 Map<String, Object> row = new HashMap<>();
