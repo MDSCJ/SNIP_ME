@@ -1,6 +1,5 @@
 package com.starc.snipme.controller;
 
-import com.starc.snipme.model.Payment;
 import com.starc.snipme.repository.PaymentRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,23 +20,30 @@ public class PaymentController {
 
     private final PaymentRepository paymentRepository;
 
-    // ── PayHere Credentials (injected from application-secrets.properties) ───
+    // ── PayHere Credentials ──────────────────────────────────────────────────
+    // Set these on Render as environment variables:
+    //   PAYHERE_MERCHANT_ID      = your sandbox or live merchant ID
+    //   PAYHERE_MERCHANT_SECRET  = the matching merchant secret
+    //   PAYHERE_SANDBOX_MODE     = true  → sandbox popup (for testing)
+    //                              false → live popup (real payments)
     @Value("${payhere.merchant.id}")
     private String merchantId;
 
-    @Value("${payhere.secret.localhost}")
-    private String secretLocalhost;
+    @Value("${payhere.merchant.secret}")
+    private String merchantSecret;
 
-    @Value("${payhere.secret.production}")
-    private String secretProduction;
+    /** true = sandbox mode everywhere; false = live mode */
+    @Value("${payhere.sandbox.mode:true}")
+    private boolean sandboxMode;
 
     public PaymentController(PaymentRepository paymentRepository) {
         this.paymentRepository = paymentRepository;
     }
 
-    // ── GET /api/payment/hash ─────────────────────────────────
-    // Called by booking.js — detects which domain the request
-    // came from and uses the correct merchant secret
+    // ── GET /api/payment/hash ─────────────────────────────────────────────────
+    // Called by booking.js before opening the PayHere popup.
+    // Returns the MD5 hash AND the sandbox flag so the frontend never has to
+    // guess which mode to use.
     @GetMapping("/hash")
     public ResponseEntity<Map<String, String>> generateHash(
             @RequestParam String orderId,
@@ -46,38 +52,33 @@ public class PaymentController {
             HttpServletRequest request) {
 
         try {
-            // Detect which frontend is calling us
-            String origin = request.getHeader("Origin");
+            String origin  = request.getHeader("Origin");
             String referer = request.getHeader("Referer");
-            String source = (origin != null ? origin : "") + (referer != null ? referer : "");
+            System.out.println("=== PayHere Hash Request ===");
+            System.out.println("Origin   : " + origin);
+            System.out.println("Referer  : " + referer);
+            System.out.println("Mode     : " + (sandboxMode ? "SANDBOX" : "LIVE"));
+            System.out.println("Merchant : " + merchantId);
+            System.out.println("Amount   : " + amount + " " + currency);
+            System.out.println("OrderID  : " + orderId);
 
-            // Log the detected origin for debugging
-            System.out.println("Payment hash request — Origin: " + origin + " | Referer: " + referer);
+            // Generate hash: MD5( merchant_id + order_id + amount + currency + MD5(secret).toUpperCase() )
+            String hashedSecret = md5(merchantSecret).toUpperCase();
+            String rawString    = merchantId + orderId + amount + currency + hashedSecret;
+            String hash         = md5(rawString).toUpperCase();
 
-            // Pick the correct secret based on domain
-            // Only use localhost secret for actual local development
-            String secret;
-            if (source.contains("localhost") || source.contains("127.0.0.1")) {
-                secret = secretLocalhost;
-                System.out.println("Using LOCALHOST secret");
-            } else {
-                // All hosted frontends (github.io, onrender.com, custom domain, etc.)
-                secret = secretProduction;
-                System.out.println("Using PRODUCTION secret for: " + source);
-            }
-
-            // Generate hash: MD5(merchant_id + order_id + amount + currency +
-            // MD5(secret).toUpperCase())
-            String hashedSecret = md5(secret).toUpperCase();
-            String rawString = merchantId + orderId + amount + currency + hashedSecret;
-            String hash = md5(rawString).toUpperCase();
+            System.out.println("Hash     : " + hash);
+            System.out.println("============================");
 
             Map<String, String> response = new HashMap<>();
             response.put("merchant_id", merchantId);
-            response.put("order_id", orderId);
-            response.put("amount", amount);
-            response.put("currency", currency);
-            response.put("hash", hash);
+            response.put("order_id",    orderId);
+            response.put("amount",      amount);
+            response.put("currency",    currency);
+            response.put("hash",        hash);
+            // Tell the frontend which popup mode to use — sandbox or live.
+            // Frontend must use this value directly; do NOT guess from hostname.
+            response.put("sandbox",     String.valueOf(sandboxMode));
 
             return ResponseEntity.ok(response);
 
@@ -87,12 +88,10 @@ public class PaymentController {
         }
     }
 
-    // ── POST /api/payment/notify ──────────────────────────────
-    // PayHere server calls this webhook after payment is processed.
-    // NOTE: The booking is already confirmed via onCompleted → confirmBookingInBackend()
-    // before PayHere ever fires this notify (because Render free-tier wakes slowly).
-    // This endpoint is therefore a safety net: it only updates the Payment row to
-    // "Success" if it wasn't already saved by the client-side flow.
+    // ── POST /api/payment/notify ──────────────────────────────────────────────
+    // PayHere server webhook. Safety net only: our client-side onCompleted flow
+    // already confirms the booking via /api/bookings/complete before this fires.
+    // We only update the Payment row here if it wasn't already marked Success.
     @PostMapping("/notify")
     @Transactional
     public ResponseEntity<String> paymentNotify(
@@ -114,34 +113,28 @@ public class PaymentController {
         // status_code "2" = success in PayHere API
         if (order_id != null && "2".equals(status_code)) {
             paymentRepository.findByOrderId(order_id).ifPresent(payment -> {
-                // Only update if not already marked successful by the client-side flow
                 if (!"Success".equalsIgnoreCase(payment.getPaymentStatus())) {
                     payment.setPaymentStatus("Success");
                     paymentRepository.save(payment);
                     System.out.println("Notify: Payment marked Success for order " + order_id);
                 } else {
-                    System.out.println("Notify: Payment already Success for order " + order_id + " — no action needed.");
+                    System.out.println("Notify: Payment already Success for order " + order_id + " — skipping.");
                 }
-                // NOTE: Do NOT call confirmBooking() here.
-                // confirmBooking() requires the slot to be in LOCKED state, but by the
-                // time PayHere fires this notify the slot is already BOOKED (set by the
-                // client-side onCompleted → /api/bookings/complete flow).
-                // Calling it would throw "Cannot confirm: Slot is not locked" and roll
-                // back the transaction — previously causing 500 errors in the Render logs.
+                // Do NOT call confirmBooking() here — slot is already BOOKED by the
+                // client-side onCompleted → /api/bookings/complete flow.
             });
         }
 
         return ResponseEntity.ok("OK");
     }
 
-    // ── MD5 helper ────────────────────────────────────────────
+    // ── MD5 helper ────────────────────────────────────────────────────────────
     private String md5(String input) throws Exception {
-        MessageDigest md = MessageDigest.getInstance("MD5");
-        byte[] digest = md.digest(input.getBytes(StandardCharsets.UTF_8));
-        BigInteger number = new BigInteger(1, digest);
-        String hash = number.toString(16);
-        while (hash.length() < 32)
-            hash = "0" + hash;
+        MessageDigest md     = MessageDigest.getInstance("MD5");
+        byte[]        digest = md.digest(input.getBytes(StandardCharsets.UTF_8));
+        BigInteger    number = new BigInteger(1, digest);
+        String        hash   = number.toString(16);
+        while (hash.length() < 32) hash = "0" + hash;
         return hash;
     }
 }

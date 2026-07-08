@@ -593,12 +593,6 @@ function proceedToGateway() { showGateway(); }
 // ─────────────────────────────────────────────────────────
 // PAYHERE SANDBOX
 // ─────────────────────────────────────────────────────────
-// Detect whether this page is running in sandbox mode
-// (localhost / 127.0.0.1) or production (GitHub Pages / any hosted domain).
-function isPayHereSandbox() {
-    var h = window.location.hostname;
-    return h === 'localhost' || h === '127.0.0.1' || h === '';
-}
 
 function setupPayHereHandlers() {
     if (typeof payhere === 'undefined') {
@@ -764,15 +758,16 @@ function confirmOnlinePayment() {
             hideLoader();
         }
 
-        // ── Sandbox detection ──────────────────────────────────────────────────
-        // CRITICAL: sandbox flag MUST match the merchant secret used for the hash.
-        //   • localhost / 127.0.0.1 → sandbox = true  (backend uses PAYHERE_SECRET_LOCALHOST)
-        //   • GitHub Pages / any hosted domain → sandbox = false (backend uses PAYHERE_SECRET_PRODUCTION)
-        // A mismatch between sandbox flag and merchant secret causes PayHere to
-        // fire onError with a signature-verification failure.
-        var useSandbox = isPayHereSandbox();
-        console.log('PayHere mode:', useSandbox ? 'SANDBOX' : 'PRODUCTION',
-                    '| Origin:', window.location.hostname);
+        // ── Sandbox mode — trust the backend, never guess from hostname ────────
+        // The backend returns "sandbox": "true" or "false" based on the
+        // PAYHERE_SANDBOX_MODE env var set on Render.
+        // sandbox=true  → PayHere sandbox popup  (test cards, no real money)
+        // sandbox=false → PayHere live popup     (real cards, real money)
+        // The hash was generated with the matching merchant secret, so the
+        // sandbox flag here ALWAYS matches the secret used — no mismatch possible.
+        var useSandbox = (data.sandbox === 'true' || data.sandbox === true);
+        console.log('PayHere mode:', useSandbox ? 'SANDBOX' : 'LIVE',
+                    '| backend sandbox flag:', data.sandbox);
 
         // Retrieve customer name from session storage if available
         // Uses the same key that customer_session.js / customer_login.js stores
