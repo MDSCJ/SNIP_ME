@@ -799,7 +799,7 @@ function confirmOnlinePayment() {
             // Since you are running locally (file:/// or localhost), we must spoof 
             // the URLs to match your registered 'github.io' domain to avoid the 
             // 'Unauthorized payment request' error.
-            var safeUrl = 'https://mdscj.github.io/SNIP_ME'; 
+            var safeUrl = 'https://mdscj.github.io/SNIP_ME';
 
             const payment = {
                 sandbox: useSandbox,
