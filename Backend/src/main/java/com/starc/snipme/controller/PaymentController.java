@@ -4,6 +4,7 @@ import com.starc.snipme.model.Payment;
 import com.starc.snipme.repository.PaymentRepository;
 import com.starc.snipme.service.BookingService;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,14 +23,15 @@ public class PaymentController {
     private final BookingService bookingService;
     private final PaymentRepository paymentRepository;
 
-    // ── PayHere Sandbox Credentials ───────────────────────────
-    private static final String MERCHANT_ID = "1235274";
+    // ── PayHere Credentials (injected from application-secrets.properties) ───
+    @Value("${payhere.merchant.id}")
+    private String merchantId;
 
-    // Secret for localhost (your existing one)
-    private static final String SECRET_LOCALHOST = "Mjg2ODM5NDc3OTU4ODM2Njg4NTM5NDc2MDU0MDk3NzI1NTE4MDg=";
+    @Value("${payhere.secret.localhost}")
+    private String secretLocalhost;
 
-    // Secret for production frontends (mdscj.github.io, onrender.com, etc.)
-    private static final String SECRET_GITHUB = "MjczNjUwNTQzOTUxNjQzNTIxMTY1NzMyODMzNDE4NjQ2MDE1NA=";
+    @Value("${payhere.secret.production}")
+    private String secretProduction;
 
     public PaymentController(BookingService bookingService, PaymentRepository paymentRepository) {
         this.bookingService = bookingService;
@@ -59,22 +61,22 @@ public class PaymentController {
             // Only use localhost secret for actual local development
             String secret;
             if (source.contains("localhost") || source.contains("127.0.0.1")) {
-                secret = SECRET_LOCALHOST;
+                secret = secretLocalhost;
                 System.out.println("Using LOCALHOST secret");
             } else {
                 // All hosted frontends (github.io, onrender.com, custom domain, etc.)
-                secret = SECRET_GITHUB;
+                secret = secretProduction;
                 System.out.println("Using PRODUCTION secret for: " + source);
             }
 
             // Generate hash: MD5(merchant_id + order_id + amount + currency +
             // MD5(secret).toUpperCase())
             String hashedSecret = md5(secret).toUpperCase();
-            String rawString = MERCHANT_ID + orderId + amount + currency + hashedSecret;
+            String rawString = merchantId + orderId + amount + currency + hashedSecret;
             String hash = md5(rawString).toUpperCase();
 
             Map<String, String> response = new HashMap<>();
-            response.put("merchant_id", MERCHANT_ID);
+            response.put("merchant_id", merchantId);
             response.put("order_id", orderId);
             response.put("amount", amount);
             response.put("currency", currency);
