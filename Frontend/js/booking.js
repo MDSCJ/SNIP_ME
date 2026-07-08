@@ -593,6 +593,13 @@ function proceedToGateway() { showGateway(); }
 // ─────────────────────────────────────────────────────────
 // PAYHERE SANDBOX
 // ─────────────────────────────────────────────────────────
+// Detect whether this page is running in sandbox mode
+// (localhost / 127.0.0.1) or production (GitHub Pages / any hosted domain).
+function isPayHereSandbox() {
+    var h = window.location.hostname;
+    return h === 'localhost' || h === '127.0.0.1' || h === '';
+}
+
 function setupPayHereHandlers() {
     if (typeof payhere === 'undefined') {
         setTimeout(setupPayHereHandlers, 300);
@@ -601,8 +608,15 @@ function setupPayHereHandlers() {
 
     payhere.onCompleted = function onCompleted(orderId) {
         console.log('PayHere completed. OrderID:', orderId);
-        if (orderId) {
+        // Always prefer the orderId returned by PayHere SDK;
+        // fall back to the one we generated in confirmOnlinePayment().
+        if (orderId && String(orderId).length > 0) {
             bookingState.orderId = orderId;
+        }
+        if (!bookingState.orderId) {
+            console.error('No orderId available after PayHere completed — cannot confirm booking.');
+            flashError('Payment succeeded but order reference is missing. Please contact support.');
+            return;
         }
         confirmBookingInBackend();
     };
@@ -615,10 +629,15 @@ function setupPayHereHandlers() {
     };
 
     payhere.onError = function onError(error) {
-        console.error('PayHere error:', error);
+        console.error('PayHere SDK error (raw):', error);
         hideProcessingOverlay();
         resetConfirmBtn();
-        flashError('Payment error. Please try again.');
+        // Provide a more descriptive error message when possible
+        var msg = 'Payment error. Please try again.';
+        if (error && typeof error === 'string' && error.length > 0) {
+            msg = 'Payment error: ' + error + '. Please try again.';
+        }
+        flashError(msg);
     };
 }
 
@@ -744,11 +763,45 @@ function confirmOnlinePayment() {
         if (typeof hideLoader === 'function') {
             hideLoader();
         }
-        const firstName = 'Customer';
-        const lastName  = 'User';
+
+        // ── Sandbox detection ──────────────────────────────────────────────────
+        // CRITICAL: sandbox flag MUST match the merchant secret used for the hash.
+        //   • localhost / 127.0.0.1 → sandbox = true  (backend uses PAYHERE_SECRET_LOCALHOST)
+        //   • GitHub Pages / any hosted domain → sandbox = false (backend uses PAYHERE_SECRET_PRODUCTION)
+        // A mismatch between sandbox flag and merchant secret causes PayHere to
+        // fire onError with a signature-verification failure.
+        var useSandbox = isPayHereSandbox();
+        console.log('PayHere mode:', useSandbox ? 'SANDBOX' : 'PRODUCTION',
+                    '| Origin:', window.location.hostname);
+
+        // Retrieve customer name from session storage if available
+        // Uses the same key that customer_session.js / customer_login.js stores
+        var firstName = localStorage.getItem('snipmeCustomerUsername')
+                     || sessionStorage.getItem('snipmeCustomerUsername')
+                     || localStorage.getItem('customerName')
+                     || sessionStorage.getItem('customerName')
+                     || 'Customer';
+        var lastName  = '';
+        // Split on first space if a full name was stored
+        var nameParts = firstName.trim().split(' ');
+        if (nameParts.length > 1) {
+            firstName = nameParts[0];
+            lastName  = nameParts.slice(1).join(' ');
+        }
+
+        var customerEmail = localStorage.getItem('snipmeCustomerEmail')
+                         || sessionStorage.getItem('snipmeCustomerEmail')
+                         || localStorage.getItem('customerEmail')
+                         || sessionStorage.getItem('customerEmail')
+                         || 'customer@snipme.lk';
+
+        // Ensure we store the orderId from the hash response (backend echoes it back)
+        if (data.order_id) {
+            bookingState.orderId = data.order_id;
+        }
 
         const payment = {
-            sandbox:     true,
+            sandbox:     useSandbox,
             merchant_id: data.merchant_id,
             return_url:  undefined,
             cancel_url:  undefined,
@@ -761,15 +814,15 @@ function confirmOnlinePayment() {
             currency:    data.currency,
             hash:        data.hash,
             first_name:  firstName,
-            last_name:   lastName,
-            email:       'customer@snipme.lk',
+            last_name:   lastName  || 'User',
+            email:       customerEmail,
             phone:       '0771234567',
             address:     'Sri Lanka',
             city:        'Colombo',
             country:     'Sri Lanka'
         };
 
-        console.log('Opening PayHere sandbox popup...');
+        console.log('Opening PayHere popup (sandbox=' + useSandbox + ')...');
         payhere.startPayment(payment);
 
         hideProcessingOverlay();

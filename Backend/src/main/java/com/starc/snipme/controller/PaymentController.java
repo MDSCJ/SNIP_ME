@@ -2,7 +2,6 @@ package com.starc.snipme.controller;
 
 import com.starc.snipme.model.Payment;
 import com.starc.snipme.repository.PaymentRepository;
-import com.starc.snipme.service.BookingService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +19,6 @@ import java.util.Map;
 @RequestMapping("/api/payment")
 public class PaymentController {
 
-    private final BookingService bookingService;
     private final PaymentRepository paymentRepository;
 
     // ── PayHere Credentials (injected from application-secrets.properties) ───
@@ -33,8 +31,7 @@ public class PaymentController {
     @Value("${payhere.secret.production}")
     private String secretProduction;
 
-    public PaymentController(BookingService bookingService, PaymentRepository paymentRepository) {
-        this.bookingService = bookingService;
+    public PaymentController(PaymentRepository paymentRepository) {
         this.paymentRepository = paymentRepository;
     }
 
@@ -91,7 +88,11 @@ public class PaymentController {
     }
 
     // ── POST /api/payment/notify ──────────────────────────────
-    // PayHere calls this after payment is processed
+    // PayHere server calls this webhook after payment is processed.
+    // NOTE: The booking is already confirmed via onCompleted → confirmBookingInBackend()
+    // before PayHere ever fires this notify (because Render free-tier wakes slowly).
+    // This endpoint is therefore a safety net: it only updates the Payment row to
+    // "Success" if it wasn't already saved by the client-side flow.
     @PostMapping("/notify")
     @Transactional
     public ResponseEntity<String> paymentNotify(
@@ -110,24 +111,23 @@ public class PaymentController {
         System.out.println("Amount     : " + payhere_amount);
         System.out.println("======================");
 
+        // status_code "2" = success in PayHere API
         if (order_id != null && "2".equals(status_code)) {
             paymentRepository.findByOrderId(order_id).ifPresent(payment -> {
+                // Only update if not already marked successful by the client-side flow
                 if (!"Success".equalsIgnoreCase(payment.getPaymentStatus())) {
                     payment.setPaymentStatus("Success");
                     paymentRepository.save(payment);
+                    System.out.println("Notify: Payment marked Success for order " + order_id);
+                } else {
+                    System.out.println("Notify: Payment already Success for order " + order_id + " — no action needed.");
                 }
-
-                if (payment.getBooking() != null
-                        && payment.getBooking().getTimeSlot() != null
-                        && "LOCKED".equalsIgnoreCase(payment.getBooking().getTimeSlot().getStatus())) {
-                    try {
-                        bookingService.confirmBooking(
-                                payment.getBooking().getTimeSlot().getSlotID(),
-                                payment.getBooking().getCustomer().getId());
-                    } catch (Exception confirmError) {
-                        System.err.println("Payment notify confirmation skipped: " + confirmError.getMessage());
-                    }
-                }
+                // NOTE: Do NOT call confirmBooking() here.
+                // confirmBooking() requires the slot to be in LOCKED state, but by the
+                // time PayHere fires this notify the slot is already BOOKED (set by the
+                // client-side onCompleted → /api/bookings/complete flow).
+                // Calling it would throw "Cannot confirm: Slot is not locked" and roll
+                // back the transaction — previously causing 500 errors in the Render logs.
             });
         }
 
