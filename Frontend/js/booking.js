@@ -10,19 +10,19 @@
 const CURRENCY = 'LKR';
 
 let bookingState = {
-    salonId:         null,
-    salonName:       null,
-    salonDetails:    null,
+    salonId: null,
+    salonName: null,
+    salonDetails: null,
     selectedService: null,   // { serviceId, serviceName, price }
-    selectedDate:    null,
-    selectedSlot:    null,   // { slotID, label, startTime }
-    customerID:      null,
-    bookingID:       null,
-    orderId:         null,
-    allSlots:        [],     // all available slots from backend
-    openingTime:     null,   // salon opening time (HH:mm:ss)
-    closingTime:     null,   // salon closing time (HH:mm:ss)
-    holidays:        []      // salon holidays (JSON array of dates: ["2026-03-20", "2026-03-21"])
+    selectedDate: null,
+    selectedSlot: null,   // { slotID, label, startTime }
+    customerID: null,
+    bookingID: null,
+    orderId: null,
+    allSlots: [],     // all available slots from backend
+    openingTime: null,   // salon opening time (HH:mm:ss)
+    closingTime: null,   // salon closing time (HH:mm:ss)
+    holidays: []      // salon holidays (JSON array of dates: ["2026-03-20", "2026-03-21"])
 };
 
 function normalizeDateKey(value) {
@@ -92,10 +92,10 @@ function setStep1NextState(isEnabled) {
 document.addEventListener('DOMContentLoaded', function () {
 
     bookingState.customerID = localStorage.getItem('customerID')
-                           || localStorage.getItem('snipmeCustomerUserId')
-                           || sessionStorage.getItem('customerID')
-                           || sessionStorage.getItem('snipmeCustomerUserId')
-                           || null;
+        || localStorage.getItem('snipmeCustomerUserId')
+        || sessionStorage.getItem('customerID')
+        || sessionStorage.getItem('snipmeCustomerUserId')
+        || null;
 
     if (!bookingState.customerID) {
         console.warn('No customer ID found in session storage. Booking completion will be blocked until the customer logs in again.');
@@ -103,12 +103,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const params = new URLSearchParams(window.location.search);
     bookingState.salonId = params.get('salonId')
-                        || sessionStorage.getItem('selectedSalonId')
-                        || null;
+        || sessionStorage.getItem('selectedSalonId')
+        || null;
 
     // ── Date picker: tomorrow min, +7 days max ────────────
     const dateInput = document.getElementById('dateInput');
-    const tomorrow  = new Date();
+    const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     tomorrow.setHours(0, 0, 0, 0);
     const maxDate = new Date();
@@ -131,9 +131,9 @@ document.addEventListener('DOMContentLoaded', function () {
         loadSalonData(bookingState.salonId);
     } else {
         // Fallback if no salonId in URL
-        document.getElementById('salonName').textContent        = 'SNIP ME Salon';
+        document.getElementById('salonName').textContent = 'SNIP ME Salon';
         document.getElementById('salonDescription').textContent = 'Professional salon services';
-        document.getElementById('salonNameStep2').textContent   = 'at SNIP ME Salon';
+        document.getElementById('salonNameStep2').textContent = 'at SNIP ME Salon';
         loadFallbackServices();
     }
 
@@ -163,64 +163,64 @@ function loadSalonData(salonId) {
         fetch(API_BASE_URL + '/public/salons/' + salonId).then(r => r.json()),
         fetch(API_BASE_URL + '/public/salons/' + salonId + '/services').then(r => r.json())
     ])
-    .then(function (results) {
-        const salon    = results[0];
-        const services = results[1];
+        .then(function (results) {
+            const salon = results[0];
+            const services = results[1];
 
-        // Store salon info
-        bookingState.salonName    = salon.name    || 'SNIP ME Salon';
-        bookingState.salonDetails = salon.details || 'Professional salon services';
-        // Store opening/closing times if backend provides them
-        bookingState.openingTime = salon.openingTime || salon.opening_time || bookingState.openingTime;
-        bookingState.closingTime = salon.closingTime || salon.closing_time || bookingState.closingTime;
-        
-        // Parse and store holidays whether the backend sends JSON or comma-separated text
-        bookingState.holidays = parseSalonHolidays(salon.holidays);
+            // Store salon info
+            bookingState.salonName = salon.name || 'SNIP ME Salon';
+            bookingState.salonDetails = salon.details || 'Professional salon services';
+            // Store opening/closing times if backend provides them
+            bookingState.openingTime = salon.openingTime || salon.opening_time || bookingState.openingTime;
+            bookingState.closingTime = salon.closingTime || salon.closing_time || bookingState.closingTime;
 
-        validateDate();
+            // Parse and store holidays whether the backend sends JSON or comma-separated text
+            bookingState.holidays = parseSalonHolidays(salon.holidays);
 
-        // Update UI
-        document.getElementById('salonName').textContent        = bookingState.salonName;
-        document.getElementById('salonDescription').textContent = bookingState.salonDetails;
-        document.getElementById('salonNameStep2').textContent   = 'at ' + bookingState.salonName;
+            validateDate();
 
-        // Populate services dropdown with name + price
-        const serviceSelect = document.getElementById('serviceSelect');
-        serviceSelect.innerHTML = '<option value="">-- Select a service --</option>';
+            // Update UI
+            document.getElementById('salonName').textContent = bookingState.salonName;
+            document.getElementById('salonDescription').textContent = bookingState.salonDetails;
+            document.getElementById('salonNameStep2').textContent = 'at ' + bookingState.salonName;
 
-        if (services && services.length > 0) {
-            services.forEach(function (s) {
-                const option = document.createElement('option');
-                option.value = JSON.stringify({ serviceId: s.serviceId, serviceName: s.serviceName, price: s.price });
-                option.textContent = s.serviceName + ' — Rs. ' + Number(s.price).toLocaleString('en-US', { minimumFractionDigits: 2 });
-                serviceSelect.appendChild(option);
-            });
-        } else {
+            // Populate services dropdown with name + price
+            const serviceSelect = document.getElementById('serviceSelect');
+            serviceSelect.innerHTML = '<option value="">-- Select a service --</option>';
+
+            if (services && services.length > 0) {
+                services.forEach(function (s) {
+                    const option = document.createElement('option');
+                    option.value = JSON.stringify({ serviceId: s.serviceId, serviceName: s.serviceName, price: s.price });
+                    option.textContent = s.serviceName + ' — Rs. ' + Number(s.price).toLocaleString('en-US', { minimumFractionDigits: 2 });
+                    serviceSelect.appendChild(option);
+                });
+            } else {
+                loadFallbackServices();
+            }
+
+            serviceSelect.addEventListener('change', updateServiceDisplay);
+            showStep1Loading(false);
+        })
+        .catch(function (err) {
+            console.error('Failed to load salon data:', err);
+            // Fallback if backend not reachable
+            document.getElementById('salonName').textContent = 'SNIP ME Salon';
+            document.getElementById('salonDescription').textContent = 'Professional salon services';
+            document.getElementById('salonNameStep2').textContent = 'at SNIP ME Salon';
+            bookingState.salonName = 'SNIP ME Salon';
             loadFallbackServices();
-        }
-
-        serviceSelect.addEventListener('change', updateServiceDisplay);
-        showStep1Loading(false);
-    })
-    .catch(function (err) {
-        console.error('Failed to load salon data:', err);
-        // Fallback if backend not reachable
-        document.getElementById('salonName').textContent        = 'SNIP ME Salon';
-        document.getElementById('salonDescription').textContent = 'Professional salon services';
-        document.getElementById('salonNameStep2').textContent   = 'at SNIP ME Salon';
-        bookingState.salonName = 'SNIP ME Salon';
-        loadFallbackServices();
-        showStep1Loading(false);
-    });
+            showStep1Loading(false);
+        });
 }
 
 function loadFallbackServices() {
     // Used when backend not available or no services configured
     const fallback = [
-        { serviceId: 1, serviceName: 'Haircut',    price: 1500 },
-        { serviceId: 2, serviceName: 'Beard Trim', price: 800  },
-        { serviceId: 3, serviceName: 'Styling',    price: 2000 },
-        { serviceId: 4, serviceName: 'Hair Wash',  price: 600  },
+        { serviceId: 1, serviceName: 'Haircut', price: 1500 },
+        { serviceId: 2, serviceName: 'Beard Trim', price: 800 },
+        { serviceId: 3, serviceName: 'Styling', price: 2000 },
+        { serviceId: 4, serviceName: 'Hair Wash', price: 600 },
         { serviceId: 5, serviceName: 'Hair Color', price: 3500 }
     ];
     const serviceSelect = document.getElementById('serviceSelect');
@@ -270,11 +270,11 @@ function validateDate() {
         return false;
     }
 
-    const sel      = new Date(inp.value + 'T00:00:00');
+    const sel = new Date(inp.value + 'T00:00:00');
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     tomorrow.setHours(0, 0, 0, 0);
-    const maxDate  = new Date();
+    const maxDate = new Date();
     maxDate.setDate(maxDate.getDate() + 7);
     maxDate.setHours(23, 59, 59, 999);
 
@@ -283,7 +283,7 @@ function validateDate() {
         setStep1NextState(false);
         return false;
     }
-    if (sel > maxDate)  {
+    if (sel > maxDate) {
         err.textContent = 'Cannot book more than 7 days ahead';
         setStep1NextState(false);
         return false;
@@ -332,57 +332,57 @@ function loadAvailableSlots() {
         fetch(availEndpoint).then(r => r.ok ? r.json() : []).catch(() => []),
         fetch(allEndpoint).then(r => r.ok ? r.json() : []).catch(() => [])
     ])
-    .then(function (results) {
-        const avail = results[0] || [];
-        const all   = results[1] || [];
-        bookingState.allSlots = avail;
-        // Build quick maps of existing slots for the selected salon+date
-        const occupied = {}; // times that are NOT AVAILABLE
-        const availableMap = {}; // times that are AVAILABLE with slotID
+        .then(function (results) {
+            const avail = results[0] || [];
+            const all = results[1] || [];
+            bookingState.allSlots = avail;
+            // Build quick maps of existing slots for the selected salon+date
+            const occupied = {}; // times that are NOT AVAILABLE
+            const availableMap = {}; // times that are AVAILABLE with slotID
 
-        function normalizeSlotKey(rawKey) {
-            if (!rawKey || typeof rawKey !== 'string') return '';
-            // Remove fractional seconds and timezone suffixes.
-            let key = rawKey.replace(/\.\d+/, '');
-            key = key.replace(/Z$/, '');
-            key = key.replace(/([+-]\d{2}:?\d{2})$/, '');
-            if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(key)) {
-                key += ':00';
-            }
-            return key;
-        }
-
-        all.forEach(function (s) {
-            try {
-                var rawKey = s.startTime;
-                if (!rawKey) return;
-                var key = normalizeSlotKey(rawKey);
-                if (!key) return;
-
-                var salonObj = s.salon || {};
-                var salonId = salonObj.salonID || salonObj.salonId || salonObj.id;
-                if (!salonId) return;
-                if (String(salonId) !== String(bookingState.salonId)) return;
-
-                var datePart = key.split('T')[0];
-                if (datePart !== bookingState.selectedDate) return;
-
-                var status = String(s.status || '').toUpperCase();
-                if (status !== 'AVAILABLE') {
-                    occupied[key] = s;
-                } else {
-                    availableMap[key] = s;
+            function normalizeSlotKey(rawKey) {
+                if (!rawKey || typeof rawKey !== 'string') return '';
+                // Remove fractional seconds and timezone suffixes.
+                let key = rawKey.replace(/\.\d+/, '');
+                key = key.replace(/Z$/, '');
+                key = key.replace(/([+-]\d{2}:?\d{2})$/, '');
+                if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(key)) {
+                    key += ':00';
                 }
-            } catch (e) { /* ignore malformed items */ }
-        });
+                return key;
+            }
 
-        // Now generate hourly slots based on salon opening/closing times
-        filterAndDisplayGeneratedSlots(availableMap, occupied, bookingState.selectedDate);
-    })
-    .catch(function (err) {
-        console.error('Failed to load slots:', err);
-        grid.innerHTML = '<p class="no-slots" style="color:#ff6b6b;">Could not load time slots. Please check your connection and try again.</p>';
-    });
+            all.forEach(function (s) {
+                try {
+                    var rawKey = s.startTime;
+                    if (!rawKey) return;
+                    var key = normalizeSlotKey(rawKey);
+                    if (!key) return;
+
+                    var salonObj = s.salon || {};
+                    var salonId = salonObj.salonID || salonObj.salonId || salonObj.id;
+                    if (!salonId) return;
+                    if (String(salonId) !== String(bookingState.salonId)) return;
+
+                    var datePart = key.split('T')[0];
+                    if (datePart !== bookingState.selectedDate) return;
+
+                    var status = String(s.status || '').toUpperCase();
+                    if (status !== 'AVAILABLE') {
+                        occupied[key] = s;
+                    } else {
+                        availableMap[key] = s;
+                    }
+                } catch (e) { /* ignore malformed items */ }
+            });
+
+            // Now generate hourly slots based on salon opening/closing times
+            filterAndDisplayGeneratedSlots(availableMap, occupied, bookingState.selectedDate);
+        })
+        .catch(function (err) {
+            console.error('Failed to load slots:', err);
+            grid.innerHTML = '<p class="no-slots" style="color:#ff6b6b;">Could not load time slots. Please check your connection and try again.</p>';
+        });
 }
 
 function filterAndDisplaySlots(slots, selectedDate) {
@@ -401,7 +401,7 @@ function filterAndDisplayGeneratedSlots(availableMap, occupiedMap, selectedDate)
     // Parse HH:mm:ss
     function parseHM(t) {
         const parts = (t || '00:00:00').split(':');
-        return { h: parseInt(parts[0]||'0',10), m: parseInt(parts[1]||'0',10) };
+        return { h: parseInt(parts[0] || '0', 10), m: parseInt(parts[1] || '0', 10) };
     }
 
     const op = parseHM(opening);
@@ -409,7 +409,7 @@ function filterAndDisplayGeneratedSlots(availableMap, occupiedMap, selectedDate)
 
     // Build JS Dates in local (no timezone suffix) by using the selectedDate
     const start = new Date(selectedDate + 'T' + padTime(op.h) + ':' + padTime(op.m) + ':00');
-    const end   = new Date(selectedDate + 'T' + padTime(cl.h) + ':' + padTime(cl.m) + ':00');
+    const end = new Date(selectedDate + 'T' + padTime(cl.h) + ':' + padTime(cl.m) + ':00');
 
     if (start >= end) {
         grid.innerHTML = '<p class="no-slots">Salon has invalid opening/closing times configured.</p>';
@@ -422,7 +422,7 @@ function filterAndDisplayGeneratedSlots(availableMap, occupiedMap, selectedDate)
         const hh = padTime(t.getHours());
         const mm = padTime(t.getMinutes());
         const isoLocal = selectedDate + 'T' + hh + ':' + mm + ':00';
-        const label = hh + ':' + mm + ' - ' + padTime((t.getHours()+1)%24) + ':' + mm;
+        const label = hh + ':' + mm + ' - ' + padTime((t.getHours() + 1) % 24) + ':' + mm;
 
         // If DB shows occupied/locked/booked → show as taken first
         if (occupiedMap[isoLocal]) {
@@ -486,7 +486,7 @@ function createGeneratedSlotElement(slot) {
         button.classList.add(slot.state === 'virtual' ? 'virtual-available' : 'available');
         button.appendChild(inner);
         const input = document.createElement('input');
-        input.type = 'radio'; input.name = 'timeSlot'; input.id = 'ts' + (slot.slotID || 'v' + slot.startTime.replace(/[:T]/g,''));
+        input.type = 'radio'; input.name = 'timeSlot'; input.id = 'ts' + (slot.slotID || 'v' + slot.startTime.replace(/[:T]/g, ''));
         input.value = slot.slotID || '';
         button.prepend(input);
 
@@ -503,19 +503,19 @@ function createGeneratedSlotElement(slot) {
 
 function createSlotElement(slot) {
     // Parse startTime "2026-04-28T09:00:00" → "09:00 - 09:30"
-    const start     = new Date(slot.startTime);
-    const end       = new Date(start.getTime() + 30 * 60000); // +30 min
-    const startStr  = padTime(start.getHours()) + ':' + padTime(start.getMinutes());
-    const endStr    = padTime(end.getHours())   + ':' + padTime(end.getMinutes());
-    const label     = startStr + ' - ' + endStr;
+    const start = new Date(slot.startTime);
+    const end = new Date(start.getTime() + 30 * 60000); // +30 min
+    const startStr = padTime(start.getHours()) + ':' + padTime(start.getMinutes());
+    const endStr = padTime(end.getHours()) + ':' + padTime(end.getMinutes());
+    const label = startStr + ' - ' + endStr;
 
     const div = document.createElement('div');
     div.className = 'time-slot';
     div.innerHTML =
         '<input type="radio" name="timeSlot" value="' + slot.slotID + '" id="ts' + slot.slotID + '">' +
         '<label for="ts' + slot.slotID + '">' +
-            '<span class="slot-time">' + label + '</span>' +
-            '<span class="slot-duration">30 min</span>' +
+        '<span class="slot-time">' + label + '</span>' +
+        '<span class="slot-duration">30 min</span>' +
         '</label>';
 
     div.addEventListener('click', function () {
@@ -561,17 +561,17 @@ function getAmountValue() {
 }
 
 function fillSummaries() {
-    const slotLbl   = bookingState.selectedSlot ? bookingState.selectedSlot.label : '';
-    const dateLbl   = formatDateDisplay(bookingState.selectedDate);
-    const svcName   = bookingState.selectedService ? bookingState.selectedService.serviceName : '-';
+    const slotLbl = bookingState.selectedSlot ? bookingState.selectedSlot.label : '';
+    const dateLbl = formatDateDisplay(bookingState.selectedDate);
+    const svcName = bookingState.selectedService ? bookingState.selectedService.serviceName : '-';
     const amtDisplay = getAmountDisplay();
 
     // Gateway box
     document.getElementById('pgSummService').textContent = svcName;
-    document.getElementById('pgSummDate').textContent    = dateLbl;
-    document.getElementById('pgSummTime').textContent    = slotLbl;
-    document.getElementById('pgSummTotal').textContent   = amtDisplay;
-    document.getElementById('pgBtnAmount').textContent   = amtDisplay;
+    document.getElementById('pgSummDate').textContent = dateLbl;
+    document.getElementById('pgSummTime').textContent = slotLbl;
+    document.getElementById('pgSummTotal').textContent = amtDisplay;
+    document.getElementById('pgBtnAmount').textContent = amtDisplay;
 }
 
 function showMainBox() {
@@ -638,7 +638,7 @@ function setupPayHereHandlers() {
 function resetConfirmBtn() {
     const btn = document.getElementById('pgConfirmBtn');
     if (btn) {
-        btn.disabled  = false;
+        btn.disabled = false;
         btn.classList.remove('loading-state');
         btn.innerHTML = 'Confirm Booking — <span id="pgBtnAmount">' + getAmountDisplay() + '</span>';
     }
@@ -650,13 +650,13 @@ function resetConfirmBtn() {
 // Uses existing /api/bookings/confirm
 // ─────────────────────────────────────────────────────────
 function confirmBookingInBackend() {
-    const slotID     = bookingState.selectedSlot && bookingState.selectedSlot.slotID;
+    const slotID = bookingState.selectedSlot && bookingState.selectedSlot.slotID;
     const customerID = bookingState.customerID;
-    const salonID    = bookingState.salonId;
-    const serviceID  = bookingState.selectedService ? bookingState.selectedService.serviceId : null;
-    const startTime  = bookingState.selectedSlot ? bookingState.selectedSlot.startTime : null;
-    const orderId    = bookingState.orderId;
-    const amount     = getAmountValue();
+    const salonID = bookingState.salonId;
+    const serviceID = bookingState.selectedService ? bookingState.selectedService.serviceId : null;
+    const startTime = bookingState.selectedSlot ? bookingState.selectedSlot.startTime : null;
+    const orderId = bookingState.orderId;
+    const amount = getAmountValue();
 
     if (!customerID) {
         hideProcessingOverlay();
@@ -666,12 +666,12 @@ function confirmBookingInBackend() {
     }
 
     let url = API_BASE_URL + '/bookings/complete?customerID=' + customerID
-            + '&salonID=' + salonID
-            + '&serviceID=' + serviceID
-            + '&startTime=' + encodeURIComponent(startTime)
-            + '&orderId=' + encodeURIComponent(orderId)
-            + '&amount=' + amount;
-            
+        + '&salonID=' + salonID
+        + '&serviceID=' + serviceID
+        + '&startTime=' + encodeURIComponent(startTime)
+        + '&orderId=' + encodeURIComponent(orderId)
+        + '&amount=' + amount;
+
     if (slotID) {
         url += '&slotID=' + slotID;
     }
@@ -679,34 +679,34 @@ function confirmBookingInBackend() {
     fetch(url, {
         method: 'POST'
     })
-    .then(function (res) { return res.text(); })
-    .then(function (data) {
-        console.log('Backend confirmed:', data);
-        // Handle race condition: backend signals slot already taken
-        if (data.includes('SLOT_ALREADY_BOOKED')) {
+        .then(function (res) { return res.text(); })
+        .then(function (data) {
+            console.log('Backend confirmed:', data);
+            // Handle race condition: backend signals slot already taken
+            if (data.includes('SLOT_ALREADY_BOOKED')) {
+                hideProcessingOverlay();
+                resetConfirmBtn();
+                flashError('This slot was just booked by someone else. Please select another time slot.');
+                setTimeout(function () {
+                    goToStep(2);
+                    hideGateway();
+                    bookingState.selectedSlot = null;
+                    loadAvailableSlots();
+                }, 3000);
+                return;
+            }
+            const match = data.match(/Booking ID:\s*(\d+)/i);
+            if (match) {
+                bookingState.bookingID = 'BOOK-' + match[1];
+            }
+            finishBooking();
+        })
+        .catch(function (err) {
+            console.error('Backend confirm error:', err);
             hideProcessingOverlay();
             resetConfirmBtn();
-            flashError('This slot was just booked by someone else. Please select another time slot.');
-            setTimeout(function () {
-                goToStep(2);
-                hideGateway();
-                bookingState.selectedSlot = null;
-                loadAvailableSlots();
-            }, 3000);
-            return;
-        }
-        const match = data.match(/Booking ID:\s*(\d+)/i);
-        if (match) {
-            bookingState.bookingID = 'BOOK-' + match[1];
-        }
-        finishBooking();
-    })
-    .catch(function (err) {
-        console.error('Backend confirm error:', err);
-        hideProcessingOverlay();
-        resetConfirmBtn();
-        flashError('Payment succeeded, but the booking save failed. Please try again or contact support.');
-    });
+            flashError('Payment succeeded, but the booking save failed. Please try again or contact support.');
+        });
 }
 
 // ─────────────────────────────────────────────────────────
@@ -715,7 +715,7 @@ function confirmBookingInBackend() {
 function confirmOnlinePayment() {
     document.getElementById('pgError').textContent = '';
     const btn = document.getElementById('pgConfirmBtn');
-    btn.disabled  = true;
+    btn.disabled = true;
     btn.innerHTML = '<span class="pg-spinner"></span> Connecting to PayHere…';
     showProcessingOverlay();
     if (typeof showLoader === 'function') {
@@ -735,115 +735,115 @@ function confirmOnlinePayment() {
             + '&customerID=' + bookingState.customerID, { method: 'POST' });
 
     initiatePromise
-    .then(function (res) {
-        if (res && res.status === 409) {
-            // Another customer just locked this slot
-            throw new Error('SLOT_TAKEN');
-        }
-        if (res && !res.ok) {
-            throw new Error('INITIATE_FAILED');
-        }
-        // Slot locked successfully (or virtual) — now get PayHere hash from backend
-        return fetch(API_BASE_URL + '/payment/hash'
-            + '?orderId='  + bookingState.orderId
-            + '&amount='   + amount
-            + '&currency=' + CURRENCY);
-    })
-    .then(function (res) {
-        if (!res.ok) throw new Error('Hash backend returned ' + res.status);
-        return res.json();
-    })
-    .then(function (data) {
-        if (typeof hideLoader === 'function') {
-            hideLoader();
-        }
+        .then(function (res) {
+            if (res && res.status === 409) {
+                // Another customer just locked this slot
+                throw new Error('SLOT_TAKEN');
+            }
+            if (res && !res.ok) {
+                throw new Error('INITIATE_FAILED');
+            }
+            // Slot locked successfully (or virtual) — now get PayHere hash from backend
+            return fetch(API_BASE_URL + '/payment/hash'
+                + '?orderId=' + bookingState.orderId
+                + '&amount=' + amount
+                + '&currency=' + CURRENCY);
+        })
+        .then(function (res) {
+            if (!res.ok) throw new Error('Hash backend returned ' + res.status);
+            return res.json();
+        })
+        .then(function (data) {
+            if (typeof hideLoader === 'function') {
+                hideLoader();
+            }
 
-        // ── Sandbox mode — trust the backend, never guess from hostname ────────
-        // The backend returns "sandbox": "true" or "false" based on the
-        // PAYHERE_SANDBOX_MODE env var set on Render.
-        // sandbox=true  → PayHere sandbox popup  (test cards, no real money)
-        // sandbox=false → PayHere live popup     (real cards, real money)
-        // The hash was generated with the matching merchant secret, so the
-        // sandbox flag here ALWAYS matches the secret used — no mismatch possible.
-        var useSandbox = (data.sandbox === 'true' || data.sandbox === true);
-        console.log('PayHere mode:', useSandbox ? 'SANDBOX' : 'LIVE',
-                    '| backend sandbox flag:', data.sandbox);
+            // ── Sandbox mode — trust the backend, never guess from hostname ────────
+            // The backend returns "sandbox": "true" or "false" based on the
+            // PAYHERE_SANDBOX_MODE env var set on Render.
+            // sandbox=true  → PayHere sandbox popup  (test cards, no real money)
+            // sandbox=false → PayHere live popup     (real cards, real money)
+            // The hash was generated with the matching merchant secret, so the
+            // sandbox flag here ALWAYS matches the secret used — no mismatch possible.
+            var useSandbox = (data.sandbox === 'true' || data.sandbox === true);
+            console.log('PayHere mode:', useSandbox ? 'SANDBOX' : 'LIVE',
+                '| backend sandbox flag:', data.sandbox);
 
-        // Retrieve customer name from session storage if available
-        // Uses the same key that customer_session.js / customer_login.js stores
-        var firstName = localStorage.getItem('snipmeCustomerUsername')
-                     || sessionStorage.getItem('snipmeCustomerUsername')
-                     || localStorage.getItem('customerName')
-                     || sessionStorage.getItem('customerName')
-                     || 'Customer';
-        var lastName  = '';
-        // Split on first space if a full name was stored
-        var nameParts = firstName.trim().split(' ');
-        if (nameParts.length > 1) {
-            firstName = nameParts[0];
-            lastName  = nameParts.slice(1).join(' ');
-        }
+            // Retrieve customer name from session storage if available
+            // Uses the same key that customer_session.js / customer_login.js stores
+            var firstName = localStorage.getItem('snipmeCustomerUsername')
+                || sessionStorage.getItem('snipmeCustomerUsername')
+                || localStorage.getItem('customerName')
+                || sessionStorage.getItem('customerName')
+                || 'Customer';
+            var lastName = '';
+            // Split on first space if a full name was stored
+            var nameParts = firstName.trim().split(' ');
+            if (nameParts.length > 1) {
+                firstName = nameParts[0];
+                lastName = nameParts.slice(1).join(' ');
+            }
 
-        var customerEmail = localStorage.getItem('snipmeCustomerEmail')
-                         || sessionStorage.getItem('snipmeCustomerEmail')
-                         || localStorage.getItem('customerEmail')
-                         || sessionStorage.getItem('customerEmail')
-                         || 'customer@snipme.lk';
+            var customerEmail = localStorage.getItem('snipmeCustomerEmail')
+                || sessionStorage.getItem('snipmeCustomerEmail')
+                || localStorage.getItem('customerEmail')
+                || sessionStorage.getItem('customerEmail')
+                || 'customer@snipme.lk';
 
-        // Ensure we store the orderId from the hash response (backend echoes it back)
-        if (data.order_id) {
-            bookingState.orderId = data.order_id;
-        }
+            // Ensure we store the orderId from the hash response (backend echoes it back)
+            if (data.order_id) {
+                bookingState.orderId = data.order_id;
+            }
 
-        const payment = {
-            sandbox:     useSandbox,
-            merchant_id: data.merchant_id,
-            return_url:  undefined,
-            cancel_url:  undefined,
-            // notify_url omitted: Render free-tier sleeps; booking is confirmed via
-            // confirmBookingInBackend() in the onCompleted callback instead.
-            order_id:    data.order_id,
-            items:       (bookingState.selectedService ? bookingState.selectedService.serviceName : 'Salon Service')
-                         + ' at ' + (bookingState.salonName || 'SNIP ME'),
-            amount:      data.amount,
-            currency:    data.currency,
-            hash:        data.hash,
-            first_name:  firstName,
-            last_name:   lastName  || 'User',
-            email:       customerEmail,
-            phone:       '0771234567',
-            address:     'Sri Lanka',
-            city:        'Colombo',
-            country:     'Sri Lanka'
-        };
+            const payment = {
+                sandbox: useSandbox,
+                merchant_id: data.merchant_id,
+                return_url: undefined,
+                cancel_url: undefined,
+                // notify_url omitted: Render free-tier sleeps; booking is confirmed via
+                // confirmBookingInBackend() in the onCompleted callback instead.
+                order_id: data.order_id,
+                items: (bookingState.selectedService ? bookingState.selectedService.serviceName : 'Salon Service')
+                    + ' at ' + (bookingState.salonName || 'SNIP ME'),
+                amount: data.amount,
+                currency: data.currency,
+                hash: data.hash,
+                first_name: firstName,
+                last_name: lastName || 'User',
+                email: customerEmail,
+                phone: '0771234567',
+                address: 'Sri Lanka',
+                city: 'Colombo',
+                country: 'Sri Lanka'
+            };
 
-        console.log('Opening PayHere popup (sandbox=' + useSandbox + ')...');
-        payhere.startPayment(payment);
+            console.log('Opening PayHere popup (sandbox=' + useSandbox + ')...');
+            payhere.startPayment(payment);
 
-        hideProcessingOverlay();
-        resetConfirmBtn();
-    })
-    .catch(function (err) {
-        console.error('Payment init failed:', err);
-        if (typeof hideLoader === 'function') {
-            hideLoader();
-        }
-        hideProcessingOverlay();
-        resetConfirmBtn();
-        if (err.message === 'SLOT_TAKEN') {
-            // Go back to step 2 and show error
-            flashError('Sorry! This slot was just booked by someone else. Please go back and select another time slot.');
-            setTimeout(function () {
-                goToStep(2);
-                hideGateway();
-                loadAvailableSlots(); // Refresh slots from backend
-            }, 3000);
-        } else if (err.message === 'INITIATE_FAILED') {
-            flashError('Could not lock this time slot. Please try again.');
-        } else {
-            flashError('Payment could not be initialised. Please check your connection and try again. (' + err.message + ')');
-        }
-    });
+            hideProcessingOverlay();
+            resetConfirmBtn();
+        })
+        .catch(function (err) {
+            console.error('Payment init failed:', err);
+            if (typeof hideLoader === 'function') {
+                hideLoader();
+            }
+            hideProcessingOverlay();
+            resetConfirmBtn();
+            if (err.message === 'SLOT_TAKEN') {
+                // Go back to step 2 and show error
+                flashError('Sorry! This slot was just booked by someone else. Please go back and select another time slot.');
+                setTimeout(function () {
+                    goToStep(2);
+                    hideGateway();
+                    loadAvailableSlots(); // Refresh slots from backend
+                }, 3000);
+            } else if (err.message === 'INITIATE_FAILED') {
+                flashError('Could not lock this time slot. Please try again.');
+            } else {
+                flashError('Payment could not be initialised. Please check your connection and try again. (' + err.message + ')');
+            }
+        });
 }
 
 function clearGatewayErrors() {
@@ -878,18 +878,18 @@ function flashError(msg) {
 function finishBooking() {
     if (!bookingState.bookingID) bookingState.bookingID = 'BOOK-' + Date.now();
 
-    const slotLbl    = bookingState.selectedSlot ? bookingState.selectedSlot.label : '';
-    const dateLbl    = formatDateDisplay(bookingState.selectedDate);
-    const svcName    = bookingState.selectedService ? bookingState.selectedService.serviceName : '-';
+    const slotLbl = bookingState.selectedSlot ? bookingState.selectedSlot.label : '';
+    const dateLbl = formatDateDisplay(bookingState.selectedDate);
+    const svcName = bookingState.selectedService ? bookingState.selectedService.serviceName : '-';
     const amtDisplay = getAmountDisplay();
 
     document.getElementById('confirmationDetails').innerHTML =
-        '<div class="cd-row"><span>Booking ID</span><span>'  + bookingState.bookingID        + '</span></div>' +
-        '<div class="cd-row"><span>Salon</span><span>'       + (bookingState.salonName || '-')+ '</span></div>' +
-        '<div class="cd-row"><span>Service</span><span>'     + svcName                        + '</span></div>' +
-        '<div class="cd-row"><span>Date</span><span>'        + dateLbl                        + '</span></div>' +
-        '<div class="cd-row"><span>Time</span><span>'        + slotLbl                        + '</span></div>' +
-        '<div class="cd-row"><span>Payment</span><span>Online (PayHere)</span></div>'          +
+        '<div class="cd-row"><span>Booking ID</span><span>' + bookingState.bookingID + '</span></div>' +
+        '<div class="cd-row"><span>Salon</span><span>' + (bookingState.salonName || '-') + '</span></div>' +
+        '<div class="cd-row"><span>Service</span><span>' + svcName + '</span></div>' +
+        '<div class="cd-row"><span>Date</span><span>' + dateLbl + '</span></div>' +
+        '<div class="cd-row"><span>Time</span><span>' + slotLbl + '</span></div>' +
+        '<div class="cd-row"><span>Payment</span><span>Online (PayHere)</span></div>' +
         '<div class="cd-row cd-total"><span>Amount</span><span>' + amtDisplay + '</span></div>';
 
     goToStep(4);
@@ -915,9 +915,9 @@ function goToStep(n) {
     }
 }
 function goToPreviousStep(n) { if (n > 1) goToStep(n - 1); }
-function goBack()       { window.history.back(); }
+function goBack() { window.history.back(); }
 function goToSettings() { window.location.href = 'settings.html?tab=bookings'; }
-function goHome()       { window.location.href = '../index.html'; }
+function goHome() { window.location.href = '../index.html'; }
 
 // ─────────────────────────────────────────────────────────
 // REAL-TIME SLOT POLLING (concurrency protection)
@@ -935,12 +935,12 @@ function startSlotPoller() {
         if (!bookingState.salonId || !bookingState.selectedDate) return;
         fetch(API_BASE_URL + '/bookings/taken-slots'
             + '?salonId=' + encodeURIComponent(bookingState.salonId)
-            + '&date='    + encodeURIComponent(bookingState.selectedDate))
-        .then(function (r) { return r.ok ? r.json() : []; })
-        .then(function (takenTimes) {
-            applyTakenSlots(takenTimes);
-        })
-        .catch(function () { /* ignore network errors silently */ });
+            + '&date=' + encodeURIComponent(bookingState.selectedDate))
+            .then(function (r) { return r.ok ? r.json() : []; })
+            .then(function (takenTimes) {
+                applyTakenSlots(takenTimes);
+            })
+            .catch(function () { /* ignore network errors silently */ });
     }
 
     pollNow(); // immediate first call

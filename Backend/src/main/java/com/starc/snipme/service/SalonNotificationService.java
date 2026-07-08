@@ -14,30 +14,34 @@ public class SalonNotificationService {
 
     public void createNotification(Long salonId, String message, String type, Long relatedId) {
         if (salonId == null) {
-        throw new IllegalArgumentException("Salon ID cannot be null");
+            throw new IllegalArgumentException("Salon ID cannot be null");
         }
         SalonNotification notification = new SalonNotification(salonId, message, type, relatedId);
         repository.save(notification);
     }
 
     public List<SalonNotification> getAllNotifications(Long salonId) {
-        if (salonId == null) return java.util.Collections.emptyList();
+        if (salonId == null)
+            return java.util.Collections.emptyList();
         return repository.findBySalonIdOrderByCreatedAtDesc(salonId);
     }
 
     public List<SalonNotification> getUnreadNotifications(Long salonId) {
-        if (salonId == null) return java.util.Collections.emptyList();
+        if (salonId == null)
+            return java.util.Collections.emptyList();
         return repository.findBySalonIdAndIsReadFalseOrderByCreatedAtDesc(salonId);
     }
 
     public long getUnreadCount(Long salonId) {
-        if (salonId == null) return 0L;
+        if (salonId == null)
+            return 0L;
         return repository.countBySalonIdAndIsReadFalse(salonId);
     }
 
     public void markAsRead(Long id) {
-        //null value check
-        if (id == null) return;
+        // null value check
+        if (id == null)
+            return;
         repository.findById(id).ifPresent(n -> {
             n.setIsRead(true);
             repository.save(n);
@@ -51,8 +55,9 @@ public class SalonNotificationService {
     }
 
     public void deleteNotification(Long id) {
-        //null value check
-        if (id == null) return;
+        // null value check
+        if (id == null)
+            return;
         repository.deleteById(id);
     }
 }

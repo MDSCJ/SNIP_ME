@@ -22,10 +22,10 @@ public class PaymentController {
 
     // ── PayHere Credentials ──────────────────────────────────────────────────
     // Set these on Render as environment variables:
-    //   PAYHERE_MERCHANT_ID      = your sandbox or live merchant ID
-    //   PAYHERE_MERCHANT_SECRET  = the matching merchant secret
-    //   PAYHERE_SANDBOX_MODE     = true  → sandbox popup (for testing)
-    //                              false → live popup (real payments)
+    // PAYHERE_MERCHANT_ID = your sandbox or live merchant ID
+    // PAYHERE_MERCHANT_SECRET = the matching merchant secret
+    // PAYHERE_SANDBOX_MODE = true → sandbox popup (for testing)
+    // false → live popup (real payments)
     @Value("${payhere.merchant.id}")
     private String merchantId;
 
@@ -52,7 +52,7 @@ public class PaymentController {
             HttpServletRequest request) {
 
         try {
-            String origin  = request.getHeader("Origin");
+            String origin = request.getHeader("Origin");
             String referer = request.getHeader("Referer");
             System.out.println("=== PayHere Hash Request ===");
             System.out.println("Origin   : " + origin);
@@ -62,23 +62,24 @@ public class PaymentController {
             System.out.println("Amount   : " + amount + " " + currency);
             System.out.println("OrderID  : " + orderId);
 
-            // Generate hash: MD5( merchant_id + order_id + amount + currency + MD5(secret).toUpperCase() )
+            // Generate hash: MD5( merchant_id + order_id + amount + currency +
+            // MD5(secret).toUpperCase() )
             String hashedSecret = md5(merchantSecret).toUpperCase();
-            String rawString    = merchantId + orderId + amount + currency + hashedSecret;
-            String hash         = md5(rawString).toUpperCase();
+            String rawString = merchantId + orderId + amount + currency + hashedSecret;
+            String hash = md5(rawString).toUpperCase();
 
             System.out.println("Hash     : " + hash);
             System.out.println("============================");
 
             Map<String, String> response = new HashMap<>();
             response.put("merchant_id", merchantId);
-            response.put("order_id",    orderId);
-            response.put("amount",      amount);
-            response.put("currency",    currency);
-            response.put("hash",        hash);
+            response.put("order_id", orderId);
+            response.put("amount", amount);
+            response.put("currency", currency);
+            response.put("hash", hash);
             // Tell the frontend which popup mode to use — sandbox or live.
             // Frontend must use this value directly; do NOT guess from hostname.
-            response.put("sandbox",     String.valueOf(sandboxMode));
+            response.put("sandbox", String.valueOf(sandboxMode));
 
             return ResponseEntity.ok(response);
 
@@ -130,11 +131,12 @@ public class PaymentController {
 
     // ── MD5 helper ────────────────────────────────────────────────────────────
     private String md5(String input) throws Exception {
-        MessageDigest md     = MessageDigest.getInstance("MD5");
-        byte[]        digest = md.digest(input.getBytes(StandardCharsets.UTF_8));
-        BigInteger    number = new BigInteger(1, digest);
-        String        hash   = number.toString(16);
-        while (hash.length() < 32) hash = "0" + hash;
+        MessageDigest md = MessageDigest.getInstance("MD5");
+        byte[] digest = md.digest(input.getBytes(StandardCharsets.UTF_8));
+        BigInteger number = new BigInteger(1, digest);
+        String hash = number.toString(16);
+        while (hash.length() < 32)
+            hash = "0" + hash;
         return hash;
     }
 }
