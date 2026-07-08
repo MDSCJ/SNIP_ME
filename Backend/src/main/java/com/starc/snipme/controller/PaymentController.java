@@ -28,8 +28,7 @@ public class PaymentController {
     // Secret for localhost (your existing one)
     private static final String SECRET_LOCALHOST = "Mjg2ODM5NDc3OTU4ODM2Njg4NTM5NDc2MDU0MDk3NzI1NTE4MDg=";
 
-    // Secret for mdscj.github.io
-
+    // Secret for production frontends (mdscj.github.io, onrender.com, etc.)
     private static final String SECRET_GITHUB = "MjczNjUwNTQzOTUxNjQzNTIxMTY1NzMyODMzNDE4NjQ2MDE1NA=";
 
     public PaymentController(BookingService bookingService, PaymentRepository paymentRepository) {
@@ -53,13 +52,19 @@ public class PaymentController {
             String referer = request.getHeader("Referer");
             String source = (origin != null ? origin : "") + (referer != null ? referer : "");
 
+            // Log the detected origin for debugging
+            System.out.println("Payment hash request — Origin: " + origin + " | Referer: " + referer);
+
             // Pick the correct secret based on domain
+            // Only use localhost secret for actual local development
             String secret;
-            if (source.contains("github.io")) {
-                secret = SECRET_GITHUB;
-            } else {
-                // localhost, 127.0.0.1, or any other local dev
+            if (source.contains("localhost") || source.contains("127.0.0.1")) {
                 secret = SECRET_LOCALHOST;
+                System.out.println("Using LOCALHOST secret");
+            } else {
+                // All hosted frontends (github.io, onrender.com, custom domain, etc.)
+                secret = SECRET_GITHUB;
+                System.out.println("Using PRODUCTION secret for: " + source);
             }
 
             // Generate hash: MD5(merchant_id + order_id + amount + currency +

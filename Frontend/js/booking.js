@@ -792,7 +792,7 @@ function confirmOnlinePayment() {
         } else if (err.message === 'INITIATE_FAILED') {
             flashError('Could not lock this time slot. Please try again.');
         } else {
-            flashError('Cannot reach backend on port 8080. Start Spring Boot first, then try again.');
+            flashError('Payment could not be initialised. Please check your connection and try again. (' + err.message + ')');
         }
     });
 }
