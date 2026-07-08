@@ -752,7 +752,8 @@ function confirmOnlinePayment() {
             merchant_id: data.merchant_id,
             return_url:  undefined,
             cancel_url:  undefined,
-            notify_url:  API_BASE_URL + '/payment/notify',
+            // notify_url omitted: Render free-tier sleeps; booking is confirmed via
+            // confirmBookingInBackend() in the onCompleted callback instead.
             order_id:    data.order_id,
             items:       (bookingState.selectedService ? bookingState.selectedService.serviceName : 'Salon Service')
                          + ' at ' + (bookingState.salonName || 'SNIP ME'),
