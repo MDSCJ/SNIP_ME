@@ -33,8 +33,7 @@ public class PaymentController {
     private String merchantSecret;
 
     /** true = sandbox mode everywhere; false = live mode */
-    @Value("${payhere.sandbox.mode:true}")
-    private boolean sandboxMode;
+    private boolean sandboxMode = true; // Hardcoded to true as requested
 
     public PaymentController(PaymentRepository paymentRepository) {
         this.paymentRepository = paymentRepository;

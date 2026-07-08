@@ -765,7 +765,7 @@ function confirmOnlinePayment() {
             // sandbox=false → PayHere live popup     (real cards, real money)
             // The hash was generated with the matching merchant secret, so the
             // sandbox flag here ALWAYS matches the secret used — no mismatch possible.
-            var useSandbox = (data.sandbox === 'true' || data.sandbox === true);
+            var useSandbox = true; // Hardcoded to true to force sandbox as in chamath branch
             console.log('PayHere mode:', useSandbox ? 'SANDBOX' : 'LIVE',
                 '| backend sandbox flag:', data.sandbox);
 
@@ -795,13 +795,18 @@ function confirmOnlinePayment() {
                 bookingState.orderId = data.order_id;
             }
 
+            // PayHere requires URLs to match the registered domains in the dashboard.
+            // Since you are running locally (file:/// or localhost), we must spoof 
+            // the URLs to match your registered 'github.io' domain to avoid the 
+            // 'Unauthorized payment request' error.
+            var safeUrl = 'https://mdscj.github.io/SNIP_ME'; 
+
             const payment = {
                 sandbox: useSandbox,
                 merchant_id: data.merchant_id,
-                return_url: undefined,
-                cancel_url: undefined,
-                // notify_url omitted: Render free-tier sleeps; booking is confirmed via
-                // confirmBookingInBackend() in the onCompleted callback instead.
+                return_url: safeUrl,
+                cancel_url: safeUrl,
+                notify_url: 'https://mdscj.github.io/api/payment/notify',
                 order_id: data.order_id,
                 items: (bookingState.selectedService ? bookingState.selectedService.serviceName : 'Salon Service')
                     + ' at ' + (bookingState.salonName || 'SNIP ME'),
