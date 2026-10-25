@@ -11,9 +11,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
@@ -75,11 +78,18 @@ public class AuthController {
 
         String roleStr = requestedRole;
 
+        // Public sign-up can only ever create customers or salon owners. The admin
+        // account authenticates with ADMIN_PASSWORD and must never be self-registered.
         if (adminEmail != null && adminEmail.equalsIgnoreCase(normalizedEmail)) {
-            roleStr = "ADMIN";
-        } else if ("ADMIN".equals(roleStr)) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of("error", "Admin role is reserved for the system admin email."));
+            logger.warn("Blocked registration attempt for the admin email");
+            return ResponseEntity.badRequest().body(Map.of("error", "This email cannot be registered."));
+        }
+        if (!"CUSTOMER".equals(roleStr) && !"SALON_OWNER".equals(roleStr)) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Invalid account type."));
+        }
+
+        if (request.getPassword() == null || request.getPassword().length() < 8) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Password must be at least 8 characters."));
         }
 
         if (("CUSTOMER".equals(roleStr) || "SALON_OWNER".equals(roleStr))
@@ -125,7 +135,9 @@ public class AuthController {
 
         if (adminEmail != null && adminEmail.equalsIgnoreCase(normalizedEmail)
                 && adminPassword != null && !adminPassword.isBlank()
-                && adminPassword.equals(authRequest.getPassword())) {
+                && authRequest.getPassword() != null
+                && MessageDigest.isEqual(adminPassword.getBytes(StandardCharsets.UTF_8),
+                        authRequest.getPassword().getBytes(StandardCharsets.UTF_8))) {
             String token = jwtUtils.generateToken(normalizedEmail);
             loginSessionTracker.markLogin(normalizedEmail, "ADMIN");
             return ResponseEntity.ok(new AuthResponse(token, "Admin", "", normalizedEmail, "ADMIN", null, null));
@@ -133,7 +145,9 @@ public class AuthController {
 
         Optional<User> userOpt = userRepository.findByEmailIgnoreCase(normalizedEmail);
 
-        if (userOpt.isPresent() && passwordEncoder.matches(authRequest.getPassword(), userOpt.get().getPassword())) {
+        if (userOpt.isPresent() && authRequest.getPassword() != null
+                && !"ADMIN".equalsIgnoreCase(userOpt.get().getUserType())
+                && passwordEncoder.matches(authRequest.getPassword(), userOpt.get().getPassword())) {
             User user = userOpt.get();
             String token = jwtUtils.generateToken(user.getEmail());
             String safeName = (user.getName() == null || user.getName().isBlank())
@@ -160,7 +174,9 @@ public class AuthController {
     }
 
     @GetMapping("/owner-salon")
-    public ResponseEntity<?> getOwnerSalon(@RequestParam("email") String email) {
+    public ResponseEntity<?> getOwnerSalon(@RequestParam(value = "email", required = false) String ignoredEmail,
+            Authentication authentication) {
+        String email = authentication.getName();
         if (email == null || email.isBlank()) {
             return ResponseEntity.badRequest().body(Map.of("error", "Email is required."));
         }
@@ -197,7 +213,9 @@ public class AuthController {
     }
 
     @GetMapping("/owner-profile")
-    public ResponseEntity<?> getOwnerProfile(@RequestParam("email") String email) {
+    public ResponseEntity<?> getOwnerProfile(@RequestParam(value = "email", required = false) String ignoredEmail,
+            Authentication authentication) {
+        String email = authentication.getName();
         if (email == null || email.isBlank()) {
             return ResponseEntity.badRequest().body(Map.of("error", "Email is required."));
         }
@@ -244,8 +262,9 @@ public class AuthController {
 
     @PutMapping("/owner-profile")
     @Transactional
-    public ResponseEntity<?> updateOwnerProfile(@RequestBody Map<String, String> body) {
-        String email = body.get("email");
+    public ResponseEntity<?> updateOwnerProfile(@RequestBody Map<String, String> body,
+            Authentication authentication) {
+        String email = authentication.getName();
         if (email == null || email.isBlank()) {
             return ResponseEntity.badRequest().body(Map.of("error", "Email is required."));
         }
@@ -334,8 +353,9 @@ public class AuthController {
 
     @PutMapping("/owner-working-days")
     @Transactional
-    public ResponseEntity<?> updateOwnerHolidays(@RequestBody Map<String, String> body) {
-        String email = body.get("email");
+    public ResponseEntity<?> updateOwnerHolidays(@RequestBody Map<String, String> body,
+            Authentication authentication) {
+        String email = authentication.getName();
         logger.info("updateOwnerHolidays called for email: {}", email);
 
         if (email == null || email.isBlank()) {

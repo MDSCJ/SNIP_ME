@@ -14,7 +14,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@CrossOrigin(origins = "*")
 @RequestMapping("/api/payment")
 public class PaymentController {
 
@@ -67,7 +66,6 @@ public class PaymentController {
             String rawString = merchantId + orderId + amount + currency + hashedSecret;
             String hash = md5(rawString).toUpperCase();
 
-            System.out.println("Hash     : " + hash);
             System.out.println("============================");
 
             Map<String, String> response = new HashMap<>();
@@ -110,6 +108,14 @@ public class PaymentController {
         System.out.println("Amount     : " + payhere_amount);
         System.out.println("======================");
 
+        // Reject anything not signed by PayHere with our merchant secret:
+        // md5sig = UPPER(MD5(merchant_id + order_id + payhere_amount + payhere_currency
+        //                    + status_code + UPPER(MD5(merchant_secret))))
+        if (!isValidNotifySignature(merchant_id, order_id, payhere_amount, payhere_currency, status_code, md5sig)) {
+            System.out.println("Notify: REJECTED invalid signature for order " + order_id);
+            return ResponseEntity.status(400).body("Invalid signature");
+        }
+
         // status_code "2" = success in PayHere API
         if (order_id != null && "2".equals(status_code)) {
             paymentRepository.findByOrderId(order_id).ifPresent(payment -> {
@@ -126,6 +132,22 @@ public class PaymentController {
         }
 
         return ResponseEntity.ok("OK");
+    }
+
+    private boolean isValidNotifySignature(String merchantIdParam, String orderId, String amount, String currency,
+            String statusCode, String md5sig) {
+        if (merchantIdParam == null || orderId == null || amount == null || currency == null
+                || statusCode == null || md5sig == null || !merchantId.equals(merchantIdParam)) {
+            return false;
+        }
+        try {
+            String expected = md5(merchantIdParam + orderId + amount + currency + statusCode
+                    + md5(merchantSecret).toUpperCase()).toUpperCase();
+            return MessageDigest.isEqual(expected.getBytes(StandardCharsets.UTF_8),
+                    md5sig.toUpperCase().getBytes(StandardCharsets.UTF_8));
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     // ── MD5 helper ────────────────────────────────────────────────────────────

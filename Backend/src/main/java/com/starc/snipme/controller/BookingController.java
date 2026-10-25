@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -23,10 +23,10 @@ import com.starc.snipme.model.TimeSlot;
 import com.starc.snipme.model.User;
 import com.starc.snipme.repository.TimeSlotRepository;
 import com.starc.snipme.repository.UserRepository;
+import com.starc.snipme.security.CurrentUser;
 import com.starc.snipme.service.BookingService;
 
 @RestController
-@CrossOrigin(origins = "*") // <-- This tells Spring Boot: "Allow HTML/JS files to talk to me!"s
 @RequestMapping("/api/bookings")
 public class BookingController {
 
@@ -38,6 +38,18 @@ public class BookingController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private CurrentUser currentUser;
+
+    /** The caller's own user id, or null if they are not a logged-in customer account. */
+    private Long callerId(Authentication authentication) {
+        return currentUser.user(authentication).map(User::getId).orElse(null);
+    }
+
+    private ResponseEntity<?> forbidden() {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Not allowed."));
+    }
 
     @GetMapping("/available")
     public ResponseEntity<?> getAvailableSlots() {
@@ -68,7 +80,11 @@ public class BookingController {
 
     // The lock endpoint you already tested
     @PostMapping("/initiate")
-    public ResponseEntity<?> initiateBooking(@RequestParam Long slotID, @RequestParam Long customerID) {
+    public ResponseEntity<?> initiateBooking(@RequestParam Long slotID, @RequestParam Long customerID,
+            Authentication authentication) {
+        if (!customerID.equals(callerId(authentication))) {
+            return forbidden();
+        }
         try {
             TimeSlot lockedSlot = bookingService.initiateBooking(slotID, customerID);
             return ResponseEntity
@@ -81,7 +97,11 @@ public class BookingController {
     // --- The Confirmation Endpoint ---
     // Developer 3 calls this after the credit card clears!
     @PostMapping("/confirm")
-    public ResponseEntity<?> confirmBooking(@RequestParam Long slotID, @RequestParam Long customerID) {
+    public ResponseEntity<?> confirmBooking(@RequestParam Long slotID, @RequestParam Long customerID,
+            Authentication authentication) {
+        if (!customerID.equals(callerId(authentication))) {
+            return forbidden();
+        }
         try {
             // This calls the method YOU wrote earlier to permanently save the appointment!
             TimeSlot confirmedSlot = bookingService.confirmBooking(slotID, customerID);
@@ -104,7 +124,11 @@ public class BookingController {
             @RequestParam Long serviceID,
             @RequestParam String startTime,
             @RequestParam String orderId,
-            @RequestParam Double amount) {
+            @RequestParam Double amount,
+            Authentication authentication) {
+        if (!customerID.equals(callerId(authentication))) {
+            return forbidden();
+        }
         try {
             Object booking = bookingService.completeBooking(slotID, customerID, salonID, serviceID, startTime, orderId,
                     amount);
@@ -118,7 +142,20 @@ public class BookingController {
 
     // The Cancellation Endpoint ---
     @PostMapping("/cancel")
-    public ResponseEntity<?> cancelBooking(@RequestParam Long slotID) {
+    public ResponseEntity<?> cancelBooking(@RequestParam Long slotID, Authentication authentication) {
+        TimeSlot slot = timeSlotRepository.findById(slotID).orElse(null);
+        if (slot == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Booking not found.");
+        }
+        com.starc.snipme.model.Booking existing = bookingService.getBookingsForSlot(slotID);
+        Long caller = callerId(authentication);
+        boolean isBookingCustomer = existing != null && existing.getCustomer() != null && caller != null
+                && caller.equals(existing.getCustomer().getId());
+        boolean managesSalon = slot.getSalon() != null
+                && currentUser.canManageSalon(authentication, slot.getSalon().getSalonID());
+        if (!isBookingCustomer && !managesSalon) {
+            return forbidden();
+        }
         try {
             // Triggers the service logic mapped to your Post-Booking Lifecycle diagram
             bookingService.cancelBooking(slotID);
@@ -151,9 +188,18 @@ public class BookingController {
 
     // DASHBOARD API: Fetch all time slots
     @GetMapping("/all")
-    public ResponseEntity<?> getAllBookings() {
+    public ResponseEntity<?> getAllBookings(Authentication authentication) {
         try {
-            List<TimeSlot> allSlots = timeSlotRepository.findAll();
+            // Admins see everything, salon owners see their own salon with customer
+            // details, everyone else only sees slot occupancy (no customer data).
+            boolean admin = currentUser.isAdmin(authentication);
+            Long ownSalonId = currentUser.ownedSalon(authentication)
+                    .map(com.starc.snipme.model.Salon::getSalonID).orElse(null);
+
+            List<TimeSlot> allSlots = timeSlotRepository.findAll().stream()
+                    .filter(slot -> admin || ownSalonId == null
+                            || (slot.getSalon() != null && ownSalonId.equals(slot.getSalon().getSalonID())))
+                    .collect(Collectors.toList());
 
             java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter.ofPattern("hh:mm a");
             List<Map<String, Object>> rows = allSlots.stream().map(slot -> {
@@ -193,6 +239,13 @@ public class BookingController {
                     }
                 }
 
+                boolean showCustomer = admin || (ownSalonId != null && slot.getSalon() != null
+                        && ownSalonId.equals(slot.getSalon().getSalonID()));
+                if (!showCustomer) {
+                    customerName = null;
+                    customerId = null;
+                }
+
                 row.put("customerName", customerName);
                 row.put("customerId", customerId);
                 row.put("serviceName", serviceName);
@@ -208,7 +261,8 @@ public class BookingController {
     }
 
     @PostMapping("/owner/add")
-    public ResponseEntity<?> ownerAddAppointment(@RequestBody Map<String, Object> payload) {
+    public ResponseEntity<?> ownerAddAppointment(@RequestBody Map<String, Object> payload,
+            Authentication authentication) {
         try {
             Long salonId = payload.get("salonID") == null ? null : Long.parseLong(payload.get("salonID").toString());
             String customerName = payload.get("customerName") == null ? null : payload.get("customerName").toString();
@@ -218,6 +272,9 @@ public class BookingController {
 
             if (salonId == null || startTime == null) {
                 return ResponseEntity.badRequest().body(Map.of("error", "salonID and startTime are required"));
+            }
+            if (!currentUser.canManageSalon(authentication, salonId)) {
+                return forbidden();
             }
 
             TimeSlot created = bookingService.createOwnerAppointment(salonId, customerName, serviceId, startTime);
@@ -229,14 +286,11 @@ public class BookingController {
 
     @GetMapping("/customer")
     public ResponseEntity<?> getCustomerBookings(@RequestParam(required = false) Long customerID,
-            @RequestParam(required = false) String email) {
+            @RequestParam(required = false) String email,
+            Authentication authentication) {
         try {
-            Long resolvedCustomerId = customerID;
-            if (resolvedCustomerId == null && email != null && !email.isBlank()) {
-                resolvedCustomerId = userRepository.findByEmailIgnoreCase(email.trim().toLowerCase())
-                        .map(User::getId)
-                        .orElse(null);
-            }
+            // Always the caller's own bookings, whatever IDs the client sends
+            Long resolvedCustomerId = callerId(authentication);
 
             if (resolvedCustomerId == null) {
                 return ResponseEntity.ok(java.util.Collections.emptyList());

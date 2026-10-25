@@ -165,7 +165,12 @@ public class AdminController {
                     }
 
                     if (userType != null && !userType.isBlank()) {
-                        user.setUserType(userType.trim().toUpperCase());
+                        String normalizedType = userType.trim().toUpperCase();
+                        if (!"CUSTOMER".equals(normalizedType) && !"SALON_OWNER".equals(normalizedType)) {
+                            return ResponseEntity.badRequest()
+                                    .body(Map.of("error", "userType must be CUSTOMER or SALON_OWNER."));
+                        }
+                        user.setUserType(normalizedType);
                     }
 
                     userRepository.save(Objects.requireNonNull(user, "user must not be null"));

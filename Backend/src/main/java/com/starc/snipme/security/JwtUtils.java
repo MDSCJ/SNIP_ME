@@ -11,6 +11,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import io.jsonwebtoken.Claims;
+import jakarta.annotation.PostConstruct;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 
@@ -23,6 +24,15 @@ public class JwtUtils {
 
     @Value("${app.jwt.expiration}")
     private long expiration;
+
+    @PostConstruct
+    void validateSecret() {
+        if (secret == null || secret.getBytes(StandardCharsets.UTF_8).length < 32
+                || secret.equals("YourSuperSecretKeyThatIsAtLeast32CharactersLong!")) {
+            throw new IllegalStateException(
+                    "JWT_SECRET must be set to a random value of at least 32 bytes (the old committed secret is not allowed).");
+        }
+    }
 
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));

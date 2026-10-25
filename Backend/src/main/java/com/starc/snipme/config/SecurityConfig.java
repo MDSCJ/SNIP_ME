@@ -1,33 +1,47 @@
 package com.starc.snipme.config;
 
+import java.util.Arrays;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import com.starc.snipme.security.AuthRateLimitFilter;
 import com.starc.snipme.security.JwtFilter;
+import com.starc.snipme.security.RequestAuditFilter;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
     private final JwtFilter jwtFilter;
+    private final RequestAuditFilter requestAuditFilter;
+    private final AuthRateLimitFilter authRateLimitFilter;
 
-    public SecurityConfig(JwtFilter jwtFilter) {
+    @Value("${app.cors.allowed-origins}")
+    private String allowedOrigins;
+
+    public SecurityConfig(JwtFilter jwtFilter, RequestAuditFilter requestAuditFilter,
+            AuthRateLimitFilter authRateLimitFilter) {
         this.jwtFilter = jwtFilter;
+        this.requestAuditFilter = requestAuditFilter;
+        this.authRateLimitFilter = authRateLimitFilter;
     }
 
     @Bean
@@ -38,28 +52,44 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // Allow browser requests from frontend origins in development
                 .cors(Customizer.withDefaults())
 
-                // 1. Disable CSRF for development and stateless API testing
+                // Stateless bearer-token API: no cookies, so CSRF does not apply
                 .csrf(AbstractHttpConfigurer::disable)
 
-                // 2. Disable Frame Options so the H2 Console can load in your browser
-                .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
+                // Default secure headers (X-Frame-Options DENY, nosniff, HSTS on HTTPS)
+                .headers(Customizer.withDefaults())
 
-                // 3. Configure URL permissions
+                // Deny by default; open only what anonymous visitors genuinely need
                 .authorizeHttpRequests(auth -> auth
-                        // Allow anyone to access Auth endpoints and the Database console
-                        .requestMatchers("/api/auth/**", "/api/public/**", "/h2-console/**", "/api/bookings/**",
-                                "/api/payment/**", "/error")
-                        .permitAll() // Everything else requires a valid JWT
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/error").permitAll()
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/auth/login", "/api/auth/register", "/api/auth/forgot-password")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/public/**").permitAll()
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/bookings/available", "/api/bookings/available-by-salon",
+                                "/api/bookings/taken-slots")
+                        .permitAll()
+                        // PayHere server-to-server webhook; authenticity is checked via md5sig
+                        .requestMatchers(HttpMethod.POST, "/api/payment/notify").permitAll()
+
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/auth/owner-salon", "/api/auth/owner-profile",
+                                "/api/auth/owner-working-days")
+                        .hasRole("SALON_OWNER")
+                        .requestMatchers("/api/salon-owner/**", "/api/bookings/owner/**")
+                        .hasAnyRole("SALON_OWNER", "ADMIN")
                         .anyRequest().authenticated())
 
-                // 4. Ensure the server does not create a session (Stateless)
+                .exceptionHandling(ex -> ex.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // 5. Place your JWT Gatekeeper filter before the default login filter
+                .addFilterBefore(requestAuditFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(authRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -68,9 +98,12 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of("*"));
+        configuration.setAllowedOriginPatterns(Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList());
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         configuration.setAllowCredentials(false);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

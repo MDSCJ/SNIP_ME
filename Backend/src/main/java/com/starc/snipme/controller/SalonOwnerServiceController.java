@@ -6,6 +6,7 @@ import java.util.Objects;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,6 +22,7 @@ import com.starc.snipme.repository.AdminNotificationRepository;
 import com.starc.snipme.repository.ServiceItemRepository;
 import com.starc.snipme.repository.ServicePriceRepository;
 import com.starc.snipme.repository.ServiceRequestRepository;
+import com.starc.snipme.security.CurrentUser;
 
 @RestController
 @RequestMapping("/api/salon-owner/services")
@@ -30,11 +32,14 @@ public class SalonOwnerServiceController {
     private final ServiceRequestRepository serviceRequestRepository;
     private final ServicePriceRepository servicePriceRepository;
     private final AdminNotificationRepository adminNotificationRepository;
+    private final CurrentUser currentUser;
 
     public SalonOwnerServiceController(ServiceItemRepository serviceItemRepository, 
                                       ServiceRequestRepository serviceRequestRepository,
                                       ServicePriceRepository servicePriceRepository,
-                                      AdminNotificationRepository adminNotificationRepository) {
+                                      AdminNotificationRepository adminNotificationRepository,
+                                      CurrentUser currentUser) {
+        this.currentUser = currentUser;
         this.serviceItemRepository = serviceItemRepository;
         this.serviceRequestRepository = serviceRequestRepository;
         this.servicePriceRepository = servicePriceRepository;
@@ -97,7 +102,10 @@ public class SalonOwnerServiceController {
      * DEBUG ENDPOINT: Get ALL services (including inactive ones)
      */
     @GetMapping("/debug/all-services")
-    public ResponseEntity<?> debugAllServices() {
+    public ResponseEntity<?> debugAllServices(Authentication authentication) {
+        if (!currentUser.isAdmin(authentication)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Admin access required."));
+        }
         try {
             List<ServiceItem> allServices = serviceItemRepository.findAll();
             System.out.println("DEBUG: getAllServices - Found " + allServices.size() + " total services");
@@ -116,9 +124,13 @@ public class SalonOwnerServiceController {
      * Request a custom service for the salon
      */
     @PostMapping("/request-custom")
-    public ResponseEntity<?> requestCustomService(@RequestBody Map<String, String> request) {
+    public ResponseEntity<?> requestCustomService(@RequestBody Map<String, String> request,
+                                                  Authentication authentication) {
         try {
             Long salonId = Long.parseLong(request.get("salonId"));
+            if (!currentUser.canManageSalon(authentication, salonId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Not allowed."));
+            }
             String serviceName = request.get("serviceName");
             String description = request.get("description");
 
@@ -155,7 +167,10 @@ public class SalonOwnerServiceController {
      * Get service requests for a salon
      */
     @GetMapping("/requests/{salonId}")
-    public ResponseEntity<?> getSalonServiceRequests(@PathVariable Long salonId) {
+    public ResponseEntity<?> getSalonServiceRequests(@PathVariable Long salonId, Authentication authentication) {
+        if (!currentUser.canManageSalon(authentication, salonId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Not allowed."));
+        }
         try {
             List<ServiceRequest> requests = serviceRequestRepository.findBySalonIdOrderByRequestedAtDesc(salonId);
             return ResponseEntity.ok(Map.of("requests", requests));
@@ -169,11 +184,19 @@ public class SalonOwnerServiceController {
      * Add a service as available to a salon with pricing
      */
     @PostMapping("/add-available-service")
-    public ResponseEntity<?> addAvailableServiceWithPrice(@RequestBody Map<String, Object> request) {
+    public ResponseEntity<?> addAvailableServiceWithPrice(@RequestBody Map<String, Object> request,
+                                                          Authentication authentication) {
         try {
             Long salonId = Long.parseLong(request.get("salonId").toString());
             Long serviceId = Long.parseLong(request.get("serviceId").toString());
             Double price = Double.parseDouble(request.get("price").toString());
+
+            if (!currentUser.canManageSalon(authentication, salonId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Not allowed."));
+            }
+            if (price.isNaN() || price.isInfinite() || price <= 0) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Price must be a positive number"));
+            }
 
             // Check if service already exists for this salon
             if (servicePriceRepository.findBySalonIdAndServiceId(salonId, serviceId).isPresent()) {

@@ -38,10 +38,18 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                 .map(user -> new org.springframework.security.core.userdetails.User(
                         user.getEmail(),
                         user.getPassword(),
-                // Authorities are derived from userType (e.g. CUSTOMER, SALON_OWNER, ADMIN)
-                List.of(new SimpleGrantedAuthority("ROLE_" +
-                    (user.getUserType() == null ? "CUSTOMER" : user.getUserType().toUpperCase())))
+                List.of(new SimpleGrantedAuthority("ROLE_" + databaseRole(user.getUserType())))
                 ))
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
+    }
+
+    // Admin rights come only from the configured admin email above. A database row
+    // whose user_type was set to ADMIN (e.g. by tampering) gets no privileges.
+    private static String databaseRole(String userType) {
+        String type = userType == null ? "CUSTOMER" : userType.trim().toUpperCase();
+        return switch (type) {
+            case "CUSTOMER", "SALON_OWNER" -> type;
+            default -> "NONE";
+        };
     }
 }
