@@ -213,11 +213,11 @@
                 users.forEach(function (u) {
                     const tr = document.createElement("tr");
                     tr.innerHTML =
-                        "<td>" + (u.email || "") + "</td>" +
-                        "<td>" + (u.name || "-") + "</td>" +
-                        "<td>" + (u.phoneNumber || "-") + "</td>" +
-                        "<td>" + (u.userType || "CUSTOMER") + "</td>" +
-                        "<td><button class=\"delete-btn\" data-email=\"" + (u.email || "") + "\">Delete</button></td>";
+                        "<td>" + escapeHTML(u.email || "") + "</td>" +
+                        "<td>" + escapeHTML(u.name || "-") + "</td>" +
+                        "<td>" + escapeHTML(u.phoneNumber || "-") + "</td>" +
+                        "<td>" + escapeHTML(u.userType || "CUSTOMER") + "</td>" +
+                        "<td><button class=\"delete-btn\" data-email=\"" + escapeHTML(u.email || "") + "\">Delete</button></td>";
                     usersTableBody.appendChild(tr);
                 });
 
@@ -265,16 +265,16 @@
                     const statusClass = s.isActive ? "active" : "banned";
                     const statusText = s.isActive ? "ACTIVE" : "BANNED";
                     const actionBtn = s.isActive
-                        ? "<button class=\"ban-btn\" data-id=\"" + salonId + "\" data-action=\"ban\">Ban</button>"
-                        : "<button class=\"ban-btn\" data-id=\"" + salonId + "\" data-action=\"unban\">Unban</button>";
+                        ? "<button class=\"ban-btn\" data-id=\"" + escapeHTML(salonId) + "\" data-action=\"ban\">Ban</button>"
+                        : "<button class=\"ban-btn\" data-id=\"" + escapeHTML(salonId) + "\" data-action=\"unban\">Unban</button>";
                     tr.innerHTML =
-                        "<td>" + (salonId || "") + "</td>" +
+                        "<td>" + escapeHTML(salonId || "") + "</td>" +
                         // message icon + name
                         "<td>" +
-                            "<button class=\"message-btn\" data-id=\"" + (salonId || "") + "\" title=\"Message salon\" style=\"margin-right:8px;border:none;background:transparent;cursor:pointer;color:#6bd;\"><i class=\"fas fa-paper-plane\"></i></button>" +
-                            (s.name || "-") +
+                            "<button class=\"message-btn\" data-id=\"" + escapeHTML(salonId || "") + "\" title=\"Message salon\" style=\"margin-right:8px;border:none;background:transparent;cursor:pointer;color:#6bd;\"><i class=\"fas fa-paper-plane\"></i></button>" +
+                            escapeHTML(s.name || "-") +
                         "</td>" +
-                        "<td>" + (s.details || "-") + "</td>" +
+                        "<td>" + escapeHTML(s.details || "-") + "</td>" +
                         "<td><span class=\"status-pill " + statusClass + "\">" + statusText + "</span></td>" +
                         "<td>" + actionBtn + "</td>";
                     salonsTableBody.appendChild(tr);
@@ -335,10 +335,10 @@
                 services.forEach(function (svc) {
                     const tr = document.createElement("tr");
                     tr.innerHTML =
-                        "<td>" + (svc.id ?? "") + "</td>" +
-                        "<td>" + (svc.name || "-") + "</td>" +
+                        "<td>" + escapeHTML(svc.id ?? "") + "</td>" +
+                        "<td>" + escapeHTML(svc.name || "-") + "</td>" +
                         "<td>" + (svc.includeInSearch ? "YES" : "NO") + "</td>" +
-                        "<td><button class=\"delete-btn\" data-service-id=\"" + (svc.id ?? "") + "\">Delete</button></td>";
+                        "<td><button class=\"delete-btn\" data-service-id=\"" + escapeHTML(svc.id ?? "") + "\">Delete</button></td>";
                     servicesTableBody.appendChild(tr);
                 });
 
@@ -491,7 +491,7 @@
             console.error("Error loading notifications:", error);
             if (notificationsList) {
                 const message = String(error && error.message ? error.message : "Failed to load notifications");
-                notificationsList.innerHTML = '<p style="color: #ff9db0; padding: 20px;">' + message + '</p>';
+                notificationsList.innerHTML = '<p style="color: #ff9db0; padding: 20px;">' + escapeHTML(message) + '</p>';
             }
         });
     }
@@ -511,10 +511,10 @@
             html += `
                 <div class="notification-item ${readClass}">
                     <div class="notification-content">
-                        <h4>${notif.message}</h4>
-                        <p class="notification-date">${date}</p>
+                        <h4>${escapeHTML(notif.message)}</h4>
+                        <p class="notification-date">${escapeHTML(date)}</p>
                     </div>
-                    ${!notif.isRead ? `<button class="mark-read-btn" onclick="markNotificationAsRead(${notif.id})" type="button">Mark as Read</button>` : ''}
+                    ${!notif.isRead ? `<button class="mark-read-btn" onclick="markNotificationAsRead(${Number(notif.id)})" type="button">Mark as Read</button>` : ''}
                 </div>
             `;
         });

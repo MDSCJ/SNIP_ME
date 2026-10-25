@@ -100,8 +100,8 @@ function buildNotifItem(n, full = false) {
     el.innerHTML = `
         <div class="notif-avatar ${n.type}">${n.avatar}</div>
         <div class="notif-content">
-            <div class="notif-title">${n.title}</div>
-            <div class="notif-sub">${n.sub}</div>
+            <div class="notif-title">${escapeHTML(n.title)}</div>
+            <div class="notif-sub">${escapeHTML(n.sub)}</div>
             <div class="notif-time">${n.time}</div>
         </div>`;
     el.addEventListener('click', () => {
@@ -388,7 +388,7 @@ function syncWorkingDaysToServer() {
 
     return fetch(authBaseUrl + '/owner-working-days', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(requestPayload)
     }).then(function (response) {
         console.log('Sync response status:', response.status, response.statusText);
@@ -837,9 +837,9 @@ function loadTodaySchedule() {
 
             const actionText = hasBooking ? 'Manage' : 'Open';
             tr.innerHTML =
-                '<td><div class="slot-cell"><span class="time-badge">' + timeLabel + '</span></div></td>' +
-                '<td>' + customer + '</td>' +
-                '<td>' + service + '</td>' +
+                '<td><div class="slot-cell"><span class="time-badge">' + escapeHTML(timeLabel) + '</span></div></td>' +
+                '<td>' + escapeHTML(customer) + '</td>' +
+                '<td>' + escapeHTML(service) + '</td>' +
                 '<td><button class="btn-small schedule-action-btn" type="button">' + actionText + '</button></td>';
 
             const actionBtn = tr.querySelector('.schedule-action-btn');
@@ -981,7 +981,7 @@ function refreshOwnerBrandingFromServer() {
     }
 
     const endpoint = API_BASE_URL + '/auth/owner-salon?email=' + encodeURIComponent(ownerEmail);
-    fetch(endpoint)
+    fetch(endpoint, { headers: getAuthHeaders() })
         .then(function (response) {
             if (!response.ok) {
                 throw new Error('Owner salon lookup failed with status ' + response.status);
@@ -1018,7 +1018,7 @@ function setProfilePreview(photoDataUrl) {
 
     const hasPhoto = typeof photoDataUrl === 'string' && photoDataUrl.trim().length > 0;
     if (hasPhoto) {
-        preview.style.backgroundImage = "url('" + photoDataUrl + "')";
+        preview.style.backgroundImage = "url('" + safeURL(photoDataUrl) + "')";
         preview.classList.add('has-image');
         return;
     }
@@ -1283,7 +1283,7 @@ function loadOwnerProfile() {
     }
 
     const endpoint = AUTH_BASE_URL + '/owner-profile?email=' + encodeURIComponent(ownerEmail);
-    fetch(endpoint)
+    fetch(endpoint, { headers: getAuthHeaders() })
         .then(function (response) {
             if (!response.ok) {
                 throw new Error('Owner profile lookup failed with status ' + response.status);
@@ -1338,7 +1338,7 @@ function saveOwnerProfile(event) {
 
     fetch(AUTH_BASE_URL + '/owner-profile', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
             email: ownerEmail,
             salonName: salonName,
@@ -1441,8 +1441,8 @@ function addServiceToTable(name, price) {
 
     const newRow = `
         <tr>
-            <td>${name}</td>
-            <td>${price}</td>
+            <td>${escapeHTML(name)}</td>
+            <td>${escapeHTML(price)}</td>
             <td>${today}</td>
             <td><span class="status-tag active">Live</span></td>
         </tr>
@@ -1463,7 +1463,7 @@ function loadOwnerServices() {
     }
 
     // First, get the salon ID from the owner's profile
-    fetch(AUTH_BASE_URL + '/owner-profile?email=' + encodeURIComponent(ownerEmail))
+    fetch(AUTH_BASE_URL + '/owner-profile?email=' + encodeURIComponent(ownerEmail), { headers: getAuthHeaders() })
         .then(response => {
             if (!response.ok) {
                 console.warn('Could not load profile, fetching available services instead');
@@ -1576,7 +1576,7 @@ function displayServices(services) {
         const priceDisplay = service.price ? `₨${parseFloat(service.price).toFixed(2)}` : 'N/A';
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td>${service.name || 'Unknown'}</td>
+            <td>${escapeHTML(service.name || 'Unknown')}</td>
             <td><span class="status-tag active">Available</span></td>
             <td>${priceDisplay}</td>
         `;
@@ -1629,9 +1629,9 @@ function displayServiceRequests(requests) {
         const statusClass = request.status === 'APPROVED' ? 'active' : request.status === 'REJECTED' ? 'rejected' : 'pending';
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td>${request.serviceName || 'Unnamed Request'}</td>
-            <td><span class="status-tag ${statusClass}">${request.status}</span></td>
-            <td>${requestDate}</td>
+            <td>${escapeHTML(request.serviceName || 'Unnamed Request')}</td>
+            <td><span class="status-tag ${statusClass}">${escapeHTML(request.status)}</span></td>
+            <td>${escapeHTML(requestDate)}</td>
         `;
         tableBody.appendChild(row);
     });
@@ -1659,7 +1659,7 @@ function submitCustomService() {
     submitBtn.textContent = 'Submitting...';
 
     // Get salon ID first
-    fetch(AUTH_BASE_URL + '/owner-profile?email=' + encodeURIComponent(ownerEmail))
+    fetch(AUTH_BASE_URL + '/owner-profile?email=' + encodeURIComponent(ownerEmail), { headers: getAuthHeaders() })
         .then(response => {
             if (!response.ok) throw new Error('Cannot load profile');
             return response.json();
@@ -1771,7 +1771,7 @@ function loadAvailableServicesForPricing() {
 
     console.log('loadAvailableServicesForPricing: Starting service load for email:', ownerEmail);
 
-    fetch(AUTH_BASE_URL + '/owner-profile?email=' + encodeURIComponent(ownerEmail))
+    fetch(AUTH_BASE_URL + '/owner-profile?email=' + encodeURIComponent(ownerEmail), { headers: getAuthHeaders() })
         .then(response => {
             console.log('Owner profile response status:', response.status);
             if (!response.ok) return null;
@@ -1881,7 +1881,7 @@ function displayAvailableServicesForPricing(services, salonId) {
             card.innerHTML = `
                 <div class="plus-icon"><i class="fas fa-plus"></i></div>
                 <div class="service-icon"><i class="${icon}"></i></div>
-                <h4>${service.name}</h4>
+                <h4>${escapeHTML(service.name)}</h4>
                 <p>Tap to add pricing</p>
             `;
             
@@ -1922,7 +1922,7 @@ function openServicePricingModal(serviceId, serviceName, serviceIcon, salonId) {
     const priceInput = document.getElementById('service-price-input');
     
     if (nameEl) nameEl.textContent = serviceName;
-    if (iconEl) iconEl.innerHTML = `<i class="${serviceIcon}"></i>`;
+    if (iconEl) iconEl.innerHTML = `<i class="${escapeHTML(serviceIcon)}"></i>`;
     if (priceInput) priceInput.value = '';
     
     toggleModal('service-pricing-modal', true);

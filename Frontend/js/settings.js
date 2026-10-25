@@ -218,7 +218,8 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         fetch(bookingsUrl, {
-            method: 'GET'
+            method: 'GET',
+            headers: customerAuthHeaders()
         })
             .then(function (response) {
                 if (!response.ok) throw new Error('Failed to load bookings');
@@ -258,18 +259,18 @@ document.addEventListener("DOMContentLoaded", function () {
                     return `
                     <div class="booking-card ${statusClass}">
                         <div class="booking-info">
-                            <h3>${booking.salonName || '-'}</h3>
-                            <p><strong>Service:</strong> ${booking.service || '-'}</p>
+                            <h3>${escapeHTML(booking.salonName || '-')}</h3>
+                            <p><strong>Service:</strong> ${escapeHTML(booking.service || '-')}</p>
                             <p><strong>Date:</strong> ${formattedDate}</p>
                             <p><strong>Time:</strong> ${formatSlotTime(booking.slotStartTime)}</p>
-                            <p><strong>Payment Method:</strong> ${paymentText}</p>
-                            <p><strong>Status:</strong> <span class="status-badge">${status || '-'}</span></p>
+                            <p><strong>Payment Method:</strong> ${escapeHTML(paymentText)}</p>
+                            <p><strong>Status:</strong> <span class="status-badge">${escapeHTML(status || '-')}</span></p>
                         </div>
                         <div class="booking-actions">
                             ${statusNormalized === 'CONFIRMED' || statusNormalized === 'BOOKED' ? `
                                 <button type="button" onclick="cancelBooking(${index})" class="btn-cancel">Cancel Booking</button>
                             ` : `
-                                <p class="booking-canceled">This booking has been ${status === 'CANCELLED' || status === 'CANCELED' ? 'canceled' : status.toLowerCase()}</p>
+                                <p class="booking-canceled">This booking has been ${status === 'CANCELLED' || status === 'CANCELED' ? 'canceled' : escapeHTML(status.toLowerCase())}</p>
                             `}
                         </div>
                     </div>
@@ -340,7 +341,8 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         fetch(API_BASE_URL + '/bookings/cancel?slotID=' + encodeURIComponent(cancelSlotId), {
-            method: 'POST'
+            method: 'POST',
+            headers: customerAuthHeaders()
         })
             .then(function (response) {
                 if (response.ok) {

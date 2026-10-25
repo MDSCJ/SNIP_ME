@@ -330,7 +330,7 @@ function loadAvailableSlots() {
 
     Promise.all([
         fetch(availEndpoint).then(r => r.ok ? r.json() : []).catch(() => []),
-        fetch(allEndpoint).then(r => r.ok ? r.json() : []).catch(() => [])
+        fetch(allEndpoint, { headers: customerAuthHeaders() }).then(r => r.ok ? r.json() : []).catch(() => [])
     ])
         .then(function (results) {
             const avail = results[0] || [];
@@ -512,8 +512,8 @@ function createSlotElement(slot) {
     const div = document.createElement('div');
     div.className = 'time-slot';
     div.innerHTML =
-        '<input type="radio" name="timeSlot" value="' + slot.slotID + '" id="ts' + slot.slotID + '">' +
-        '<label for="ts' + slot.slotID + '">' +
+        '<input type="radio" name="timeSlot" value="' + escapeHTML(slot.slotID) + '" id="ts' + escapeHTML(slot.slotID) + '">' +
+        '<label for="ts' + escapeHTML(slot.slotID) + '">' +
         '<span class="slot-time">' + label + '</span>' +
         '<span class="slot-duration">30 min</span>' +
         '</label>';
@@ -677,7 +677,8 @@ function confirmBookingInBackend() {
     }
 
     fetch(url, {
-        method: 'POST'
+        method: 'POST',
+        headers: customerAuthHeaders()
     })
         .then(function (res) { return res.text(); })
         .then(function (data) {
@@ -732,7 +733,7 @@ function confirmOnlinePayment() {
     const initiatePromise = (bookingState.selectedSlot && bookingState.selectedSlot.slotID == null)
         ? Promise.resolve(null)
         : fetch(API_BASE_URL + '/bookings/initiate?slotID=' + bookingState.selectedSlot.slotID
-            + '&customerID=' + bookingState.customerID, { method: 'POST' });
+            + '&customerID=' + bookingState.customerID, { method: 'POST', headers: customerAuthHeaders() });
 
     initiatePromise
         .then(function (res) {
@@ -747,7 +748,7 @@ function confirmOnlinePayment() {
             return fetch(API_BASE_URL + '/payment/hash'
                 + '?orderId=' + bookingState.orderId
                 + '&amount=' + amount
-                + '&currency=' + CURRENCY);
+                + '&currency=' + CURRENCY, { headers: customerAuthHeaders() });
         })
         .then(function (res) {
             if (!res.ok) throw new Error('Hash backend returned ' + res.status);
@@ -806,7 +807,7 @@ function confirmOnlinePayment() {
                 merchant_id: data.merchant_id,
                 return_url: safeUrl,
                 cancel_url: safeUrl,
-                notify_url: 'https://mdscj.github.io/api/payment/notify',
+                notify_url: API_BASE_URL + '/payment/notify',
                 order_id: data.order_id,
                 items: (bookingState.selectedService ? bookingState.selectedService.serviceName : 'Salon Service')
                     + ' at ' + (bookingState.salonName || 'SNIP ME'),
@@ -889,11 +890,11 @@ function finishBooking() {
     const amtDisplay = getAmountDisplay();
 
     document.getElementById('confirmationDetails').innerHTML =
-        '<div class="cd-row"><span>Booking ID</span><span>' + bookingState.bookingID + '</span></div>' +
-        '<div class="cd-row"><span>Salon</span><span>' + (bookingState.salonName || '-') + '</span></div>' +
-        '<div class="cd-row"><span>Service</span><span>' + svcName + '</span></div>' +
+        '<div class="cd-row"><span>Booking ID</span><span>' + escapeHTML(bookingState.bookingID) + '</span></div>' +
+        '<div class="cd-row"><span>Salon</span><span>' + escapeHTML(bookingState.salonName || '-') + '</span></div>' +
+        '<div class="cd-row"><span>Service</span><span>' + escapeHTML(svcName) + '</span></div>' +
         '<div class="cd-row"><span>Date</span><span>' + dateLbl + '</span></div>' +
-        '<div class="cd-row"><span>Time</span><span>' + slotLbl + '</span></div>' +
+        '<div class="cd-row"><span>Time</span><span>' + escapeHTML(slotLbl) + '</span></div>' +
         '<div class="cd-row"><span>Payment</span><span>Online (PayHere)</span></div>' +
         '<div class="cd-row cd-total"><span>Amount</span><span>' + amtDisplay + '</span></div>';
 
